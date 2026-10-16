@@ -1,8 +1,25 @@
-# RHINE LAB · ANALYSIS OS
+# ATLAS · Personal Knowledge Terminal（个人知识档案终端）
+
+> **基于 [LBEILC/RhineLabUI](https://github.com/LBEILC/RhineLabUI) 派生的个人知识档案系统**  
+> 以本地 **Markdown 文件**为唯一权威内容源，融合**三维档案大厅交互（3D Archive）**与**二维高效知识阅读器（2D Library & Reader）**，用于长期、低阻力地积累个人技能、科研实验方法、学科知识与排错经验。
+
+- **项目规划与文档**：
+  - [ATLAS 个人知识库开发规划书](ATLAS%20个人知识库开发规划书.md)
+  - [技术架构与 M0 基线核查报告](docs/ARCHITECTURE.md)
+  - [内容编写与零阻力维护指南](docs/CONTENT-GUIDE.md)
+  - [开源许可、上游署名与第三方素材清单](docs/ATTRIBUTION.md)
+- **本地运行与使用方式**：
+  1. **日常写作**：直接用 **Obsidian**（将 `content/` 作为仓库打开）、**VS Code** 或 **AI Agent** 编辑 Markdown。
+  2. **本地 WebUI 实时预览**：双击 [`启动终端.cmd`](启动终端.cmd) 或运行 `npm run dev`，浏览器打开 `http://127.0.0.1:5173/`。
+  3. **桌面独立终端窗口（PWA）**：在 Chrome / Edge 打开页面后点击地址栏右侧「安装应用」，即可在桌面生成无边框独立终端图标并支持离线查阅。
+
+---
+
+## 上游基线说明（RHINE LAB · ANALYSIS OS）
 
 **把莱茵生命的终端，做成可以操作的三维界面。**
 
-**[在线体验 → rhine.lubeiluchen.cc](https://rhine.lubeiluchen.cc/)**
+**[上游在线体验 → rhine.lubeiluchen.cc](https://rhine.lubeiluchen.cc/)**
 
 iPhone 可用 Safari 打开在线版，通过“分享 → 添加到主屏幕”安装；从主屏幕图标进入可使用独立窗口。首次联网后，设置中显示“离线资源已就绪”即可离线浏览档案和模型。支持桌面不同比例、手机横竖屏和触摸操作。[安装与更新说明](docs/PWA.md)
 

@@ -47,7 +47,7 @@ function toArchiveRecord(entry: KnowledgeEntry): ArchiveRecord {
     slug: entry.slug,
     visualCode: entry.visualCode,
     title: entry.title,
-    en: `${entry.en} · ${tMeta.en}`,
+    en: entry.en,
     department: entry.department,
     category: entry.categoryTitle,
     portalId: entry.category,

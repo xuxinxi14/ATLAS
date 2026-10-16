@@ -15,6 +15,6 @@ if errorlevel 1 (
   exit /b 1
 )
 echo.
-echo [2/2] 正在启动本地知识终端服务器 (http://127.0.0.1:5173/#/home)...
-start "" "http://127.0.0.1:5173/#/home"
+echo [2/2] 正在启动本地知识终端服务器 (默认进入 3D 档案大厅 http://127.0.0.1:5173/)...
+start "" "http://127.0.0.1:5173/"
 call npm run dev

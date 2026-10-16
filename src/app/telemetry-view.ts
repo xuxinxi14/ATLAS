@@ -8,71 +8,127 @@ import { buildEntryHash, buildLibraryHash } from "./router.ts";
 
 export function renderTelemetryHomeMarkup(hasWebGL = true): string {
   const telemetry = knowledgeRepository.telemetry();
+  const allPublished = knowledgeRepository.all(false);
   const total = Math.max(1, telemetry.totalEntries);
   const proficientPct = Math.round(
     (telemetry.statusCounts.proficient / total) * 100,
   );
 
-  const portalCardsHtml = telemetry.portalStats
-    .map((p) => {
-      const pct = p.total > 0 ? Math.round((p.proficient / p.total) * 100) : 0;
+  // Build concentric SVG arcs for the 5 portals (Rhine Lab Orbital Scan aesthetic)
+  const radii = [86, 73, 60, 47, 34];
+  const orbitalArcsHtml = telemetry.portalStats
+    .map((p, idx) => {
+      const r = radii[idx] ?? 34;
+      const circumference = +(2 * Math.PI * r).toFixed(1);
+      const ratio = p.total > 0 ? Math.max(0.18, p.proficient / p.total) : 0.15;
+      const arcLen = +(circumference * ratio * 0.78).toFixed(1);
+      const gapLen = +(circumference - arcLen).toFixed(1);
+      const rot = -90 + idx * 38;
       return `
-        <article class="atlas-portal-card" data-portal-id="${escapeHtml(p.id)}">
-          <div class="atlas-portal-card-top">
-            <span class="atlas-portal-code">[${escapeHtml(p.codePrefix)}-SERIES]</span>
-            <span class="atlas-portal-en">${escapeHtml(p.en)}</span>
+        <circle cx="110" cy="110" r="${r}" class="orbital-track" />
+        <circle
+          cx="110"
+          cy="110"
+          r="${r}"
+          class="orbital-arc orbital-arc-${idx}"
+          stroke-dasharray="${arcLen} ${gapLen}"
+          transform="rotate(${rot} 110 110)"
+        />
+      `;
+    })
+    .join("");
+
+  // Build global vertical tick bar for all entries
+  const allTicksHtml = allPublished
+    .map((entry) => {
+      const sMeta = statusMeta(entry.status);
+      return `<a href="${buildEntryHash(entry.slug)}" class="rhine-spectrum-tick" data-status="${escapeHtml(entry.status)}" title="${escapeHtml(entry.visualCode)} · ${escapeHtml(entry.title)} [${escapeHtml(sMeta.label)}]"></a>`;
+    })
+    .join("");
+
+  // 5-Lane Architectural Matrix Columns
+  const portalColumnsHtml = telemetry.portalStats
+    .map((p, idx) => {
+      const pct = p.total > 0 ? Math.round((p.proficient / p.total) * 100) : 0;
+      const laneEntries = knowledgeRepository.listByCategory(p.id);
+      const ticksHtml = laneEntries
+        .map((e) => {
+          const sMeta = statusMeta(e.status);
+          return `<a href="${buildEntryHash(e.slug)}" class="portal-lane-tick" data-status="${escapeHtml(e.status)}" title="${escapeHtml(e.visualCode)} · ${escapeHtml(e.title)} (${escapeHtml(sMeta.label)})"></a>`;
+        })
+        .join("");
+
+      return `
+        <article class="rhine-portal-col" data-portal-id="${escapeHtml(p.id)}">
+          <div class="portal-col-top">
+            <span class="portal-col-lane">LANE 0${idx + 1}</span>
+            <span class="portal-col-code">${escapeHtml(p.codePrefix)}-SERIES</span>
           </div>
-          <h3>${escapeHtml(p.title)}</h3>
-          <p class="atlas-portal-desc">${escapeHtml(p.description)}</p>
-          <div class="atlas-portal-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
-            <div class="atlas-portal-progress-bar" style="width:${pct}%"></div>
+          <div class="portal-col-en">${escapeHtml(p.en)}</div>
+          <div class="portal-col-title-row">
+            <h4>${escapeHtml(p.title)}</h4>
+            <strong class="portal-col-count">${String(p.total).padStart(2, "0")}</strong>
           </div>
-          <div class="atlas-portal-metrics">
-            <span>共 <b>${p.total}</b> 篇</span>
-            <span class="metric-proficient">● 已掌握 ${p.proficient}</span>
-            ${p.learning > 0 ? `<span class="metric-learning">◐ 解析中 ${p.learning}</span>` : ""}
-            ${p.todo > 0 ? `<span class="metric-todo">○ 待解密 ${p.todo}</span>` : ""}
-            ${p.review > 0 ? `<span class="metric-review">◈ 需校准 ${p.review}</span>` : ""}
+          <p class="portal-col-desc">${escapeHtml(p.description)}</p>
+          <div class="portal-col-ticks" aria-label="${escapeHtml(p.title)} 档案刻度">
+            ${ticksHtml}
           </div>
-          <div class="atlas-portal-actions">
-            <a href="${buildLibraryHash(p.id)}" class="atlas-btn atlas-btn-secondary">二维目录 (${p.total})</a>
-            ${hasWebGL ? `<button type="button" class="atlas-btn atlas-btn-ghost" data-atlas-action="open-3d-portal" data-portal="${escapeHtml(p.id)}">3D 档案列 ↗</button>` : ""}
+          <div class="rhine-rule-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+            <i style="width:${pct}%"></i>
+          </div>
+          <div class="portal-col-stats">
+            <span>CALIBRATED <b>${pct}%</b></span>
+            <span>● ${p.proficient} / ${p.total}</span>
+          </div>
+          <div class="portal-col-actions">
+            <a href="${buildLibraryHash(p.id)}" class="rhine-inline-action">2D INDEX <span>→</span></a>
+            ${
+              hasWebGL
+                ? `<button type="button" class="rhine-inline-action" data-atlas-action="open-3d-portal" data-portal="${escapeHtml(p.id)}">3D COLUMN <span>↗</span></button>`
+                : ""
+            }
           </div>
         </article>
       `;
     })
     .join("");
 
+  // Calibration / Review Queue
   const reviewHtml =
     telemetry.reviewQueue.length > 0
       ? telemetry.reviewQueue
           .map(
             (item) => `
-          <a href="${buildEntryHash(item.slug)}" class="atlas-review-item">
-            <div class="atlas-review-badge">◈ 待校准</div>
-            <div class="atlas-review-main">
+          <a href="${buildEntryHash(item.slug)}" class="rhine-calibration-row">
+            <span class="calibration-tag">◈ REVIEW</span>
+            <div class="calibration-main">
               <strong>${escapeHtml(item.title)}</strong>
-              <span>${escapeHtml(item.categoryTitle)} · 上次更新 ${escapeHtml(item.updated)} · ${escapeHtml(item.reason)}</span>
+              <small>${escapeHtml(item.categoryTitle)} · UPDATED ${escapeHtml(item.updated)} · ${escapeHtml(item.reason)}</small>
             </div>
-            <span class="atlas-review-cta">30秒速览 →</span>
+            <span class="calibration-go">CALIBRATE <span>↗</span></span>
           </a>
         `,
           )
           .join("")
-      : `<div class="atlas-review-empty">✓ 当前所有已归档技能均处于有效校准周期内</div>`;
+      : `<div class="rhine-calibration-ok"><span>■</span> ALL SPECIMENS WITHIN CALIBRATION WINDOW · 全部词条处于有效校准周期内</div>`;
 
-  const recentHtml = telemetry.recentEntries
+  // Recent Transmissions Ledger
+  const recentRowsHtml = telemetry.recentEntries
     .map((entry) => {
       const sMeta = statusMeta(entry.status);
       const tMeta = typeMeta(entry.type);
+      const fullEntry = knowledgeRepository.bySlug(entry.slug);
+      const summaryText = fullEntry?.summary ?? entry.categoryTitle;
       return `
-        <a href="${buildEntryHash(entry.slug)}" class="atlas-recent-row">
-          <span class="atlas-code-pill">${escapeHtml(entry.visualCode)}</span>
-          <span class="atlas-status-dot ${sMeta.badgeClass}" title="${escapeHtml(sMeta.label)}"></span>
-          <strong class="atlas-recent-title">${escapeHtml(entry.title)}</strong>
-          <span class="atlas-type-tag ${tMeta.badgeClass}">${escapeHtml(tMeta.label)}</span>
-          <span class="atlas-recent-cat">${escapeHtml(entry.categoryTitle)}</span>
-          <time class="atlas-recent-date">${escapeHtml(entry.updated)}</time>
+        <a href="${buildEntryHash(entry.slug)}" class="rhine-ledger-row">
+          <span class="ledger-code">${escapeHtml(entry.visualCode)}</span>
+          <span class="ledger-title-cell">
+            <strong>${escapeHtml(entry.title)}</strong>
+            <small>${escapeHtml(tMeta.label)} · ${escapeHtml(summaryText)}</small>
+          </span>
+          <span class="ledger-portal">${escapeHtml(entry.categoryTitle)}</span>
+          <span class="ledger-status"><i data-status="${escapeHtml(entry.status)}"></i>${escapeHtml(sMeta.label)}</span>
+          <span class="ledger-date">${escapeHtml(entry.updated)} <i>↗</i></span>
         </a>
       `;
     })
@@ -80,111 +136,149 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
 
   return `
     <div class="atlas-surface-scroll">
-      <div class="atlas-container">
-        <header class="atlas-hero">
-          <div class="atlas-hero-left">
-            <div class="atlas-eyebrow">ATLAS · PERSONAL KNOWLEDGE TERMINAL // TELEMETRY HUD</div>
-            <h2>个人知识档案终端</h2>
-            <p class="atlas-hero-sub">
-              以本地 <code>content/**/*.md</code> 为唯一权威知识源。支持零 Front Matter 随手记、同级 <code>./assets/</code> 截图粘贴、二维三栏阅读器与三维档案大厅点亮反馈。
+      <div class="rhine-telemetry-stage">
+        <!-- Left Wing: Observation Core & Calibration Ring -->
+        <aside class="rhine-telemetry-left">
+          <div class="rhine-section-kicker" data-stagger="0">
+            <span>00 // SYSTEM TELEMETRY · 遥测中枢</span>
+            <span>SYNTHESIZE OS // ${escapeHtml(telemetry.generatedAt)}</span>
+          </div>
+          <div class="rhine-anchor-rule" data-rule><i></i></div>
+
+          <div class="rhine-title-block" data-stagger="1">
+            <h2>TELEMETRY MATRIX<small>知识库观测与校准中枢</small></h2>
+            <p class="rhine-subtitle">
+              本地 <code>content/**/*.md</code> 实时映射 · 零 Front Matter 自动推导 · 二维编目与三维阵列同源驱动
             </p>
-            <div class="atlas-hero-actions">
-              <a href="#/library" class="atlas-btn atlas-btn-primary">⊞ 打开二维知识索引 (${telemetry.totalEntries})</a>
-              ${
-                hasWebGL
-                  ? `<button type="button" class="atlas-btn atlas-btn-accent" data-atlas-action="enter-archive">◈ 进入三维档案大厅 ↗</button>`
-                  : `<span class="atlas-webgl-fallback-note">当前环境未启用 WebGL，已自动为您开启全功能二维阅读模式</span>`
-              }
-              <button type="button" class="atlas-btn atlas-btn-secondary" data-action="search">⌕ 全局命令检索 <kbd>Ctrl+K</kbd></button>
-              <button type="button" class="atlas-btn atlas-btn-ghost" data-atlas-action="quick-new-guide">＋ 如何快速记笔记</button>
+          </div>
+
+          <div class="rhine-orbital-panel" data-stagger="1">
+            <div class="rhine-orbital-graphic" aria-hidden="true">
+              <svg viewBox="0 0 220 220">
+                <g class="orbital-crosshairs">
+                  <line x1="110" y1="4" x2="110" y2="18" />
+                  <line x1="110" y1="202" x2="110" y2="216" />
+                  <line x1="4" y1="110" x2="18" y2="110" />
+                  <line x1="202" y1="110" x2="216" y2="110" />
+                  <circle cx="110" cy="110" r="100" class="orbital-outer-ring" />
+                </g>
+                <g class="orbital-lanes">
+                  ${orbitalArcsHtml}
+                </g>
+                <g class="orbital-nodes">
+                  <circle cx="110" cy="24" r="4.5" class="orbital-amber-dot" />
+                  <circle cx="170" cy="152" r="3.5" class="orbital-amber-dot-secondary" />
+                </g>
+              </svg>
+              <div class="orbital-center-readout">
+                <strong>${proficientPct}<span>%</span></strong>
+                <small>MASTERED</small>
+              </div>
+            </div>
+
+            <div class="rhine-kpi-column">
+              <div class="rhine-giant-kpi">
+                <span class="kpi-eyebrow">ARCHIVED SPECIMENS / 正式档案</span>
+                <div class="kpi-giant-row">
+                  <strong>${String(telemetry.totalEntries).padStart(3, "0")}</strong>
+                  <span>+${String(telemetry.inboxCount).padStart(2, "0")} INBOX</span>
+                </div>
+              </div>
+
+              <div class="rhine-mini-kpis">
+                <div>
+                  <dt>PROFICIENT / 已掌握</dt>
+                  <dd>${String(telemetry.statusCounts.proficient).padStart(2, "0")}</dd>
+                </div>
+                <div>
+                  <dt>ACTIVE / 解析与待办</dt>
+                  <dd>${String(telemetry.statusCounts.learning + telemetry.statusCounts.todo).padStart(2, "0")}</dd>
+                </div>
+                <div>
+                  <dt>SNIPPETS / 速查微卡</dt>
+                  <dd>${String(telemetry.typeCounts.snippet).padStart(2, "0")}</dd>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="atlas-telemetry-box" aria-label="系统遥测统计">
-            <div class="telemetry-header">
-              <span>SYSTEM TELEMETRY</span>
-              <span>UPDATED: ${escapeHtml(telemetry.generatedAt)}</span>
+          <div class="rhine-spectrum-block" data-stagger="2">
+            <div class="spectrum-head">
+              <span>SPECIMEN CALIBRATION SPECTRUM // 档案状态刻度</span>
+              <span>${telemetry.totalEntries} UNITS</span>
             </div>
-            <div class="telemetry-kpi-grid">
-              <div class="telemetry-kpi">
-                <span class="kpi-label">已归档正式条目</span>
-                <strong class="kpi-value">${String(telemetry.totalEntries).padStart(2, "0")}</strong>
-                <small>掌握率 ${proficientPct}%</small>
-              </div>
-              <div class="telemetry-kpi">
-                <span class="kpi-label">点亮实体卡 (已掌握)</span>
-                <strong class="kpi-value kpi-proficient">${String(telemetry.statusCounts.proficient).padStart(2, "0")}</strong>
-                <small>● PROFICIENT</small>
-              </div>
-              <div class="telemetry-kpi">
-                <span class="kpi-label">学习中 / 待解密槽</span>
-                <strong class="kpi-value kpi-learning">${telemetry.statusCounts.learning} / ${telemetry.statusCounts.todo}</strong>
-                <small>◐ LEARNING / ○ TODO</small>
-              </div>
-              <div class="telemetry-kpi">
-                <span class="kpi-label">速查微卡 / 草稿箱</span>
-                <strong class="kpi-value">${telemetry.typeCounts.snippet} / ${telemetry.inboxCount}</strong>
-                <small>SNIPPET / INBOX</small>
-              </div>
+            <div class="rhine-spectrum-ticks" aria-label="全部档案状态刻度条">
+              ${allTicksHtml}
             </div>
-            <div class="telemetry-status-legend">
-              <span class="legend-item"><i class="dot status-proficient"></i>已掌握 (${telemetry.statusCounts.proficient})</span>
-              <span class="legend-item"><i class="dot status-learning"></i>解析中 (${telemetry.statusCounts.learning})</span>
-              <span class="legend-item"><i class="dot status-todo"></i>待解密虚影 (${telemetry.statusCounts.todo})</span>
-              <span class="legend-item"><i class="dot status-review"></i>需校准 (${telemetry.statusCounts.review})</span>
-              <a href="#/library/inbox" class="legend-item legend-inbox"><i class="dot status-draft"></i>闪念草稿箱 (${telemetry.inboxCount})</a>
+            <div class="rhine-spectrum-legend">
+              <span><i data-status="proficient"></i>已掌握 (${telemetry.statusCounts.proficient})</span>
+              <span><i data-status="learning"></i>解析中 (${telemetry.statusCounts.learning})</span>
+              <span><i data-status="todo"></i>待解密 (${telemetry.statusCounts.todo})</span>
+              <span><i data-status="review"></i>需校准 (${telemetry.statusCounts.review})</span>
+              <a href="#/library/inbox"><i data-status="draft"></i>闪念草稿 (${telemetry.inboxCount}) ↗</a>
             </div>
           </div>
-        </header>
 
-        <section class="atlas-section" aria-label="待复习校准队列">
-          <div class="atlas-section-head">
-            <h3>◈ 待校准与温习提醒 (REVIEW QUEUE)</h3>
-            <span>自动筛选标记为 <code>review</code> 或超过 180 天未校准的操作档案</span>
-          </div>
-          <div class="atlas-review-list">
-            ${reviewHtml}
-          </div>
-        </section>
-
-        <section class="atlas-section" aria-label="五大知识门户">
-          <div class="atlas-section-head">
-            <h3>五大知识领域门户 (KNOWLEDGE PORTALS)</h3>
-            <span>对应三维大厅五列档案架 · 支持任意数量文档动态扩展</span>
-          </div>
-          <div class="atlas-portal-grid">
-            ${portalCardsHtml}
-          </div>
-        </section>
-
-        <div class="atlas-two-col-section">
-          <section class="atlas-section" aria-label="最近更新档案">
-            <div class="atlas-section-head">
-              <h3>最近更新档案 (RECENT UPDATES)</h3>
-              <a href="#/library" class="atlas-link-more">查看全部 →</a>
+          <section class="rhine-calibration-section" data-stagger="2" aria-label="待校准与温习提醒">
+            <div class="rhine-subhead">
+              <span>01 // CALIBRATION QUEUE · 待校准与温习提醒</span>
+              <small>REVIEW &gt; 180D</small>
             </div>
-            <div class="atlas-recent-list">
-              ${recentHtml}
+            <div class="rhine-calibration-list">
+              ${reviewHtml}
             </div>
           </section>
 
-          <section class="atlas-section" aria-label="零阻力记录工作流">
-            <div class="atlas-section-head">
-              <h3>⚡ 零阻力记录三种方式 (QUICK AUTHORING)</h3>
+          <section class="rhine-protocol-section" data-stagger="3" aria-label="零阻力归档协议">
+            <div class="rhine-subhead">
+              <span>02 // AUTHORING PROTOCOL · 零阻力记录协议</span>
+              <small>LOCAL MARKDOWN</small>
             </div>
-            <div class="atlas-workflow-cards">
-              <div class="workflow-card">
-                <strong>1. Obsidian / VS Code 直写（最推荐）</strong>
-                <p>用 Obsidian 打开 <code>content/</code> 目录，在任一分类或 <code>inbox/</code> 下新建 <code>.md</code>。<strong>无需手填 Front Matter</strong>，直接写 <code># 标题</code> 和正文，截图直接 <code>Ctrl+V</code> 存入同级 <code>./assets/</code>。</p>
-              </div>
-              <div class="workflow-card">
-                <strong>2. 命令行一键生成模板</strong>
-                <p>终端执行 <code>npm run new "笔记标题"</code>（默认进入草稿箱）或 <code>npm run new tools "Aegisub 打轴"</code>，秒级创建带快速复习区的文件。</p>
-              </div>
-              <div class="workflow-card">
-                <strong>3. AI Agent 对话一键归档</strong>
-                <p>在排错或学习后直接告诉 AI：「把刚才的排错过程归档到 ATLAS」，自动生成合规 Markdown 并运行校验构建。</p>
-              </div>
+            <ol class="rhine-protocol-list">
+              <li><span>01</span><div><strong>Obsidian / VS Code 直写</strong> — 在 <code>content/</code> 任一目录新建 <code>.md</code>，免填 Front Matter 自动推导分类与日期。</div></li>
+              <li><span>02</span><div><strong>CLI 一键生成模板</strong> — 终端运行 <code>npm run new "标题"</code> 秒级创建含速查区文档，截图直贴同级 <code>./assets/</code>。</div></li>
+            </ol>
+            <div class="rhine-primary-actions">
+              <a href="#/library" class="solid-button">
+                OPEN 2D LIBRARY ↗<span>二维知识索引 (${telemetry.totalEntries})</span>
+              </a>
+              ${
+                hasWebGL
+                  ? `<button type="button" class="solid-button secondary-solid" data-atlas-action="enter-archive">3D ARCHIVE →<span>进入三维档案大厅</span></button>`
+                  : `<span class="atlas-webgl-fallback-note">当前环境未启用 WebGL，已自动为您开启全功能二维阅读模式</span>`
+              }
+            </div>
+          </section>
+        </aside>
+
+        <!-- Right Wing: 5-Lane Matrix & Recent Ledger -->
+        <div class="rhine-telemetry-right">
+          <section class="rhine-portals-section" data-stagger="1" aria-label="五大知识领域门户">
+            <div class="rhine-section-kicker">
+              <span>03 // FIVE-LANE ARCHIVE MATRIX · 五大知识领域门户</span>
+              <span>SYNCHRONIZED WITH 3D ARCHIVE LANES 01–05</span>
+            </div>
+            <div class="rhine-anchor-rule" data-rule><i></i></div>
+
+            <div class="rhine-portal-columns">
+              ${portalColumnsHtml}
+            </div>
+          </section>
+
+          <section class="rhine-recent-section" data-stagger="2" aria-label="最近更新档案">
+            <div class="rhine-section-kicker">
+              <span>04 // RECENT TRANSMISSIONS · 最近更新与归档流</span>
+              <a href="#/library" class="rhine-kicker-link">ALL ARCHIVES (${telemetry.totalEntries}) →</a>
+            </div>
+            <div class="rhine-ledger-header">
+              <span>SERIAL / 编号</span>
+              <span>SPECIMEN / 档案标题与摘要</span>
+              <span>PORTAL / 所属门类</span>
+              <span>STATUS / 掌握度</span>
+              <span>UPDATED / 日期</span>
+            </div>
+            <div class="rhine-ledger-list">
+              ${recentRowsHtml}
             </div>
           </section>
         </div>

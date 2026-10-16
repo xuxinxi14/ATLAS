@@ -48,7 +48,7 @@ export function filterAndSortLibraryEntries(
     if (state.query.trim()) {
       const q = normalizeSearchText(state.query);
       const hay = normalizeSearchText(
-        `${entry.visualCode} ${entry.title} ${entry.summary} ${entry.tags.join(" ")} ${entry.plainText}`,
+        `${entry.visualCode} ${entry.globalCode} ${entry.title} ${entry.summary} ${entry.tags.join(" ")} ${entry.plainText}`,
       );
       return hay.includes(q);
     }
@@ -82,17 +82,19 @@ export function renderLibraryViewMarkup(
   const portalTabs = [
     {
       id: "all",
+      code: "ALL",
       title: "全部领域",
       count: telemetry.totalEntries,
     },
-    ...portals.map((p) => ({
+    ...portals.map((p, i) => ({
       id: p.id,
+      code: `0${i + 1}`,
       title: p.title,
-      count:
-        telemetry.portalStats.find((s) => s.id === p.id)?.total ?? 0,
+      count: telemetry.portalStats.find((s) => s.id === p.id)?.total ?? 0,
     })),
     {
       id: "inbox",
+      code: "INB",
       title: "闪念草稿箱",
       count: telemetry.inboxCount,
     },
@@ -103,151 +105,218 @@ export function renderLibraryViewMarkup(
       (tab) => `
       <button
         type="button"
-        class="atlas-cat-tab ${state.category === tab.id ? "active" : ""}"
+        class="rhine-portal-tab ${state.category === tab.id ? "active" : ""}"
         data-library-category="${escapeHtml(tab.id)}"
         aria-pressed="${state.category === tab.id}"
       >
+        <small>${escapeHtml(tab.code)}</small>
         <span>${escapeHtml(tab.title)}</span>
-        <small>${tab.count}</small>
+        <b>${String(tab.count).padStart(2, "0")}</b>
       </button>
     `,
     )
     .join("");
 
-  const cardsHtml =
+  const typeFilters: { value: EntryType | "all"; label: string }[] = [
+    { value: "all", label: "ALL TYPES / 全部类型" },
+    { value: "skill", label: "SKILL / 技能操作" },
+    { value: "snippet", label: "SNIPPET / 速查微卡" },
+    { value: "concept", label: "CONCEPT / 核心概念" },
+    { value: "troubleshooting", label: "TROUBLESHOOT / 故障排错" },
+  ];
+
+  const statusFilters: { value: EntryStatus | "all"; label: string }[] = [
+    { value: "all", label: "ALL STATUS / 全部状态" },
+    { value: "proficient", label: "已掌握" },
+    { value: "learning", label: "解析中" },
+    { value: "todo", label: "待解密" },
+    { value: "review", label: "需校准" },
+  ];
+
+  const typeChipsHtml = typeFilters
+    .map(
+      (t) =>
+        `<button type="button" class="rhine-filter-chip ${state.type === t.value ? "active" : ""}" data-library-type="${t.value}">${escapeHtml(t.label)}</button>`,
+    )
+    .join("");
+
+  const statusChipsHtml = statusFilters
+    .map(
+      (s) =>
+        `<button type="button" class="rhine-filter-chip ${state.status === s.value ? "active" : ""}" data-library-status="${s.value}">${s.value !== "all" ? `<i data-status="${s.value}"></i>` : ""}${escapeHtml(s.label)}</button>`,
+    )
+    .join("");
+
+  const entriesHtml =
     entries.length > 0
-      ? entries
-          .map((entry) => {
-            const sMeta = statusMeta(entry.status);
-            const tMeta = typeMeta(entry.type);
-            const isSaved =
-              savedIds.has(entry.id) || savedIds.has(entry.globalCode);
-            return `
-            <article class="atlas-entry-card ${sMeta.badgeClass}" data-entry-id="${escapeHtml(entry.id)}">
-              <div class="entry-card-top">
-                <div class="entry-card-codes">
-                  <span class="atlas-code-pill">${escapeHtml(entry.visualCode)}</span>
-                  <span class="atlas-status-pill ${sMeta.badgeClass}" title="${escapeHtml(sMeta.hint)}">
-                    <i class="dot ${sMeta.badgeClass}"></i>${escapeHtml(sMeta.label)}
-                  </span>
-                  <span class="atlas-type-tag ${tMeta.badgeClass}">${escapeHtml(tMeta.label)}</span>
-                  ${entry.autoInferred ? `<span class="atlas-inferred-badge" title="零 Front Matter 自动推导条目">AUTO</span>` : ""}
-                </div>
-                <span class="entry-card-cat">${escapeHtml(entry.categoryTitle)}</span>
-              </div>
+      ? state.layout === "list"
+        ? `
+          <div class="rhine-ledger-header rhine-library-ledger-head">
+            <span>SERIAL / 编号</span>
+            <span>SPECIMEN / 档案标题与摘要</span>
+            <span>PORTAL / 所属门类</span>
+            <span>STATUS / 状态</span>
+            <span>ACTION / 操作</span>
+          </div>
+          <div class="rhine-ledger-list">
+            ${entries
+              .map((entry) => {
+                const sMeta = statusMeta(entry.status);
+                const tMeta = typeMeta(entry.type);
+                const isSaved =
+                  savedIds.has(entry.id) || savedIds.has(entry.globalCode);
+                return `
+                  <article class="rhine-ledger-row rhine-library-ledger-row">
+                    <span class="ledger-code">${escapeHtml(entry.visualCode)}<small>${escapeHtml(entry.globalCode)}</small></span>
+                    <a href="${buildEntryHash(entry.slug)}" class="ledger-title-cell">
+                      <strong>${escapeHtml(entry.title)}</strong>
+                      <small>${escapeHtml(tMeta.label)} · ${escapeHtml(entry.summary)}</small>
+                    </a>
+                    <span class="ledger-portal">${escapeHtml(entry.categoryTitle)}<small>${escapeHtml(entry.updated)}</small></span>
+                    <span class="ledger-status"><i data-status="${escapeHtml(entry.status)}"></i>${escapeHtml(sMeta.label)}</span>
+                    <span class="ledger-actions">
+                      ${
+                        hasWebGL && entry.category !== "inbox"
+                          ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 阵列中抽取">3D ↗</button>`
+                          : ""
+                      }
+                      <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
+                      <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
+                    </span>
+                  </article>
+                `;
+              })
+              .join("")}
+          </div>
+        `
+        : entries
+            .map((entry) => {
+              const sMeta = statusMeta(entry.status);
+              const tMeta = typeMeta(entry.type);
+              const isSaved =
+                savedIds.has(entry.id) || savedIds.has(entry.globalCode);
+              return `
+                <article class="rhine-specimen-plate" data-entry-id="${escapeHtml(entry.id)}" data-status="${escapeHtml(entry.status)}">
+                  <div class="specimen-plate-rule"><i></i><span>+</span></div>
+                  <div class="specimen-kicker">
+                    <span class="specimen-serial">${escapeHtml(entry.visualCode)} <i>/</i> ${escapeHtml(entry.globalCode)}</span>
+                    <span class="specimen-status" title="${escapeHtml(sMeta.hint)}">
+                      <i data-status="${escapeHtml(entry.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}
+                    </span>
+                  </div>
 
-              <h3 class="entry-card-title">
-                <a href="${buildEntryHash(entry.slug)}">${escapeHtml(entry.title)}</a>
-              </h3>
+                  <div class="specimen-subkicker">
+                    <span>${escapeHtml(entry.en)} // ${escapeHtml(tMeta.en)}</span>
+                    <span>${escapeHtml(entry.categoryTitle)}${entry.autoInferred ? " · AUTO" : ""}</span>
+                  </div>
 
-              <p class="entry-card-summary">${escapeHtml(entry.summary)}</p>
+                  <h3 class="specimen-title">
+                    <a href="${buildEntryHash(entry.slug)}">
+                      <span>${escapeHtml(entry.title)}</span>
+                      <i aria-hidden="true">↗</i>
+                    </a>
+                  </h3>
 
-              <div class="entry-card-tags">
-                ${entry.tags.map((t) => `<span class="atlas-tag">#${escapeHtml(t)}</span>`).join("")}
-              </div>
+                  <p class="specimen-summary">${escapeHtml(entry.summary)}</p>
 
-              <div class="entry-card-footer">
-                <div class="entry-card-meta">
-                  <span>更新于 ${escapeHtml(entry.updated)}</span>
-                  <span>· ${escapeHtml(entry.version_scope)}</span>
-                </div>
-                <div class="entry-card-actions">
-                  ${
-                    hasWebGL && entry.category !== "inbox"
-                      ? `<button type="button" class="atlas-btn-mini" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 档案阵列中抽取该卡">◈ 3D 抽卡</button>`
-                      : ""
-                  }
-                  <button type="button" class="atlas-btn-mini ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}" title="收藏此知识条目">${isSaved ? "★ 已收藏" : "☆ 收藏"}</button>
-                  <a href="${buildEntryHash(entry.slug)}" class="atlas-btn-mini atlas-btn-mini-primary">阅读档案 →</a>
-                </div>
-              </div>
-            </article>
-          `;
-          })
-          .join("")
+                  <div class="specimen-tags">
+                    ${entry.tags.map((t) => `<span class="specimen-tag">#${escapeHtml(t)}</span>`).join("")}
+                  </div>
+
+                  <div class="specimen-footer">
+                    <div class="specimen-meta">
+                      <span>${escapeHtml(entry.updated)}</span>
+                      <span>· ${escapeHtml(entry.version_scope)}</span>
+                    </div>
+                    <div class="specimen-actions">
+                      ${
+                        hasWebGL && entry.category !== "inbox"
+                          ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 档案阵列中抽取该卡">3D 定位 ↗</button>`
+                          : ""
+                      }
+                      <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
+                      <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
+                    </div>
+                  </div>
+                </article>
+              `;
+            })
+            .join("")
       : `
-        <div class="atlas-empty-state">
-          <p>当前筛选条件下未找到匹配的知识档案。</p>
-          <button type="button" class="atlas-btn atlas-btn-secondary" data-atlas-action="reset-library-filters">重置全部筛选条件</button>
+        <div class="rhine-empty-specimen">
+          <span>∅</span>
+          <strong>NO MATCHING SPECIMENS // 未找到匹配的知识档案</strong>
+          <p>请尝试其他关键词、编号，或重置当前门类与状态过滤条件。</p>
+          <button type="button" class="solid-button" data-atlas-action="reset-library-filters">RESET FILTERS →<span>重置全部筛选条件</span></button>
         </div>
       `;
 
   return `
     <div class="atlas-surface-scroll">
-      <div class="atlas-container">
-        <header class="atlas-library-header">
-          <div>
-            <div class="atlas-eyebrow">ATLAS · 2D KNOWLEDGE INDEX // DIRECT ACCESS</div>
-            <h2>二维知识索引目录</h2>
+      <div class="rhine-library-stage">
+        <header class="rhine-library-top" data-stagger="0">
+          <div class="rhine-section-kicker">
+            <span>00 // ARCHIVE DIRECTORY · 二维知识索引目录</span>
+            <span>SHOWING ${String(entries.length).padStart(2, "0")} OF ${String(telemetry.totalEntries + telemetry.inboxCount).padStart(2, "0")} SPECIMENS</span>
           </div>
-          <div class="atlas-library-header-actions">
-            <a href="#/home" class="atlas-btn atlas-btn-ghost">← 遥测概览</a>
-            ${hasWebGL ? `<button type="button" class="atlas-btn atlas-btn-secondary" data-atlas-action="enter-archive">◈ 切换至 3D 档案大厅</button>` : ""}
+          <div class="rhine-anchor-rule" data-rule><i></i></div>
+
+          <div class="rhine-library-head-row">
+            <div class="rhine-library-heading">
+              <h2>KNOWLEDGE DIRECTORY<small>二维知识索引目录</small></h2>
+            </div>
+
+            <div class="rhine-library-search-bar">
+              <div class="search-field rhine-inline-search">
+                <span class="nav-glyph" aria-hidden="true"></span>
+                <input
+                  id="atlas-library-search"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="筛选标题、编号 (C-001 / X-001)、标签或正文命令…"
+                  value="${escapeHtml(state.query)}"
+                  aria-label="筛选知识目录"
+                />
+                <span class="key">FILTER</span>
+              </div>
+            </div>
           </div>
         </header>
 
-        <nav class="atlas-cat-tabs" aria-label="知识领域切换">
+        <!-- Row 1: 5-Lane Portal Scale -->
+        <nav class="rhine-portal-strip" data-stagger="1" aria-label="知识领域切换">
           ${tabsHtml}
         </nav>
 
-        <div class="atlas-filter-bar" role="region" aria-label="多维筛选与排序">
-          <div class="filter-search-wrap">
-            <span class="filter-search-icon" aria-hidden="true">⌕</span>
-            <input
-              id="atlas-library-search"
-              type="search"
-              placeholder="筛选标题、标签、命令或摘要..."
-              value="${escapeHtml(state.query)}"
-              aria-label="筛选知识目录"
-            />
+        <!-- Row 2: Hairline Dimension Filters & View Controls -->
+        <div class="rhine-dimension-bar" data-stagger="1" role="region" aria-label="多维筛选与排序">
+          <div class="rhine-chip-group">
+            <span class="chip-group-label">TYPE //</span>
+            ${typeChipsHtml}
           </div>
 
-          <div class="filter-selects">
-            <label>
-              <span>类型</span>
-              <select id="atlas-library-type">
-                <option value="all" ${state.type === "all" ? "selected" : ""}>全部类型</option>
-                <option value="skill" ${state.type === "skill" ? "selected" : ""}>技能操作 (Skill)</option>
-                <option value="snippet" ${state.type === "snippet" ? "selected" : ""}>速查微卡 (Snippet)</option>
-                <option value="concept" ${state.type === "concept" ? "selected" : ""}>核心概念 (Concept)</option>
-                <option value="troubleshooting" ${state.type === "troubleshooting" ? "selected" : ""}>故障排错 (Troubleshooting)</option>
-              </select>
-            </label>
+          <div class="rhine-chip-group">
+            <span class="chip-group-label">STATUS //</span>
+            ${statusChipsHtml}
+          </div>
 
-            <label>
-              <span>状态</span>
-              <select id="atlas-library-status">
-                <option value="all" ${state.status === "all" ? "selected" : ""}>全部状态</option>
-                <option value="proficient" ${state.status === "proficient" ? "selected" : ""}>● 已掌握 (Proficient)</option>
-                <option value="learning" ${state.status === "learning" ? "selected" : ""}>◐ 解析中 (Learning)</option>
-                <option value="todo" ${state.status === "todo" ? "selected" : ""}>○ 待解密 (Todo)</option>
-                <option value="review" ${state.status === "review" ? "selected" : ""}>◈ 需校准 (Review)</option>
-                <option value="draft" ${state.status === "draft" ? "selected" : ""}>闪念草稿 (Draft)</option>
-              </select>
-            </label>
+          <div class="rhine-view-controls">
+            <div class="rhine-sort-group" role="group" aria-label="排序方式">
+              <span class="chip-group-label">SORT //</span>
+              <button type="button" class="rhine-filter-chip ${state.sortBy === "updated" ? "active" : ""}" data-library-sort="updated">UPDATED ↓</button>
+              <button type="button" class="rhine-filter-chip ${state.sortBy === "status" ? "active" : ""}" data-library-sort="status">PRIORITY</button>
+              <button type="button" class="rhine-filter-chip ${state.sortBy === "title" ? "active" : ""}" data-library-sort="title">A–Z</button>
+            </div>
 
-            <label>
-              <span>排序</span>
-              <select id="atlas-library-sort">
-                <option value="updated" ${state.sortBy === "updated" ? "selected" : ""}>按最近更新</option>
-                <option value="status" ${state.sortBy === "status" ? "selected" : ""}>按待校准/学习状态优先</option>
-                <option value="title" ${state.sortBy === "title" ? "selected" : ""}>按标题名称</option>
-              </select>
-            </label>
-
-            <div class="filter-layout-toggle" role="group" aria-label="布局视图切换">
-              <button type="button" class="${state.layout === "grid" ? "active" : ""}" data-library-layout="grid" title="卡片网格">⊞ 卡片</button>
-              <button type="button" class="${state.layout === "list" ? "active" : ""}" data-library-layout="list" title="紧凑列表">☰ 列表</button>
+            <div class="rhine-layout-group" role="group" aria-label="视图模式">
+              <button type="button" class="rhine-filter-chip ${state.layout === "grid" ? "active" : ""}" data-library-layout="grid">MATRIX 切片</button>
+              <button type="button" class="rhine-filter-chip ${state.layout === "list" ? "active" : ""}" data-library-layout="list">LEDGER 列表</button>
             </div>
           </div>
         </div>
 
-        <div class="atlas-library-count">
-          共显示 <strong>${entries.length}</strong> 份知识档案
-        </div>
-
-        <div class="atlas-entries-container layout-${state.layout}">
-          ${cardsHtml}
+        <div class="rhine-specimens-container layout-${state.layout}" data-stagger="2">
+          ${entriesHtml}
         </div>
       </div>
     </div>

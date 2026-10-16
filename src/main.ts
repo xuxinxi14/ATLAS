@@ -110,6 +110,7 @@ $("#stage").innerHTML = `
     <button data-action="search"><span class="nav-glyph">⌕</span> ARCHIVE INDEX <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
+    <i class="nav-mode-indicator" aria-hidden="true"></i>
   </nav>
   <button id="skip" class="skip" data-action="skip">ENTER SYSTEM <span>↗</span></button>
   <section id="boot" class="boot" aria-label="系统启动">
@@ -134,6 +135,7 @@ $("#stage").innerHTML = `
     <div class="object-caption"><span id="object-id">NO.001</span><div>INTERNAL DATABASE</div><small>DRAG TO INSPECT <span>↔</span></small><button class="viewer-open" data-action="model-viewer">360° 查看文档模型 <span>↗</span></button></div>
     <article id="detail-content" class="detail-content"></article>
   </section>
+  <section id="atlas-surface" class="atlas-surface" aria-label="ATLAS 二维知识终端" hidden></section>
   <div class="powered">POWERED BY <b>RHINE LAB</b><i></i></div>
   <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ""}</span><span>ATLAS // PERSONAL KNOWLEDGE TERMINAL <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
   <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
@@ -148,7 +150,7 @@ $("#boot-background").insertAdjacentHTML(
 const bootSequence = new BootSequence($("#stage"));
 $("#viewport").insertAdjacentHTML(
   "beforeend",
-  '<section id="atlas-surface" class="atlas-surface" aria-label="ATLAS 二维知识终端" hidden></section><button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>',
+  '<button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>',
 );
 
 type Mode = "boot" | "archive" | "detail";
@@ -505,6 +507,7 @@ function fit() {
     const indicator = document.querySelector<HTMLElement>(".tab-indicator");
     if (tab && indicator)
       indicator.style.transform = `translateX(${tab.offsetLeft}px) scaleX(${tab.offsetWidth})`;
+    syncNavButtons(false);
   });
 }
 window.addEventListener("resize", fit);
@@ -533,32 +536,11 @@ function isEntrySaved(idOrCode: string): boolean {
   return saved.has(idOrCode);
 }
 
-function renderAtlasTopbarMarkup(): string {
-  const hasWebGL = Boolean(scene);
-  return `
-    <header class="atlas-topbar" aria-label="ATLAS 终端顶部导航">
-      <a href="#/home" class="atlas-topbar-brand">
-        <strong>ATLAS // TERMINAL</strong>
-        <span>PERSONAL KNOWLEDGE OS · POWERED BY RHINE LAB</span>
-      </a>
-      <nav class="atlas-topbar-nav" aria-label="视图模式切换">
-        <a href="#/home" class="atlas-topbar-link ${atlasView === "home" ? "active" : ""}">◈ 遥测中枢 <kbd>H</kbd></a>
-        <a href="#/library" class="atlas-topbar-link ${atlasView === "library" || atlasView === "reader" ? "active" : ""}">⊞ 2D 知识索引 <kbd>L</kbd></a>
-        ${
-          hasWebGL
-            ? `<a href="#/archive" class="atlas-topbar-link ${atlasView === "archive" ? "active" : ""}">❖ 3D 档案大厅</a>`
-            : ""
-        }
-        <button type="button" class="atlas-topbar-link" data-action="search">⌕ 全局检索 <kbd>/</kbd></button>
-        <button type="button" class="atlas-topbar-link" data-action="saved">★ 收藏 (${String(saved.size).padStart(2, "0")})</button>
-        <button type="button" class="atlas-topbar-link" data-action="toggle-theme-quick" title="切换明暗配色">${prefs.colorTheme === "dark" ? "☀ 亮色" : "☾ 暗色"}</button>
-        <button type="button" class="atlas-topbar-link" data-action="settings">◷ 设置</button>
-      </nav>
-    </header>
-  `;
-}
+let renderedAtlasView: RouteView = "archive";
+let atlasExitAnimation: Animation | undefined;
 
-function syncNavButtons() {
+function syncNavButtons(animated = true) {
+  let activeBtn: HTMLElement | null = null;
   document
     .querySelectorAll<HTMLElement>(".system-nav .nav-mode-btn")
     .forEach((btn) => {
@@ -569,7 +551,16 @@ function syncNavButtons() {
           (atlasView === "library" || atlasView === "reader")) ||
         (act === "nav-archive" && atlasView === "archive");
       btn.classList.toggle("active", isAct);
+      btn.setAttribute("aria-pressed", String(isAct));
+      if (isAct) activeBtn = btn;
     });
+  const indicator = document.querySelector<HTMLElement>(".nav-mode-indicator");
+  if (indicator && activeBtn) {
+    const btnEl = activeBtn as HTMLElement;
+    indicator.style.transition =
+      animated && motionActive("surfaceTransitions") ? "" : "none";
+    indicator.style.transform = `translateX(${btnEl.offsetLeft}px) scaleX(${btnEl.offsetWidth})`;
+  }
 }
 
 function renderAtlasSurface(preserveLibraryInputFocus = false) {
@@ -579,11 +570,46 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   syncNavButtons();
 
   if (!is2D || mode === "boot") {
-    surface.hidden = true;
-    surface.inert = true;
     delete $("#stage").dataset.atlasOverlay;
+    $("#stage").dataset.atlasView = "archive";
+    $("#archive-ui").inert =
+      mode !== "archive" || Boolean(modal) || Boolean(workbench?.enabled);
+    $("#detail-ui").inert = mode !== "detail" || Boolean(modal);
+    renderedAtlasView = "archive";
+
+    if (!surface.hidden) {
+      surface.inert = true;
+      if (!motionActive("surfaceTransitions") || mode === "boot") {
+        atlasExitAnimation?.cancel();
+        atlasExitAnimation = undefined;
+        surface.hidden = true;
+      } else if (!atlasExitAnimation) {
+        const currentOpacity = getComputedStyle(surface).opacity || "1";
+        const anim = surface.animate(
+          [
+            { opacity: currentOpacity, translate: "0 0" },
+            { opacity: 0, translate: "0 10px" },
+          ],
+          {
+            duration: 210,
+            easing: "cubic-bezier(0.4, 0, 1, 1)",
+            fill: "forwards",
+          },
+        );
+        atlasExitAnimation = anim;
+        anim.onfinish = () => {
+          surface.hidden = true;
+          anim.cancel();
+          atlasExitAnimation = undefined;
+        };
+      }
+    }
     return;
   }
+
+  const wasHidden = surface.hidden || Boolean(atlasExitAnimation);
+  atlasExitAnimation?.cancel();
+  atlasExitAnimation = undefined;
 
   let selStart: number | null = null;
   let selEnd: number | null = null;
@@ -605,10 +631,73 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         ? renderLibraryViewMarkup(libraryState, saved, hasWebGL)
         : renderReaderViewMarkup(activeReaderSlug, saved, hasWebGL);
 
-  surface.innerHTML = `${renderAtlasTopbarMarkup()}<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
+  surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
   surface.hidden = false;
   surface.inert = Boolean(modal);
   $("#stage").dataset.atlasOverlay = "true";
+  $("#stage").dataset.atlasView = atlasView;
+  $("#archive-ui").inert = true;
+  $("#detail-ui").inert = true;
+
+  const viewChanged = renderedAtlasView !== atlasView || wasHidden;
+  renderedAtlasView = atlasView;
+
+  if (
+    viewChanged &&
+    !preserveLibraryInputFocus &&
+    motionActive("surfaceTransitions")
+  ) {
+    if (wasHidden) {
+      surface.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 240,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      });
+    } else {
+      const bodyEl = surface.querySelector<HTMLElement>("#atlas-surface-body");
+      bodyEl?.animate(
+        [
+          { opacity: 0.18, translate: "0 8px" },
+          { opacity: 1, translate: "0 0" },
+        ],
+        {
+          duration: 240,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    }
+
+    surface
+      .querySelectorAll<HTMLElement>("[data-stagger]")
+      .forEach((el) => {
+        const idx = Number(el.dataset.stagger ?? 0);
+        el.animate(
+          [
+            { opacity: 0, translate: "0 12px" },
+            { opacity: 1, translate: "0 0" },
+          ],
+          {
+            duration: 380,
+            delay: 30 + idx * 55,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            fill: "backwards",
+          },
+        );
+      });
+
+    surface
+      .querySelectorAll<HTMLElement>("[data-rule]")
+      .forEach((rule, idx) => {
+        rule.animate(
+          [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
+          {
+            duration: 520,
+            delay: 45 + idx * 65,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            fill: "backwards",
+          },
+        );
+      });
+  }
 
   if (preserveLibraryInputFocus && atlasView === "library") {
     const nextInput = document.querySelector<HTMLInputElement>(
@@ -936,9 +1025,7 @@ function toggleSavedById(targetId?: string) {
   const currentSaved =
     saved.has(currentRecord.id) || saved.has(currentRecord.entryId);
   if (button) {
-    button.firstChild!.textContent = currentSaved
-      ? "− REMOVE FROM SAVED"
-      : "＋ SAVE ARCHIVE";
+    button.firstChild!.textContent = currentSaved ? "− SAVED" : "＋ SAVE";
     button.querySelector("span")!.textContent = currentSaved
       ? "已收藏"
       : "收藏档案";
@@ -969,13 +1056,13 @@ function renderDetail() {
     r.visualCode || "NO." + String(selected + 1).padStart(3, "0");
   $("#detail-content").innerHTML = `
   <div class="detail-kicker"><span>FILE ${r.id} · ${escapeHtml(r.visualCode)}</span><span>${escapeHtml(r.clearance)}</span></div>
-  <h2>${escapeHtml(r.en)}</h2><div class="detail-title-cn">${escapeHtml(r.title)}<span>${escapeHtml(r.category)}</span></div>
+  <h2>${escapeHtml(r.en)}</h2><div class="detail-title-cn"><b>${escapeHtml(r.title)}</b><span>${escapeHtml(r.category)}</span></div>
   <div class="detail-rule"></div>
   <dl class="metadata"><div><dt>DEPARTMENT / 所属领域</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 适用与更新</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>TYPE / 词条类型</dt><dd>${escapeHtml(tMeta.label)} · ${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 掌握状态</dt><dd><i data-status="${escapeHtml(r.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}</dd></div></dl>
-  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述与速查</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>核心要点</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>访问日志</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
+  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述与摘要</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>核心要点</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>归档溯源</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
-  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ FULL ARTICLE ↗<span>二维阅读器展开全文</span></button><button class="solid-button" data-action="bookmark">${isSaved ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
-  <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">二维阅读模式 (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
+  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button><button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
+  <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">OPEN IN 2D READER (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute(
     "aria-pressed",
@@ -991,10 +1078,10 @@ function renderDetail() {
 }
 function overview() {
   const r = records[selected];
-  const quickstartBox = r.quickstartHtml
-    ? `<div class="detail-snippet-box">${hydrateEntryHtmlImages(r.quickstartHtml)}</div>`
+  const tagsHtml = r.tags.length
+    ? `<div class="detail-inline-tags">${r.tags.map((t) => `<span>#${escapeHtml(t)}</span>`).join("")}</div>`
     : "";
-  return `<div class="panel-label">ABSTRACT / 摘要</div><p>${escapeHtml(r.abstract)}</p>${quickstartBox}`;
+  return `<div class="panel-label">ABSTRACT / 档案摘要</div><p>${escapeHtml(r.abstract)}</p>${tagsHtml}`;
 }
 function setTab(tab: string, sound = true) {
   if (sound && tab === activeTab) return;
@@ -1316,7 +1403,41 @@ document.addEventListener("click", (e) => {
     if (location.hash !== targetHash) {
       history.replaceState(null, "", targetHash);
     }
-    renderAtlasSurface();
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const typeChip = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-library-type]",
+  );
+  if (typeChip) {
+    libraryState.type = (typeChip.dataset.libraryType ?? "all") as
+      | EntryType
+      | "all";
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const statusChip = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-library-status]",
+  );
+  if (statusChip) {
+    libraryState.status = (statusChip.dataset.libraryStatus ?? "all") as
+      | EntryStatus
+      | "all";
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const sortChip = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-library-sort]",
+  );
+  if (sortChip) {
+    libraryState.sortBy = (sortChip.dataset.librarySort ?? "updated") as
+      | "updated"
+      | "title"
+      | "status";
+    renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
   }
@@ -1327,7 +1448,7 @@ document.addEventListener("click", (e) => {
     const nextLayout = layoutBtn.dataset.libraryLayout;
     if (nextLayout === "grid" || nextLayout === "list") {
       libraryState.layout = nextLayout;
-      renderAtlasSurface();
+      renderAtlasSurface(true);
       audio.play("ui-tick");
     }
     return;
@@ -1693,13 +1814,14 @@ function bootFrame(t: number) {
     return undefined;
   }
   if (
-    isWallpaper &&
     frozenTime === null &&
     t >= ARRAY_OPENING_END &&
-    !openingShowsDetail(
-      wallpaperHost()?.properties.openingdetail?.value,
-      !!workbench?.enabled,
-    )
+    (!reviewEntry ||
+      (isWallpaper &&
+        !openingShowsDetail(
+          wallpaperHost()?.properties.openingdetail?.value,
+          !!workbench?.enabled,
+        )))
   ) {
     setMode("archive");
     return undefined;

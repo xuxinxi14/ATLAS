@@ -15,7 +15,7 @@ source_urls: []
 prerequisites: []
 related:
   - skill-cell-observation
-  - tool-ppt-master
+  - tools-ppt-master-workflow
 aliases: []
 ---
 

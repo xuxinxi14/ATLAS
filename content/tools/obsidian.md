@@ -16,7 +16,7 @@ source_urls:
 prerequisites:
   - concept-markdown-basics
 related:
-  - tool-ppt-master
+  - tools-ppt-master-workflow
   - skill-git-workflow
 aliases: []
 ---

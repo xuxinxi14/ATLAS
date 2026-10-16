@@ -26,3 +26,4 @@ reference/local-files-connection.js
 public/fonts/novecento/
 .vercel/
 .wrangler/
+content/.obsidian/workspace*.json

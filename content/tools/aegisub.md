@@ -15,7 +15,7 @@ source_urls:
   - https://aegisub.org/docs/latest/
 prerequisites: []
 related:
-  - tool-ppt-master
+  - tools-ppt-master-workflow
 aliases: []
 ---
 

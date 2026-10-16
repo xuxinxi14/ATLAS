@@ -295,17 +295,27 @@ export function renderMarkdownDocument(body, context = {}) {
       continue;
     }
 
-    // Fenced code block
-    const fenceMatch = trimmed.match(/^```([\w+-]*)\s*$/);
+    // Fenced code block (supports both ``` and ~~~ fences, including indented fences)
+    const fenceMatch = trimmed.match(/^(`{3,}|~{3,})([\w+-]*)\s*$/);
     if (fenceMatch) {
-      const lang = fenceMatch[1] || "text";
+      const fenceChars = fenceMatch[1][0].repeat(fenceMatch[1].length);
+      const lang = fenceMatch[2] || "text";
+      const indentLen = line.match(/^\s*/)?.[0]?.length ?? 0;
       const codeLines = [];
       i++;
-      while (i < lines.length && !lines[i].trim().startsWith("```")) {
-        codeLines.push(lines[i]);
+      while (i < lines.length && !lines[i].trim().startsWith(fenceChars)) {
+        const rawCodeLine = lines[i];
+        if (
+          indentLen > 0 &&
+          rawCodeLine.slice(0, indentLen).trim() === ""
+        ) {
+          codeLines.push(rawCodeLine.slice(indentLen));
+        } else {
+          codeLines.push(rawCodeLine);
+        }
         i++;
       }
-      if (i < lines.length) i++; // skip closing ```
+      if (i < lines.length) i++; // skip closing fence
       const rawCode = codeLines.join("\n");
       const blockHtml = `<div class="atlas-code-block" data-lang="${escapeHtml(lang)}"><div class="atlas-code-header"><span class="atlas-code-lang">${escapeHtml(lang.toUpperCase())}</span><button type="button" class="atlas-code-copy" data-copy-code="${escapeHtml(rawCode)}">COPY</button></div><pre><code>${escapeHtml(rawCode)}</code></pre></div>`;
       htmlBlocks.push(blockHtml);
@@ -401,23 +411,41 @@ export function renderMarkdownDocument(body, context = {}) {
       continue;
     }
 
-    // Blockquote
+    // Blockquote & GitHub Callout (> [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION])
     if (trimmed.startsWith(">")) {
       const quoteLines = [];
       while (i < lines.length && lines[i].trim().startsWith(">")) {
         quoteLines.push(lines[i].trim().replace(/^>\s?/, ""));
         i++;
       }
-      const quoteHtml = `<blockquote class="atlas-blockquote"><p>${renderInlineMarkdown(quoteLines.join(" "), context)}</p></blockquote>`;
-      htmlBlocks.push(quoteHtml);
-      if (inQuickstart) quickstartBlocks.push(quoteHtml);
+      const calloutMatch = quoteLines[0]?.match(
+        /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$/i,
+      );
+      if (calloutMatch) {
+        const calloutType = calloutMatch[1].toUpperCase();
+        const firstRest = calloutMatch[2].trim();
+        const bodyLines = firstRest
+          ? [firstRest, ...quoteLines.slice(1)]
+          : quoteLines.slice(1);
+        const calloutHtml = `<blockquote class="atlas-blockquote atlas-callout" data-callout="${calloutType.toLowerCase()}"><strong class="atlas-callout-badge">${calloutType}</strong><p>${renderInlineMarkdown(bodyLines.join(" "), context)}</p></blockquote>`;
+        htmlBlocks.push(calloutHtml);
+        if (inQuickstart) quickstartBlocks.push(calloutHtml);
+      } else {
+        const quoteHtml = `<blockquote class="atlas-blockquote"><p>${renderInlineMarkdown(quoteLines.join(" "), context)}</p></blockquote>`;
+        htmlBlocks.push(quoteHtml);
+        if (inQuickstart) quickstartBlocks.push(quoteHtml);
+      }
       continue;
     }
 
     // Lists (unordered / ordered / task list)
     if (/^([-*]|\d+\.)\s+/.test(trimmed)) {
-      const isOrdered = /^\d+\.\s+/.test(trimmed);
+      const orderedMatch = trimmed.match(/^(\d+)\.\s+/);
+      const isOrdered = Boolean(orderedMatch);
+      const startNum = orderedMatch ? Number(orderedMatch[1]) : 1;
       const listTag = isOrdered ? "ol" : "ul";
+      const startAttr =
+        isOrdered && startNum > 1 ? ` start="${startNum}"` : "";
       const items = [];
       while (i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
         const itemRaw = lines[i].replace(/^\s*([-*]|\d+\.)\s+/, "").trim();
@@ -435,7 +463,7 @@ export function renderMarkdownDocument(body, context = {}) {
         }
         i++;
       }
-      const listHtml = `<${listTag} class="atlas-list">${items.join("")}</${listTag}>`;
+      const listHtml = `<${listTag} class="atlas-list"${startAttr}>${items.join("")}</${listTag}>`;
       htmlBlocks.push(listHtml);
       if (inQuickstart) quickstartBlocks.push(listHtml);
       continue;
@@ -447,7 +475,7 @@ export function renderMarkdownDocument(body, context = {}) {
       i < lines.length &&
       lines[i].trim() &&
       !lines[i].trim().startsWith("#") &&
-      !lines[i].trim().startsWith("```") &&
+      !/^(`{3,}|~{3,})/.test(lines[i].trim()) &&
       !lines[i].trim().startsWith("$$") &&
       !lines[i].trim().startsWith(">") &&
       !/^([-*]|\d+\.)\s+/.test(lines[i].trim()) &&
@@ -728,24 +756,44 @@ export async function buildKnowledgeBase(options = {}) {
   }
 
   // Pass 3: Validate internal links, prerequisites, related entries, images & render HTML
+  const strictRelations = options.strictRelations ?? true;
   const entries = [];
   const copiedMediaFiles = [];
 
   for (const entry of rawEntries) {
+    const resolvedPrereqs = [];
     for (const reqId of entry.prerequisites) {
-      if (!idOwner.has(reqId)) {
+      const target = idOwner.get(reqId) ?? slugOwner.get(reqId);
+      if (target) {
+        resolvedPrereqs.push(target.id);
+      } else if (strictRelations) {
         errors.push(
           `${entry.fileLabel}.prerequisites：引用的前置知识条目 "${reqId}" 不存在`,
         );
-      }
-    }
-    for (const relId of entry.related) {
-      if (!idOwner.has(relId)) {
-        errors.push(
-          `${entry.fileLabel}.related：引用的关联知识条目 "${relId}" 不存在`,
+      } else {
+        console.warn(
+          `[ATLAS] 已自动忽略已删除或重命名的前置引用：${entry.fileLabel} -> "${reqId}"`,
         );
       }
     }
+    entry.prerequisites = resolvedPrereqs;
+
+    const resolvedRelated = [];
+    for (const relId of entry.related) {
+      const target = idOwner.get(relId) ?? slugOwner.get(relId);
+      if (target) {
+        resolvedRelated.push(target.id);
+      } else if (strictRelations) {
+        errors.push(
+          `${entry.fileLabel}.related：引用的关联知识条目 "${relId}" 不存在`,
+        );
+      } else {
+        console.warn(
+          `[ATLAS] 已自动忽略已删除或重命名的关联引用：${entry.fileLabel} -> "${relId}"`,
+        );
+      }
+    }
+    entry.related = resolvedRelated;
 
     const images = [];
     const pendingAssetCopies = [];

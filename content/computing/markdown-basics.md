@@ -16,7 +16,7 @@ source_urls:
 prerequisites: []
 related:
   - tool-obsidian
-  - tool-ppt-master
+  - tools-ppt-master-workflow
 aliases: []
 ---
 

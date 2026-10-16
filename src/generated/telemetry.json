@@ -1,17 +1,17 @@
 {
   "generatedAt": "2026-10-16",
-  "totalEntries": 14,
+  "totalEntries": 15,
   "inboxCount": 1,
   "statusCounts": {
-    "proficient": 11,
-    "learning": 1,
+    "proficient": 10,
+    "learning": 3,
     "todo": 1,
     "review": 1,
     "draft": 1
   },
   "typeCounts": {
     "concept": 2,
-    "skill": 7,
+    "skill": 8,
     "troubleshooting": 1,
     "snippet": 5
   },
@@ -22,9 +22,9 @@
       "en": "TOOLS & WORKFLOW",
       "codePrefix": "T",
       "description": "PPT-Master、Aegisub、Obsidian、办公与科研工具链操作指南",
-      "total": 3,
-      "proficient": 3,
-      "learning": 0,
+      "total": 4,
+      "proficient": 2,
+      "learning": 2,
       "todo": 0,
       "review": 0
     },
@@ -113,15 +113,26 @@
       "visualCode": "T-002"
     },
     {
-      "id": "tool-ppt-master",
-      "slug": "tools/ppt-master",
-      "title": "PPT-Master 演示文稿工作流指南",
+      "id": "tools-gpt-sovits-voice-cloning",
+      "slug": "tools/gpt-sovits-voice-cloning",
+      "title": "GPT-SoVITS 本地语音克隆与音质优化操作手册",
       "category": "tools",
       "categoryTitle": "软件与工具",
       "type": "skill",
-      "status": "proficient",
+      "status": "learning",
       "updated": "2026-10-16",
       "visualCode": "T-003"
+    },
+    {
+      "id": "tools-ppt-master-workflow",
+      "slug": "tools/ppt-master-workflow",
+      "title": "PPT Master：环境配置与演示文稿制作流程",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "type": "skill",
+      "status": "learning",
+      "updated": "2026-10-16",
+      "visualCode": "T-004"
     },
     {
       "id": "concept-markdown-basics",
@@ -144,21 +155,10 @@
       "status": "proficient",
       "updated": "2026-10-16",
       "visualCode": "C-002"
-    },
-    {
-      "id": "skill-github-pages",
-      "slug": "computing/github-pages",
-      "title": "GitHub Actions 自动化构建与 GitHub Pages 部署",
-      "category": "computing",
-      "categoryTitle": "编程与 AI",
-      "type": "skill",
-      "status": "proficient",
-      "updated": "2026-10-16",
-      "visualCode": "C-003"
     }
   ],
   "activityByDate": {
-    "2026-10-16": 14,
+    "2026-10-16": 15,
     "2026-03-15": 1
   }
 }

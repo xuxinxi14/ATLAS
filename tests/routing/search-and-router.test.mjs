@@ -17,7 +17,7 @@ test("mixed Chinese, English, and case-insensitive search ranks title matches fi
   // Full-width / uppercase normalization
   const res2 = searchKnowledge("ＰＰＴ-MASTER");
   assert.ok(res2.length > 0);
-  assert.equal(res2[0].item.id, "tool-ppt-master");
+  assert.equal(res2[0].item.id, "tools-ppt-master-workflow");
 
   // Body-only match (e.g. "reset --soft HEAD~1")
   const res3 = searchKnowledge("reset --soft");
@@ -43,10 +43,10 @@ test("hash router parses home, archive, library, entry, and alias slugs accurate
     anchor: undefined,
   });
 
-  // Verify alias lookup in repository ("tools/ppt-workflow" -> "tool-ppt-master")
+  // Verify alias lookup in repository ("tools/ppt-workflow" -> "tools-ppt-master-workflow")
   const aliased = knowledgeRepository.bySlug("tools/ppt-workflow");
   assert.ok(aliased);
-  assert.equal(aliased.id, "tool-ppt-master");
+  assert.equal(aliased.id, "tools-ppt-master-workflow");
 
   assert.equal(buildEntryHash("tools/aegisub"), "#/entry/tools/aegisub");
   assert.equal(buildLibraryHash("research"), "#/library/research");

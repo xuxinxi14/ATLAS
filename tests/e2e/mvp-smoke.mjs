@@ -95,7 +95,11 @@ test("MVP E2E: telemetry home, 2D library, and 3-column reader render valid HTML
   );
 
   // 4. Verify 3D columns and dist/ artifacts
-  assert.equal(records.length, 14, "14 published entries in 3D archive array");
+  assert.equal(
+    records.length,
+    knowledgeRepository.all(false).length,
+    "All published entries appear in 3D archive array",
+  );
   for (let lane = 0; lane < 5; lane++) {
     assert.ok(columnFiles(lane).length >= 2, `Column ${lane} has entries`);
   }

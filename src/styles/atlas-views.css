@@ -1821,6 +1821,35 @@ i[data-status="draft"] {
   background: var(--atlas-plate);
 }
 
+.atlas-callout {
+  padding: 12px 16px;
+}
+
+.atlas-callout-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--atlas-accent);
+  margin-bottom: 4px;
+}
+
+.atlas-callout[data-callout="warning"],
+.atlas-callout[data-callout="caution"],
+.atlas-callout[data-callout="important"] {
+  border-left-color: var(--atlas-review);
+}
+
+.atlas-callout[data-callout="warning"] .atlas-callout-badge,
+.atlas-callout[data-callout="caution"] .atlas-callout-badge,
+.atlas-callout[data-callout="important"] .atlas-callout-badge {
+  color: var(--atlas-review);
+}
+
+.atlas-callout p {
+  margin: 0 !important;
+}
+
 .atlas-figure {
   margin: 20px 0;
   border: 1px solid var(--atlas-line);

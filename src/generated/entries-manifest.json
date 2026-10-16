@@ -76,7 +76,7 @@
       ],
       "prerequisites": [],
       "related": [
-        "tool-ppt-master"
+        "tools-ppt-master-workflow"
       ],
       "aliases": [],
       "relPath": "content/tools/aegisub.md",
@@ -168,7 +168,7 @@
         "concept-markdown-basics"
       ],
       "related": [
-        "tool-ppt-master",
+        "tools-ppt-master-workflow",
         "skill-git-workflow"
       ],
       "aliases": [],
@@ -227,39 +227,36 @@
       "globalCode": "X-002"
     },
     {
-      "id": "tool-ppt-master",
-      "slug": "tools/ppt-master",
-      "title": "PPT-Master 演示文稿工作流指南",
+      "id": "tools-gpt-sovits-voice-cloning",
+      "slug": "tools/gpt-sovits-voice-cloning",
+      "title": "GPT-SoVITS 本地语音克隆与音质优化操作手册",
       "category": "tools",
       "categoryTitle": "软件与工具",
       "en": "TOOLS & WORKFLOW",
       "department": "效率工具与创作软件",
-      "subcategory": "presentation",
+      "subcategory": "voice-cloning",
       "type": "skill",
-      "status": "proficient",
+      "status": "learning",
       "tags": [
-        "PPT",
-        "演示文稿",
-        "自动化",
-        "排版"
+        "GPT-SoVITS",
+        "语音克隆",
+        "TTS",
+        "AI语音合成",
+        "CUDA",
+        "音频处理"
       ],
-      "summary": "结构化大纲拆解、母版规范设定与 PPT-Master 辅助生成及视觉验收标准流程。",
-      "created": "2026-09-18",
+      "summary": "使用 GPT-SoVITS 在 Windows 与 RTX 5060 上完成零样本语音克隆，掌握参考音频处理、底模选择和推理参数设置，排查声音模糊与咬字粘连问题，输出可复用的中文合成语音。",
+      "created": "2026-10-16",
       "updated": "2026-10-16",
-      "version_scope": "PowerPoint 2021 / Microsoft 365 & PPT-Master 工作流",
+      "version_scope": "Windows 11 / NVIDIA RTX 5060 Laptop 8GB / GPT-SoVITS v2Pro NVIDIA 50 系整合包",
       "source_urls": [
-        "https://learn.microsoft.com/zh-cn/office/troubleshoot/powerpoint/"
+        "https://github.com/RVC-Boss/GPT-SoVITS",
+        "https://github.com/RVC-Boss/GPT-SoVITS/blob/main/README.md"
       ],
-      "prerequisites": [
-        "concept-markdown-basics"
-      ],
-      "related": [
-        "tool-obsidian"
-      ],
-      "aliases": [
-        "tools/ppt-workflow"
-      ],
-      "relPath": "content/tools/ppt-master.md",
+      "prerequisites": [],
+      "related": [],
+      "aliases": [],
+      "relPath": "content/tools/gpt-sovits-voice-cloning.md",
       "autoInferred": false,
       "images": [],
       "toc": [
@@ -269,59 +266,230 @@
           "level": 2
         },
         {
-          "id": "适用场景",
-          "text": "适用场景",
+          "id": "核心原理与适用场景",
+          "text": "核心原理与适用场景",
           "level": 2
         },
         {
-          "id": "前置准备",
-          "text": "前置准备",
-          "level": 2
-        },
-        {
-          "id": "操作步骤",
-          "text": "操作步骤",
-          "level": 2
-        },
-        {
-          "id": "1-大纲转页面骨架",
-          "text": "1. 大纲转页面骨架",
+          "id": "1-gpt-sovits-是什么",
+          "text": "1. GPT-SoVITS 是什么",
           "level": 3
         },
         {
-          "id": "2-版心与三级视觉层次设定",
-          "text": "2. 版心与三级视觉层次设定",
+          "id": "2-两种主要使用模式",
+          "text": "2. 两种主要使用模式",
           "level": 3
         },
         {
-          "id": "3-批量检查与导出",
-          "text": "3. 批量检查与导出",
+          "id": "3-本地硬件适配",
+          "text": "3. 本地硬件适配",
           "level": 3
         },
         {
-          "id": "验证结果",
-          "text": "验证结果",
+          "id": "4-webui-各模块的作用",
+          "text": "4. WebUI 各模块的作用",
+          "level": 3
+        },
+        {
+          "id": "5-参考音频为什么会影响生成效果",
+          "text": "5. 参考音频为什么会影响生成效果",
+          "level": 3
+        },
+        {
+          "id": "标准操作流程",
+          "text": "标准操作流程",
           "level": 2
         },
         {
-          "id": "常见问题与修复",
-          "text": "常见问题与修复",
+          "id": "1-启动本地-webui",
+          "text": "1. 启动本地 WebUI",
+          "level": 3
+        },
+        {
+          "id": "2-准备参考音频",
+          "text": "2. 准备参考音频",
+          "level": 3
+        },
+        {
+          "id": "3-进入-tts-推理页面",
+          "text": "3. 进入 TTS 推理页面",
+          "level": 3
+        },
+        {
+          "id": "4-检查模型版本",
+          "text": "4. 检查模型版本",
+          "level": 3
+        },
+        {
+          "id": "5-填写参考信息",
+          "text": "5. 填写参考信息",
+          "level": 3
+        },
+        {
+          "id": "6-填写目标文本",
+          "text": "6. 填写目标文本",
+          "level": 3
+        },
+        {
+          "id": "7-测试中英文混合",
+          "text": "7. 测试中英文混合",
+          "level": 3
+        },
+        {
+          "id": "8-进一步优化声音",
+          "text": "8. 进一步优化声音",
+          "level": 3
+        },
+        {
+          "id": "9-需要微调时的数据准备",
+          "text": "9. 需要微调时的数据准备",
+          "level": 3
+        },
+        {
+          "id": "常见排障与避坑指南",
+          "text": "常见排障与避坑指南",
+          "level": 2
+        },
+        {
+          "id": "1-生成音频非常模糊，咬字粘连",
+          "text": "1. 生成音频非常模糊，咬字粘连",
+          "level": 3
+        },
+        {
+          "id": "2-降低语速后仍然模糊",
+          "text": "2. 降低语速后仍然模糊",
+          "level": 3
+        },
+        {
+          "id": "3-中英文名称发音不自然",
+          "text": "3. 中英文名称发音不自然",
+          "level": 3
+        },
+        {
+          "id": "4-句子之间没有明显停顿",
+          "text": "4. 句子之间没有明显停顿",
+          "level": 3
+        },
+        {
+          "id": "5-参考音频长度不合适",
+          "text": "5. 参考音频长度不合适",
+          "level": 3
+        },
+        {
+          "id": "6-nvidia-50-系显卡-cuda-不兼容",
+          "text": "6. NVIDIA 50 系显卡 CUDA 不兼容",
+          "level": 3
+        },
+        {
+          "id": "7-整合包是-v2pro，实际模型却是-v2",
+          "text": "7. 整合包是 v2Pro，实际模型却是 v2",
+          "level": 3
+        },
+        {
+          "id": "8-16gb-内存环境容易占满资源",
+          "text": "8. 16GB 内存环境容易占满资源",
+          "level": 3
+        },
+        {
+          "id": "9-不应过度依赖一次生成结果",
+          "text": "9. 不应过度依赖一次生成结果",
+          "level": 3
+        },
+        {
+          "id": "验证清单",
+          "text": "验证清单",
           "level": 2
         }
       ],
-      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>先写 Markdown 结构化大纲</strong>，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。</li><li><strong>统一母版与网格</strong>：16:9 画布（<code class=\"atlas-inline-code\">33.867 cm × 19.05 cm</code>），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。</li><li><strong>单页信息密度上限</strong>：字号不小于 <code class=\"atlas-inline-code\">14pt</code>，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 <code class=\"atlas-inline-code\">#ED821B</code>）」。</li><li><strong>导出前必做三查</strong>：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。</li></ol>",
-      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>先写 Markdown 结构化大纲</strong>，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。</li><li><strong>统一母版与网格</strong>：16:9 画布（<code class=\"atlas-inline-code\">33.867 cm × 19.05 cm</code>），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。</li><li><strong>单页信息密度上限</strong>：字号不小于 <code class=\"atlas-inline-code\">14pt</code>，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 <code class=\"atlas-inline-code\">#ED821B</code>）」。</li><li><strong>导出前必做三查</strong>：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>一份已梳理清晰的 Markdown 提纲（参考 <a href=\"#/entry/computing/markdown-basics\" class=\"atlas-int-link\" data-entry-link=\"computing/markdown-basics\">Markdown 基本语法</a>）：</li><li><code class=\"atlas-inline-code\">#</code> 对应封面标题</li><li><code class=\"atlas-inline-code\">##</code> 对应章节过渡页</li><li><code class=\"atlas-inline-code\">###</code> 对应单页核心结论（一句话标题）</li><li>预设色板与单位标志（SVG 矢量格式优先，避免低分辨率带白底 PNG）。</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-大纲转页面骨架\" class=\"atlas-heading atlas-h3\"><a href=\"#1-大纲转页面骨架\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 大纲转页面骨架</h3>\n<p>将提纲按页拆分，确保每一页标题直接表达结论而非仅写名词：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>常见弱标题（避免）</th><th>结论型标题（推荐）</th></tr></thead><tbody><tr><td>实验结果分析</td><td>化合物 A 在 10 μM 浓度下显著抑制细胞迁移（抑制率 68%）</td></tr><tr><td>静态资源路径问题</td><td>统一使用 <code class=\"atlas-inline-code\">BASE_URL</code> 解析器可彻底消除子路径 404</td></tr></tbody></table></div>\n<h3 id=\"2-版心与三级视觉层次设定\" class=\"atlas-heading atlas-h3\"><a href=\"#2-版心与三级视觉层次设定\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 版心与三级视觉层次设定</h3>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+\">COPY</button></div><pre><code>+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+</code></pre></div>\n<h3 id=\"3-批量检查与导出\" class=\"atlas-heading atlas-h3\"><a href=\"#3-批量检查与导出\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 批量检查与导出</h3>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>检查所有图表坐标轴文字是否清晰可读</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>在「文件 → 选项 → 保存」中勾选 <strong>将字体嵌入文件（仅嵌入演示文稿中使用的字符）</strong></span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>同时导出 <code class=\"atlas-inline-code\">.pptx</code> 与 <code class=\"atlas-inline-code\">.pdf</code> 双版本备存</span></li></ul>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>在无预装第三方字体的设备上打开 <code class=\"atlas-inline-code\">.pptx</code>，标题与正文字重不发生回退变形。</li><li>任意抽取一页，观众可在 <strong>5 秒内</strong> 读出该页核心结论。</li></ul>\n<h2 id=\"常见问题与修复\" class=\"atlas-heading atlas-h2\"><a href=\"#常见问题与修复\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见问题与修复</h2>\n<ul class=\"atlas-list\"><li><strong>问题</strong>：嵌入字体后保存报错或体积暴增至上百 MB。</li></ul>\n<p><strong>原因</strong>：使用了不支持子集嵌入的完整 CJK 字体包或 OTF 变体。 <strong>修复</strong>：改用标准 TTF 格式字重，或将封面特殊艺术字转为 SVG 矢量形状后再保存。</p>",
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>核心结论</strong>：RTX 5060 8GB 显存可以运行 GPT-SoVITS，优先使用适配 NVIDIA 50 系显卡的整合包，避免旧版 CUDA 环境不兼容。</li><li><strong>核心结论</strong>：首次使用应进入 <code class=\"atlas-inline-code\">1-GPT-SoVITS-TTS → 1C-推理</code>，使用 3～10 秒清晰参考音频进行零样本语音克隆，不需要提前训练模型。</li><li><strong>核心结论</strong>：生成声音模糊、咬字粘连时，优先检查参考音频静音、文本匹配、模型版本与语言模式，再调整语速和切分参数。</li></ul>\n<p>在 GPT-SoVITS 整合包的解压根目录打开 PowerShell，执行：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\".\\go-webui.bat\">COPY</button></div><pre><code>.\\go-webui.bat</code></pre></div>\n<p>预期结果：启动 GPT-SoVITS WebUI，之后在 TTS 页签开启推理服务。</p>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>核心结论</strong>：RTX 5060 8GB 显存可以运行 GPT-SoVITS，优先使用适配 NVIDIA 50 系显卡的整合包，避免旧版 CUDA 环境不兼容。</li><li><strong>核心结论</strong>：首次使用应进入 <code class=\"atlas-inline-code\">1-GPT-SoVITS-TTS → 1C-推理</code>，使用 3～10 秒清晰参考音频进行零样本语音克隆，不需要提前训练模型。</li><li><strong>核心结论</strong>：生成声音模糊、咬字粘连时，优先检查参考音频静音、文本匹配、模型版本与语言模式，再调整语速和切分参数。</li></ul>\n<p>在 GPT-SoVITS 整合包的解压根目录打开 PowerShell，执行：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\".\\go-webui.bat\">COPY</button></div><pre><code>.\\go-webui.bat</code></pre></div>\n<p>预期结果：启动 GPT-SoVITS WebUI，之后在 TTS 页签开启推理服务。</p>\n<h2 id=\"核心原理与适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#核心原理与适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>核心原理与适用场景</h2>\n<h3 id=\"1-gpt-sovits-是什么\" class=\"atlas-heading atlas-h3\"><a href=\"#1-gpt-sovits-是什么\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. GPT-SoVITS 是什么</h3>\n<p>GPT-SoVITS 是一个支持少样本声音克隆的语音合成系统，主要用于：</p>\n<ul class=\"atlas-list\"><li>文本转语音（Text-to-Speech，TTS）。</li><li>零样本声音克隆（Zero-shot Voice Cloning）。</li><li>少样本模型微调（Few-shot Fine-tuning）。</li><li>跨语言语音合成。</li><li>配合预处理工具建立语音训练数据集。</li></ul>\n<p>其基本工作流程为：</p>\n<p><strong>参考音频 → 提取说话人相关语音特征 → 输入目标文本 → 生成具有相似音色的新语音。</strong></p>\n<p>其中：</p>\n<ul class=\"atlas-list\"><li><strong>GPT 部分</strong>：主要负责语音相关语义表示的预测。</li><li><strong>SoVITS 部分</strong>：主要负责根据预测结果合成语音波形。</li><li><strong>参考音频</strong>：提供说话人的音色、韵律等参考信息。</li><li><strong>参考文本</strong>：帮助模型建立参考语音与语言内容之间的对应关系。</li></ul>\n<p>零样本克隆不等于完整学习了一个人的声音。其相似度、咬字和自然程度仍然受到参考素材和底模能力的限制。</p>\n<h3 id=\"2-两种主要使用模式\" class=\"atlas-heading atlas-h3\"><a href=\"#2-两种主要使用模式\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 两种主要使用模式</h3>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>模式</th><th>所需素材</th><th>特点</th><th>适用场景</th></tr></thead><tbody><tr><td>Zero-shot</td><td>约 5 秒参考音频</td><td>无需训练，直接推理</td><td>快速体验、音色测试</td></tr><tr><td>Few-shot</td><td>约 1 分钟或更多训练数据</td><td>需要微调，通常有机会提高相似度和稳定性</td><td>长期配音、固定角色音色</td></tr></tbody></table></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"note\"><strong class=\"atlas-callout-badge\">NOTE</strong><p>官方支持使用少量音频完成微调，但不保证微调后一定优于零样本推理。训练素材的质量、数量、标注准确性和参数都会影响结果。</p></blockquote>\n<h3 id=\"3-本地硬件适配\" class=\"atlas-heading atlas-h3\"><a href=\"#3-本地硬件适配\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 本地硬件适配</h3>\n<p>当前使用的电脑环境：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>硬件</th><th>配置</th><th>适用性</th></tr></thead><tbody><tr><td>GPU</td><td>RTX 5060 Laptop</td><td>支持本地 GPU 推理</td></tr><tr><td>显存</td><td>8GB GDDR7</td><td>适合零样本推理及受限规模的微调</td></tr><tr><td>内存</td><td>16GB</td><td>基本够用，多程序并行可能不足</td></tr><tr><td>存储</td><td>1TB SSD</td><td>可存放整合包、预训练模型及训练数据</td></tr><tr><td>操作系统</td><td>Windows</td><td>支持 Windows 整合包</td></tr></tbody></table></div>\n<p>RTX 5060 属于 NVIDIA Blackwell 架构。</p>\n<p>该架构需要使用兼容的 PyTorch 和 CUDA 构建版本。PyTorch 2.7 配合 CUDA 12.8 是支持 Blackwell 的环境组合之一。</p>\n<p>此前使用的安装包为 NVIDIA 50 系适配版本：</p>\n<p><code class=\"atlas-inline-code\">GPT-SoVITS-v2pro-20250604-nvidia50.7z</code></p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"important\"><strong class=\"atlas-callout-badge\">IMPORTANT</strong><p>整合包名称包含 v2Pro，不代表推理时一定选择了 v2Pro 权重。实际使用的模型必须在推理页面检查。已经正常运行的整合包不应仅为调音质而随意重装 CUDA 或 PyTorch。</p></blockquote>\n<h3 id=\"4-webui-各模块的作用\" class=\"atlas-heading atlas-h3\"><a href=\"#4-webui-各模块的作用\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>4. WebUI 各模块的作用</h3>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>模块</th><th>主要功能</th><th>首次使用是否需要</th></tr></thead><tbody><tr><td>0a-UVR5</td><td>人声与伴奏分离</td><td>否</td></tr><tr><td>0b-语音切分</td><td>长录音自动分段</td><td>否</td></tr><tr><td>0c-ASR</td><td>将语音自动识别为文字</td><td>否</td></tr><tr><td>0d-文本校对</td><td>修正语音识别标注</td><td>否</td></tr><tr><td>1A-训练集格式化</td><td>将音频和文本处理为训练数据</td><td>否</td></tr><tr><td>1B-微调训练</td><td>训练 GPT 和 SoVITS 模型</td><td>否</td></tr><tr><td>1C-推理</td><td>输入文本并生成语音</td><td>是</td></tr><tr><td>2-变声</td><td>已有语音的音色转换</td><td>否</td></tr></tbody></table></div>\n<p>零样本推理只需要 <code class=\"atlas-inline-code\">1C-推理</code>。</p>\n<p>需要训练时，完整流程通常为：</p>\n<p><strong>原始录音 → 可选人声分离 → 音频切片 → ASR → 文本校对 → 数据集格式化 → 模型微调 → 推理。</strong></p>\n<h3 id=\"5-参考音频为什么会影响生成效果\" class=\"atlas-heading atlas-h3\"><a href=\"#5-参考音频为什么会影响生成效果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>5. 参考音频为什么会影响生成效果</h3>\n<p>参考音频会为模型提供音色和发音特征，但并非所有满足时长要求的音频都适合推理。</p>\n<p>较理想的参考音频通常具有：</p>\n<ul class=\"atlas-list\"><li>3～10 秒的总时长，推荐优先测试约 5～8 秒的完整语音。</li><li>单人说话，吐字清晰。</li><li>无明显背景音乐、噪声及混响。</li><li>正常语速，不刻意拖长或压缩发音。</li><li>开头与结尾没有大段无意义静音。</li><li>参考文本和实际说话内容尽可能准确对应。</li></ul>\n<p>WAV 通常适合保存清晰的参考素材，但文件格式本身并不能保证音质。</p>\n<h2 id=\"标准操作流程\" class=\"atlas-heading atlas-h2\"><a href=\"#标准操作流程\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>标准操作流程</h2>\n<h3 id=\"1-启动本地-webui\" class=\"atlas-heading atlas-h3\"><a href=\"#1-启动本地-webui\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 启动本地 WebUI</h3>\n<ol class=\"atlas-list\"><li>解压适配 NVIDIA 50 系显卡的 GPT-SoVITS 整合包。</li><li>进入解压后的程序根目录。</li><li>双击 <code class=\"atlas-inline-code\">go-webui.bat</code>，或在该目录使用快速复习中的 PowerShell 命令。</li><li>等待程序启动并打开 WebUI。</li></ol>\n<p>预期反馈：能够看到 GPT-SoVITS 控制台以及数据处理、TTS、变声等模块。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"tip\"><strong class=\"atlas-callout-badge\">TIP</strong><p>如果已经成功运行 GPU 推理，说明至少当前使用的主要计算环境可用，不必因为生成声音不好听就重新安装程序。</p></blockquote>\n<h3 id=\"2-准备参考音频\" class=\"atlas-heading atlas-h3\"><a href=\"#2-准备参考音频\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 准备参考音频</h3>\n<p>建议录制或截取一段清晰中文语音，例如：</p>\n<p>“今天下午我准备去图书馆，顺便把最近的实验资料整理一下。”</p>\n<p>操作要求：</p>\n<ol class=\"atlas-list\"><li>选取约 5～8 秒的有效语音。</li><li>删除明显多余的前置和尾部静音。</li><li>避免切断句首或句尾音素。</li><li>保存为 WAV，保留正常音量，不进行过度降噪。</li><li>准确记录录音中说出的文字。</li></ol>\n<p>本次实际测试曾使用以下参考文本：</p>\n<p>“过去与未来如此相似，我却对此无动于衷。”</p>\n<p>对应的原始音频约 6.97 秒，前面存在约 2.14 秒静音。此前已经裁剪出约 4.76 秒的 WAV 版本。</p>\n<p>这说明音频总时长符合要求，不代表有效人声比例一定合适。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"warning\"><strong class=\"atlas-callout-badge\">WARNING</strong><p>裁剪静音是值得优先尝试的改进措施，但不能仅凭存在静音就认定其必然是声音模糊的根本原因。</p></blockquote>\n<h3 id=\"3-进入-tts-推理页面\" class=\"atlas-heading atlas-h3\"><a href=\"#3-进入-tts-推理页面\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 进入 TTS 推理页面</h3>\n<ol class=\"atlas-list\"><li>点击 <code class=\"atlas-inline-code\">1-GPT-SoVITS-TTS</code>。</li><li>找到 <code class=\"atlas-inline-code\">1C-推理</code>。</li><li>检查 GPT 模型和 SoVITS 模型的选项。</li><li>GPU 设备编号使用 <code class=\"atlas-inline-code\">0</code>（单 NVIDIA 显卡环境通常如此）。</li><li>开启 TTS 推理 WebUI。</li><li>等待底模加载完成。</li></ol>\n<p>预期反馈：出现独立的语音推理界面，能够上传参考音频并输入目标文本。</p>\n<h3 id=\"4-检查模型版本\" class=\"atlas-heading atlas-h3\"><a href=\"#4-检查模型版本\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>4. 检查模型版本</h3>\n<p>当前安装包主要面向 v2Pro 系列。</p>\n<p>应重点检查 SoVITS 模型文件名，例如：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>模型文件</th><th>对应版本</th></tr></thead><tbody><tr><td><code class=\"atlas-inline-code\">s2G2333k.pth</code></td><td>v2 系列</td></tr><tr><td><code class=\"atlas-inline-code\">s2Gv2Pro.pth</code></td><td>v2Pro</td></tr><tr><td><code class=\"atlas-inline-code\">s2Gv2ProPlus.pth</code></td><td>v2ProPlus</td></tr></tbody></table></div>\n<p>v2Pro 系列预训练模型一般存放在：</p>\n<p><code class=\"atlas-inline-code\">GPT_SoVITS/pretrained_models/v2Pro/</code></p>\n<p>操作时应在 WebUI 中选择对应版本提供的预设模型，并检查其 GPT 与 SoVITS 权重是否为支持的组合。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"important\"><strong class=\"atlas-callout-badge\">IMPORTANT</strong><p>不要任意混搭不同版本的 GPT 和 SoVITS 权重。模型组合应以当前整合包的版本预设和官方说明为准。</p></blockquote>\n<h3 id=\"5-填写参考信息\" class=\"atlas-heading atlas-h3\"><a href=\"#5-填写参考信息\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>5. 填写参考信息</h3>\n<p>本次使用的示例：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>设置</th><th>输入</th></tr></thead><tbody><tr><td>参考音频</td><td>裁剪后的 WAV 文件</td></tr><tr><td>参考文本</td><td>过去与未来如此相似，我却对此无动于衷。</td></tr><tr><td>参考语言</td><td>中文</td></tr><tr><td>无参考文本模式</td><td>关闭</td></tr></tbody></table></div>\n<p>注意：</p>\n<ul class=\"atlas-list\"><li>参考文本应与录音内容一致。</li><li>不能漏字、随意改写或省略口头语。</li><li>即使输入的是中文语音，也要检查参考语言选择。</li><li>有准确文本时，优先使用正常的有参考文本模式。</li></ul>\n<p>预期反馈：推理程序正确读取参考音频及其文本信息。</p>\n<h3 id=\"6-填写目标文本\" class=\"atlas-heading atlas-h3\"><a href=\"#6-填写目标文本\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>6. 填写目标文本</h3>\n<p>第一次建议只使用中文，避免中英文混合造成额外干扰。</p>\n<p>推荐测试文本：</p>\n<p>“你好，今天天气非常不错。我准备下午去图书馆，看一看最近整理的实验资料。”</p>\n<p>推荐参数：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>参数</th><th>初始建议</th></tr></thead><tbody><tr><td>目标语言</td><td>中文</td></tr><tr><td>语速</td><td>1.0</td></tr><tr><td>句间停顿</td><td>0.3～0.4 秒</td></tr><tr><td>文本切分</td><td>按中文标点切分</td></tr><tr><td>top_k</td><td>默认</td></tr><tr><td>top_p</td><td>默认</td></tr><tr><td>temperature</td><td>默认</td></tr></tbody></table></div>\n<p>点击合成语音。</p>\n<p>预期反馈：生成可以播放、保存的音频文件，使用与参考声音相似的音色朗读目标文本。</p>\n<h3 id=\"7-测试中英文混合\" class=\"atlas-heading atlas-h3\"><a href=\"#7-测试中英文混合\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>7. 测试中英文混合</h3>\n<p>纯中文测试正常后，再使用混合文本：</p>\n<p>“你好。我现在正在测试 GPT SoVITS。这是由人工智能生成的语音。”</p>\n<p>建议：</p>\n<ol class=\"atlas-list\"><li>将目标文本语言切换为中英混合。</li><li>将长句拆分为短句。</li><li>英文名称两侧适当留空格。</li><li>必要时将英文术语改成更容易被前端处理的形式。</li><li>对比新旧生成结果。</li></ol>\n<p>注意：<code class=\"atlas-inline-code\">GPT-SoVITS</code> 改写成 <code class=\"atlas-inline-code\">GPT SoVITS</code> 是一种排障实验，不保证所有版本都会因此获得更好的英文发音。</p>\n<h3 id=\"8-进一步优化声音\" class=\"atlas-heading atlas-h3\"><a href=\"#8-进一步优化声音\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>8. 进一步优化声音</h3>\n<p>如果声音仍不清晰：</p>\n<ol class=\"atlas-list\"><li>固定相同的目标文本。</li><li>使用裁剪后的参考音频重新生成。</li><li>检查模型是否为 v2Pro。</li><li>若整合包支持，使用 v2ProPlus 进行对照测试。</li><li>每次只更改一个参数，保存生成结果。</li><li>对比咬字、音色、语速和自然程度。</li></ol>\n<p>可尝试将语速从 <code class=\"atlas-inline-code\">1.0</code> 调整至 <code class=\"atlas-inline-code\">0.9</code>，但不应把降低语速当成解决声音模糊的通用方法。</p>\n<p>如果合理优化后仍不能满足需求，再考虑用更多合规录音素材进行少样本微调。</p>\n<h3 id=\"9-需要微调时的数据准备\" class=\"atlas-heading atlas-h3\"><a href=\"#9-需要微调时的数据准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>9. 需要微调时的数据准备</h3>\n<p>训练数据一般需要音频片段及对应文字。</p>\n<p>典型的 <code class=\"atlas-inline-code\">.list</code> 标注格式：</p>\n<p><code class=\"atlas-inline-code\">音频路径|说话人名称|语言代码|文字内容</code></p>\n<p>例如：</p>\n<p><code class=\"atlas-inline-code\">D:\\VoiceData\\001.wav|speaker01|zh|今天天气非常不错。</code></p>\n<p>其中：</p>\n<ul class=\"atlas-list\"><li><code class=\"atlas-inline-code\">音频路径</code>：实际音频文件位置。</li><li><code class=\"atlas-inline-code\">speaker01</code>：说话人标识。</li><li><code class=\"atlas-inline-code\">zh</code>：中文语言代码。</li><li><code class=\"atlas-inline-code\">文字内容</code>：与音频对应的转录文本。</li></ul>\n<p>实际步骤：</p>\n<ol class=\"atlas-list\"><li>将原始长录音导入切片工具。</li><li>使用 ASR 自动生成文本。</li><li>人工校对错字、漏字和标点。</li><li>在 <code class=\"atlas-inline-code\">1A</code> 中格式化训练数据。</li><li>在 <code class=\"atlas-inline-code\">1B</code> 中执行模型微调。</li><li>使用训练后的模型进入 <code class=\"atlas-inline-code\">1C</code> 测试。</li></ol>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"caution\"><strong class=\"atlas-callout-badge\">CAUTION</strong><p>声音克隆应使用自己的声音或已获得明确授权的素材。公开发布生成音频时，应避免使听众误认为是真实人物亲自录制或认可的发言。</p></blockquote>\n<h2 id=\"常见排障与避坑指南\" class=\"atlas-heading atlas-h2\"><a href=\"#常见排障与避坑指南\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见排障与避坑指南</h2>\n<h3 id=\"1-生成音频非常模糊，咬字粘连\" class=\"atlas-heading atlas-h3\"><a href=\"#1-生成音频非常模糊，咬字粘连\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 生成音频非常模糊，咬字粘连</h3>\n<p><strong>现象 →</strong></p>\n<p>能够生成语音，但声音偏闷，辅音不清楚，字词之间像粘在一起。</p>\n<p><strong>可能原因 →</strong></p>\n<ul class=\"atlas-list\"><li>参考音频质量不理想。</li><li>参考音频存在过长静音。</li><li>参考文字与实际录音不匹配。</li><li>实际使用的底模不符合预期。</li><li>零样本模型对该音色的泛化能力有限。</li><li>中英文前端处理或分句方式不合适。</li></ul>\n<p><strong>解决操作 →</strong></p>\n<ol class=\"atlas-list\"><li>去除参考音频中明显过长的静音。</li><li>检查参考文本是否逐字对应。</li><li>使用纯中文短句进行测试。</li><li>确认模型权重和版本。</li><li>恢复语速 <code class=\"atlas-inline-code\">1.0</code> 及默认采样参数。</li><li>对比 v2Pro 和 v2ProPlus 的实际输出。</li></ol>\n<p>本次参考音频已发现开头存在较长静音，但尚不能证明它是唯一原因。</p>\n<h3 id=\"2-降低语速后仍然模糊\" class=\"atlas-heading atlas-h3\"><a href=\"#2-降低语速后仍然模糊\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 降低语速后仍然模糊</h3>\n<p><strong>现象 →</strong></p>\n<p>把语速从 <code class=\"atlas-inline-code\">1.0</code> 调整为 <code class=\"atlas-inline-code\">0.9</code>，甚至更低，声音仍然含糊。</p>\n<p><strong>原因 →</strong></p>\n<p>语速控制主要改变语音的时间尺度，并不等同于修复音素细节。</p>\n<p><strong>解决操作 →</strong></p>\n<p>恢复语速 <code class=\"atlas-inline-code\">1.0</code>，优先处理参考音频及模型选择。</p>\n<p>如果只存在讲话偏快的问题，再小幅降低语速。</p>\n<h3 id=\"3-中英文名称发音不自然\" class=\"atlas-heading atlas-h3\"><a href=\"#3-中英文名称发音不自然\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 中英文名称发音不自然</h3>\n<p><strong>现象 →</strong></p>\n<p>中文部分相对正常，但 <code class=\"atlas-inline-code\">GPT-SoVITS</code> 等术语发音混乱。</p>\n<p><strong>可能原因 →</strong></p>\n<p>使用了纯中文语言模式，或文本前端对混合字符、连字符的处理不理想。</p>\n<p><strong>解决操作 →</strong></p>\n<ol class=\"atlas-list\"><li>将目标语言改为中英混合。</li><li>尝试使用 <code class=\"atlas-inline-code\">GPT SoVITS</code>。</li><li>使用中文标点明确分句。</li><li>先测试纯中文，再加入英文。</li></ol>\n<h3 id=\"4-句子之间没有明显停顿\" class=\"atlas-heading atlas-h3\"><a href=\"#4-句子之间没有明显停顿\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>4. 句子之间没有明显停顿</h3>\n<p><strong>现象 →</strong></p>\n<p>多句话连续输出，缺乏自然停顿。</p>\n<p><strong>可能原因 →</strong></p>\n<p>文本切分方式不合适、标点不足，或句间间隔设置偏短。</p>\n<p><strong>解决操作 →</strong></p>\n<ol class=\"atlas-list\"><li>将长文本拆分为完整短句。</li><li>使用句号而不是全部使用逗号。</li><li>选择适当的文本切分方式。</li><li>如果界面支持，尝试将句间间隔设为 <code class=\"atlas-inline-code\">0.4～0.5</code> 秒。</li></ol>\n<p>注意：句间停顿参数通常不能直接修复一句话内部的咬字不清。</p>\n<h3 id=\"5-参考音频长度不合适\" class=\"atlas-heading atlas-h3\"><a href=\"#5-参考音频长度不合适\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>5. 参考音频长度不合适</h3>\n<p><strong>现象 →</strong></p>\n<p>上传参考音频后出现长度相关报错。</p>\n<p><strong>原因 →</strong></p>\n<p>推理模式通常要求主参考音频在 3～10 秒范围内。</p>\n<p><strong>解决操作 →</strong></p>\n<p>截取一段完整清晰语句，控制总时长在该范围内，优先测试 5～8 秒左右。</p>\n<p>不要为了满足时长而补充大段静音。</p>\n<h3 id=\"6-nvidia-50-系显卡-cuda-不兼容\" class=\"atlas-heading atlas-h3\"><a href=\"#6-nvidia-50-系显卡-cuda-不兼容\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>6. NVIDIA 50 系显卡 CUDA 不兼容</h3>\n<p><strong>现象 →</strong></p>\n<p>程序无法使用 GPU，或者出现类似：</p>\n<p><code class=\"atlas-inline-code\">no kernel image is available for execution</code></p>\n<p><code class=\"atlas-inline-code\">sm_120 is not compatible</code></p>\n<p><strong>可能原因 →</strong></p>\n<p>使用了不支持 Blackwell 架构的旧版 PyTorch/CUDA 构建。</p>\n<p><strong>解决操作 →</strong></p>\n<p>优先使用 NVIDIA 50 系专用整合包。</p>\n<p>若选择从源码搭建，则应安装支持 Blackwell 的 PyTorch/CUDA 组合，例如经官方支持的 PyTorch 2.7 + CUDA 12.8 环境。</p>\n<p>不要直接把旧教程中的 CUDA 11.8 环境用于 RTX 5060。</p>\n<h3 id=\"7-整合包是-v2pro，实际模型却是-v2\" class=\"atlas-heading atlas-h3\"><a href=\"#7-整合包是-v2pro，实际模型却是-v2\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>7. 整合包是 v2Pro，实际模型却是 v2</h3>\n<p><strong>现象 →</strong></p>\n<p>安装包名称含有 <code class=\"atlas-inline-code\">v2Pro</code>，但生成效果与预期不符。</p>\n<p><strong>原因 →</strong></p>\n<p>程序版本与当前选择的推理权重不是同一个概念。</p>\n<p><strong>解决操作 →</strong></p>\n<p>在 <code class=\"atlas-inline-code\">1C-推理</code> 查看 GPT 和 SoVITS 模型列表，检查是否选择了 <code class=\"atlas-inline-code\">s2Gv2Pro.pth</code> 等预期模型。</p>\n<p>如需切换，按当前版本要求选择匹配的模型组合。</p>\n<h3 id=\"8-16gb-内存环境容易占满资源\" class=\"atlas-heading atlas-h3\"><a href=\"#8-16gb-内存环境容易占满资源\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>8. 16GB 内存环境容易占满资源</h3>\n<p><strong>现象 →</strong></p>\n<p>模型加载缓慢、程序卡顿，或者多个 AI 工具同时运行时发生内存不足。</p>\n<p><strong>可能原因 →</strong></p>\n<p>系统内存同时被 GPT-SoVITS、浏览器、VS Code、LM Studio 等程序占用。</p>\n<p><strong>解决操作 →</strong></p>\n<ol class=\"atlas-list\"><li>关闭其他大型 AI 程序。</li><li>优先只运行一个推理服务。</li><li>训练时适当减少 batch size。</li><li>使用任务管理器查看系统内存和 GPU 显存占用。</li></ol>\n<p>如果长期进行模型训练，32GB 内存会更宽裕，但不是零样本推理的必要条件。</p>\n<h3 id=\"9-不应过度依赖一次生成结果\" class=\"atlas-heading atlas-h3\"><a href=\"#9-不应过度依赖一次生成结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>9. 不应过度依赖一次生成结果</h3>\n<p><strong>现象 →</strong></p>\n<p>同样的参考声音，某次结果咬字不清，另一次相对自然。</p>\n<p><strong>原因 →</strong></p>\n<p>语音生成过程具有一定随机性，采样参数也会影响输出。</p>\n<p><strong>解决操作 →</strong></p>\n<ul class=\"atlas-list\"><li>固定目标文本与参考音频。</li><li>保留默认参数作为基线。</li><li>多次生成，比较结果稳定性。</li><li>每次只修改一个变量。</li><li>保存不同底模的对照音频。</li></ul>\n<p>不要在一次实验中同时修改模型、语速、语言模式、参考音频和采样参数，否则难以判断是哪项调整起作用。</p>\n<h2 id=\"验证清单\" class=\"atlas-heading atlas-h2\"><a href=\"#验证清单\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证清单</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>已使用 NVIDIA 50 系适配整合包，在 RTX 5060 Laptop 上成功启动 GPT-SoVITS，并完成首次零样本语音生成。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>已理解参考音频、参考文本、GPT/SoVITS 模型以及 TTS 推理页面的基本作用，并完成参考音频静音裁剪。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>已确认实际使用的 GPT 与 SoVITS 权重版本，并用相同文本完成 v2Pro 与 v2ProPlus 的可比性测试。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>已使用优化后的参考音频获得咬字清楚、音色接近、没有明显异常粘连的语音，并能独立复现完整流程。</span></li></ul>",
       "findings": [
-        "先写 Markdown 结构化大纲，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。",
-        "统一母版与网格：16:9 画布（33.867 cm × 19.05 cm），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。",
-        "单页信息密度上限：字号不小于 14pt，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 #ED821B）」。",
-        "导出前必做三查：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。",
-        "适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。",
-        "一份已梳理清晰的 Markdown 提纲（参考 Markdown 基本语法）："
+        "核心结论：RTX 5060 8GB 显存可以运行 GPT-SoVITS，优先使用适配 NVIDIA 50 系显卡的整合包，避免旧版 CUDA 环境不兼容。",
+        "核心结论：首次使用应进入 1-GPT-SoVITS-TTS → 1C-推理，使用 3～10 秒清晰参考音频进行零样本语音克隆，不需要提前训练模型。",
+        "核心结论：生成声音模糊、咬字粘连时，优先检查参考音频静音、文本匹配、模型版本与语言模式，再调整语速和切分参数。",
+        "在 GPT-SoVITS 整合包的解压根目录打开 PowerShell，执行：",
+        "预期结果：启动 GPT-SoVITS WebUI，之后在 TTS 页签开启推理服务。",
+        "GPT-SoVITS 是一个支持少样本声音克隆的语音合成系统，主要用于："
       ],
-      "plainText": "PPT-Master 演示文稿工作流指南\n\n快速复习\n\n1. 先写 Markdown 结构化大纲，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。\n2. 统一母版与网格：16:9 画布（33.867 cm × 19.05 cm），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。\n3. 单页信息密度上限：字号不小于 14pt，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 #ED821B）」。\n4. 导出前必做三查：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。\n\n适用场景\n\n适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。\n\n前置准备\n\n- 一份已梳理清晰的 Markdown 提纲（参考 Markdown 基本语法）：\n  - # 对应封面标题\n  - ## 对应章节过渡页\n  - ### 对应单页核心结论（一句话标题）\n- 预设色板与单位标志（SVG 矢量格式优先，避免低分辨率带白底 PNG）。\n\n操作步骤\n\n1. 大纲转页面骨架\n\n将提纲按页拆分，确保每一页标题直接表达结论而非仅写名词：\n\n| 常见弱标题（避免） | 结论型标题（推荐） |\n| --- | --- |\n| 实验结果分析 | 化合物 A 在 10 μM 浓度下显著抑制细胞迁移（抑制率 68%） |\n| 静态资源路径问题 | 统一使用 BASE_URL 解析器可彻底消除子路径 404 |\n\n2. 版心与三级视觉层次设定\n\n``text\n+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+\n`\n\n3. 批量检查与导出\n\n- [x] 检查所有图表坐标轴文字是否清晰可读\n- [x] 在「文件 → 选项 → 保存」中勾选 将字体嵌入文件（仅嵌入演示文稿中使用的字符）\n- [x] 同时导出 .pptx 与 .pdf 双版本备存\n\n验证结果\n\n- 在无预装第三方字体的设备上打开 .pptx`，标题与正文字重不发生回退变形。\n- 任意抽取一页，观众可在 5 秒内 读出该页核心结论。\n\n常见问题与修复\n\n- 问题：嵌入字体后保存报错或体积暴增至上百 MB。  \n  原因：使用了不支持子集嵌入的完整 CJK 字体包或 OTF 变体。  \n  修复：改用标准 TTF 格式字重，或将封面特殊艺术字转为 SVG 矢量形状后再保存。",
+      "plainText": "GPT-SoVITS 本地语音克隆与音质优化操作手册\n\n快速复习\n\n- 核心结论：RTX 5060 8GB 显存可以运行 GPT-SoVITS，优先使用适配 NVIDIA 50 系显卡的整合包，避免旧版 CUDA 环境不兼容。\n- 核心结论：首次使用应进入 1-GPT-SoVITS-TTS → 1C-推理，使用 3～10 秒清晰参考音频进行零样本语音克隆，不需要提前训练模型。\n- 核心结论：生成声音模糊、咬字粘连时，优先检查参考音频静音、文本匹配、模型版本与语言模式，再调整语速和切分参数。\n\n在 GPT-SoVITS 整合包的解压根目录打开 PowerShell，执行：\n\n~~~powershell\n.\\go-webui.bat\n~~~\n\n预期结果：启动 GPT-SoVITS WebUI，之后在 TTS 页签开启推理服务。\n\n核心原理与适用场景\n\n1. GPT-SoVITS 是什么\n\nGPT-SoVITS 是一个支持少样本声音克隆的语音合成系统，主要用于：\n\n- 文本转语音（Text-to-Speech，TTS）。\n- 零样本声音克隆（Zero-shot Voice Cloning）。\n- 少样本模型微调（Few-shot Fine-tuning）。\n- 跨语言语音合成。\n- 配合预处理工具建立语音训练数据集。\n\n其基本工作流程为：\n\n参考音频 → 提取说话人相关语音特征 → 输入目标文本 → 生成具有相似音色的新语音。\n\n其中：\n\n- GPT 部分：主要负责语音相关语义表示的预测。\n- SoVITS 部分：主要负责根据预测结果合成语音波形。\n- 参考音频：提供说话人的音色、韵律等参考信息。\n- 参考文本：帮助模型建立参考语音与语言内容之间的对应关系。\n\n零样本克隆不等于完整学习了一个人的声音。其相似度、咬字和自然程度仍然受到参考素材和底模能力的限制。\n\n2. 两种主要使用模式\n\n| 模式 | 所需素材 | 特点 | 适用场景 |\n|---|---|---|---|\n| Zero-shot | 约 5 秒参考音频 | 无需训练，直接推理 | 快速体验、音色测试 |\n| Few-shot | 约 1 分钟或更多训练数据 | 需要微调，通常有机会提高相似度和稳定性 | 长期配音、固定角色音色 |\n\n> [!NOTE]\n> 官方支持使用少量音频完成微调，但不保证微调后一定优于零样本推理。训练素材的质量、数量、标注准确性和参数都会影响结果。\n\n3. 本地硬件适配\n\n当前使用的电脑环境：\n\n| 硬件 | 配置 | 适用性 |\n|---|---|---|\n| GPU | RTX 5060 Laptop | 支持本地 GPU 推理 |\n| 显存 | 8GB GDDR7 | 适合零样本推理及受限规模的微调 |\n| 内存 | 16GB | 基本够用，多程序并行可能不足 |\n| 存储 | 1TB SSD | 可存放整合包、预训练模型及训练数据 |\n| 操作系统 | Windows | 支持 Windows 整合包 |\n\nRTX 5060 属于 NVIDIA Blackwell 架构。\n\n该架构需要使用兼容的 PyTorch 和 CUDA 构建版本。PyTorch 2.7 配合 CUDA 12.8 是支持 Blackwell 的环境组合之一。\n\n此前使用的安装包为 NVIDIA 50 系适配版本：\n\nGPT-SoVITS-v2pro-20250604-nvidia50.7z\n\n> [!IMPORTANT]\n> 整合包名称包含 v2Pro，不代表推理时一定选择了 v2Pro 权重。实际使用的模型必须在推理页面检查。已经正常运行的整合包不应仅为调音质而随意重装 CUDA 或 PyTorch。\n\n4. WebUI 各模块的作用\n\n| 模块 | 主要功能 | 首次使用是否需要 |\n|---|---|---|\n| 0a-UVR5 | 人声与伴奏分离 | 否 |\n| 0b-语音切分 | 长录音自动分段 | 否 |\n| 0c-ASR | 将语音自动识别为文字 | 否 |\n| 0d-文本校对 | 修正语音识别标注 | 否 |\n| 1A-训练集格式化 | 将音频和文本处理为训练数据 | 否 |\n| 1B-微调训练 | 训练 GPT 和 SoVITS 模型 | 否 |\n| 1C-推理 | 输入文本并生成语音 | 是 |\n| 2-变声 | 已有语音的音色转换 | 否 |\n\n零样本推理只需要 1C-推理。\n\n需要训练时，完整流程通常为：\n\n原始录音 → 可选人声分离 → 音频切片 → ASR → 文本校对 → 数据集格式化 → 模型微调 → 推理。\n\n5. 参考音频为什么会影响生成效果\n\n参考音频会为模型提供音色和发音特征，但并非所有满足时长要求的音频都适合推理。\n\n较理想的参考音频通常具有：\n\n- 3～10 秒的总时长，推荐优先测试约 5～8 秒的完整语音。\n- 单人说话，吐字清晰。\n- 无明显背景音乐、噪声及混响。\n- 正常语速，不刻意拖长或压缩发音。\n- 开头与结尾没有大段无意义静音。\n- 参考文本和实际说话内容尽可能准确对应。\n\nWAV 通常适合保存清晰的参考素材，但文件格式本身并不能保证音质。\n\n标准操作流程\n\n1. 启动本地 WebUI\n\n1. 解压适配 NVIDIA 50 系显卡的 GPT-SoVITS 整合包。\n2. 进入解压后的程序根目录。\n3. 双击 go-webui.bat，或在该目录使用快速复习中的 PowerShell 命令。\n4. 等待程序启动并打开 WebUI。\n\n预期反馈：能够看到 GPT-SoVITS 控制台以及数据处理、TTS、变声等模块。\n\n> [!TIP]\n> 如果已经成功运行 GPU 推理，说明至少当前使用的主要计算环境可用，不必因为生成声音不好听就重新安装程序。\n\n2. 准备参考音频\n\n建议录制或截取一段清晰中文语音，例如：\n\n“今天下午我准备去图书馆，顺便把最近的实验资料整理一下。”\n\n操作要求：\n\n1. 选取约 5～8 秒的有效语音。\n2. 删除明显多余的前置和尾部静音。\n3. 避免切断句首或句尾音素。\n4. 保存为 WAV，保留正常音量，不进行过度降噪。\n5. 准确记录录音中说出的文字。\n\n本次实际测试曾使用以下参考文本：\n\n“过去与未来如此相似，我却对此无动于衷。”\n\n对应的原始音频约 6.97 秒，前面存在约 2.14 秒静音。此前已经裁剪出约 4.76 秒的 WAV 版本。\n\n这说明音频总时长符合要求，不代表有效人声比例一定合适。\n\n> [!WARNING]\n> 裁剪静音是值得优先尝试的改进措施，但不能仅凭存在静音就认定其必然是声音模糊的根本原因。\n\n3. 进入 TTS 推理页面\n\n1. 点击 1-GPT-SoVITS-TTS。\n2. 找到 1C-推理。\n3. 检查 GPT 模型和 SoVITS 模型的选项。\n4. GPU 设备编号使用 0（单 NVIDIA 显卡环境通常如此）。\n5. 开启 TTS 推理 WebUI。\n6. 等待底模加载完成。\n\n预期反馈：出现独立的语音推理界面，能够上传参考音频并输入目标文本。\n\n4. 检查模型版本\n\n当前安装包主要面向 v2Pro 系列。\n\n应重点检查 SoVITS 模型文件名，例如：\n\n| 模型文件 | 对应版本 |\n|---|---|\n| s2G2333k.pth | v2 系列 |\n| s2Gv2Pro.pth | v2Pro |\n| s2Gv2ProPlus.pth | v2ProPlus |\n\nv2Pro 系列预训练模型一般存放在：\n\nGPT_SoVITS/pretrained_models/v2Pro/\n\n操作时应在 WebUI 中选择对应版本提供的预设模型，并检查其 GPT 与 SoVITS 权重是否为支持的组合。\n\n> [!IMPORTANT]\n> 不要任意混搭不同版本的 GPT 和 SoVITS 权重。模型组合应以当前整合包的版本预设和官方说明为准。\n\n5. 填写参考信息\n\n本次使用的示例：\n\n| 设置 | 输入 |\n|---|---|\n| 参考音频 | 裁剪后的 WAV 文件 |\n| 参考文本 | 过去与未来如此相似，我却对此无动于衷。 |\n| 参考语言 | 中文 |\n| 无参考文本模式 | 关闭 |\n\n注意：\n\n- 参考文本应与录音内容一致。\n- 不能漏字、随意改写或省略口头语。\n- 即使输入的是中文语音，也要检查参考语言选择。\n- 有准确文本时，优先使用正常的有参考文本模式。\n\n预期反馈：推理程序正确读取参考音频及其文本信息。\n\n6. 填写目标文本\n\n第一次建议只使用中文，避免中英文混合造成额外干扰。\n\n推荐测试文本：\n\n“你好，今天天气非常不错。我准备下午去图书馆，看一看最近整理的实验资料。”\n\n推荐参数：\n\n| 参数 | 初始建议 |\n|---|---|\n| 目标语言 | 中文 |\n| 语速 | 1.0 |\n| 句间停顿 | 0.3～0.4 秒 |\n| 文本切分 | 按中文标点切分 |\n| top_k | 默认 |\n| top_p | 默认 |\n| temperature | 默认 |\n\n点击合成语音。\n\n预期反馈：生成可以播放、保存的音频文件，使用与参考声音相似的音色朗读目标文本。\n\n7. 测试中英文混合\n\n纯中文测试正常后，再使用混合文本：\n\n“你好。我现在正在测试 GPT SoVITS。这是由人工智能生成的语音。”\n\n建议：\n\n1. 将目标文本语言切换为中英混合。\n2. 将长句拆分为短句。\n3. 英文名称两侧适当留空格。\n4. 必要时将英文术语改成更容易被前端处理的形式。\n5. 对比新旧生成结果。\n\n注意：GPT-SoVITS 改写成 GPT SoVITS 是一种排障实验，不保证所有版本都会因此获得更好的英文发音。\n\n8. 进一步优化声音\n\n如果声音仍不清晰：\n\n1. 固定相同的目标文本。\n2. 使用裁剪后的参考音频重新生成。\n3. 检查模型是否为 v2Pro。\n4. 若整合包支持，使用 v2ProPlus 进行对照测试。\n5. 每次只更改一个参数，保存生成结果。\n6. 对比咬字、音色、语速和自然程度。\n\n可尝试将语速从 1.0 调整至 0.9，但不应把降低语速当成解决声音模糊的通用方法。\n\n如果合理优化后仍不能满足需求，再考虑用更多合规录音素材进行少样本微调。\n\n9. 需要微调时的数据准备\n\n训练数据一般需要音频片段及对应文字。\n\n典型的 .list 标注格式：\n\n音频路径|说话人名称|语言代码|文字内容\n\n例如：\n\nD:\\VoiceData\\001.wav|speaker01|zh|今天天气非常不错。\n\n其中：\n\n- 音频路径：实际音频文件位置。\n- speaker01：说话人标识。\n- zh：中文语言代码。\n- 文字内容：与音频对应的转录文本。\n\n实际步骤：\n\n1. 将原始长录音导入切片工具。\n2. 使用 ASR 自动生成文本。\n3. 人工校对错字、漏字和标点。\n4. 在 1A 中格式化训练数据。\n5. 在 1B 中执行模型微调。\n6. 使用训练后的模型进入 1C 测试。\n\n> [!CAUTION]\n> 声音克隆应使用自己的声音或已获得明确授权的素材。公开发布生成音频时，应避免使听众误认为是真实人物亲自录制或认可的发言。\n\n常见排障与避坑指南\n\n1. 生成音频非常模糊，咬字粘连\n\n现象 →\n\n能够生成语音，但声音偏闷，辅音不清楚，字词之间像粘在一起。\n\n可能原因 →\n\n- 参考音频质量不理想。\n- 参考音频存在过长静音。\n- 参考文字与实际录音不匹配。\n- 实际使用的底模不符合预期。\n- 零样本模型对该音色的泛化能力有限。\n- 中英文前端处理或分句方式不合适。\n\n解决操作 →\n\n1. 去除参考音频中明显过长的静音。\n2. 检查参考文本是否逐字对应。\n3. 使用纯中文短句进行测试。\n4. 确认模型权重和版本。\n5. 恢复语速 1.0 及默认采样参数。\n6. 对比 v2Pro 和 v2ProPlus 的实际输出。\n\n本次参考音频已发现开头存在较长静音，但尚不能证明它是唯一原因。\n\n2. 降低语速后仍然模糊\n\n现象 →\n\n把语速从 1.0 调整为 0.9，甚至更低，声音仍然含糊。\n\n原因 →\n\n语速控制主要改变语音的时间尺度，并不等同于修复音素细节。\n\n解决操作 →\n\n恢复语速 1.0，优先处理参考音频及模型选择。\n\n如果只存在讲话偏快的问题，再小幅降低语速。\n\n3. 中英文名称发音不自然\n\n现象 →\n\n中文部分相对正常，但 GPT-SoVITS 等术语发音混乱。\n\n可能原因 →\n\n使用了纯中文语言模式，或文本前端对混合字符、连字符的处理不理想。\n\n解决操作 →\n\n1. 将目标语言改为中英混合。\n2. 尝试使用 GPT SoVITS。\n3. 使用中文标点明确分句。\n4. 先测试纯中文，再加入英文。\n\n4. 句子之间没有明显停顿\n\n现象 →\n\n多句话连续输出，缺乏自然停顿。\n\n可能原因 →\n\n文本切分方式不合适、标点不足，或句间间隔设置偏短。\n\n解决操作 →\n\n1. 将长文本拆分为完整短句。\n2. 使用句号而不是全部使用逗号。\n3. 选择适当的文本切分方式。\n4. 如果界面支持，尝试将句间间隔设为 0.4～0.5 秒。\n\n注意：句间停顿参数通常不能直接修复一句话内部的咬字不清。\n\n5. 参考音频长度不合适\n\n现象 →\n\n上传参考音频后出现长度相关报错。\n\n原因 →\n\n推理模式通常要求主参考音频在 3～10 秒范围内。\n\n解决操作 →\n\n截取一段完整清晰语句，控制总时长在该范围内，优先测试 5～8 秒左右。\n\n不要为了满足时长而补充大段静音。\n\n6. NVIDIA 50 系显卡 CUDA 不兼容\n\n现象 →\n\n程序无法使用 GPU，或者出现类似：\n\nno kernel image is available for execution\n\nsm_120 is not compatible\n\n可能原因 →\n\n使用了不支持 Blackwell 架构的旧版 PyTorch/CUDA 构建。\n\n解决操作 →\n\n优先使用 NVIDIA 50 系专用整合包。\n\n若选择从源码搭建，则应安装支持 Blackwell 的 PyTorch/CUDA 组合，例如经官方支持的 PyTorch 2.7 + CUDA 12.8 环境。\n\n不要直接把旧教程中的 CUDA 11.8 环境用于 RTX 5060。\n\n7. 整合包是 v2Pro，实际模型却是 v2\n\n现象 →\n\n安装包名称含有 v2Pro，但生成效果与预期不符。\n\n原因 →\n\n程序版本与当前选择的推理权重不是同一个概念。\n\n解决操作 →\n\n在 1C-推理 查看 GPT 和 SoVITS 模型列表，检查是否选择了 s2Gv2Pro.pth 等预期模型。\n\n如需切换，按当前版本要求选择匹配的模型组合。\n\n8. 16GB 内存环境容易占满资源\n\n现象 →\n\n模型加载缓慢、程序卡顿，或者多个 AI 工具同时运行时发生内存不足。\n\n可能原因 →\n\n系统内存同时被 GPT-SoVITS、浏览器、VS Code、LM Studio 等程序占用。\n\n解决操作 →\n\n1. 关闭其他大型 AI 程序。\n2. 优先只运行一个推理服务。\n3. 训练时适当减少 batch size。\n4. 使用任务管理器查看系统内存和 GPU 显存占用。\n\n如果长期进行模型训练，32GB 内存会更宽裕，但不是零样本推理的必要条件。\n\n9. 不应过度依赖一次生成结果\n\n现象 →\n\n同样的参考声音，某次结果咬字不清，另一次相对自然。\n\n原因 →\n\n语音生成过程具有一定随机性，采样参数也会影响输出。\n\n解决操作 →\n\n- 固定目标文本与参考音频。\n- 保留默认参数作为基线。\n- 多次生成，比较结果稳定性。\n- 每次只修改一个变量。\n- 保存不同底模的对照音频。\n\n不要在一次实验中同时修改模型、语速、语言模式、参考音频和采样参数，否则难以判断是哪项调整起作用。\n\n验证清单\n\n- [x] 已使用 NVIDIA 50 系适配整合包，在 RTX 5060 Laptop 上成功启动 GPT-SoVITS，并完成首次零样本语音生成。\n- [x] 已理解参考音频、参考文本、GPT/SoVITS 模型以及 TTS 推理页面的基本作用，并完成参考音频静音裁剪。\n- [ ] 已确认实际使用的 GPT 与 SoVITS 权重版本，并用相同文本完成 v2Pro 与 v2ProPlus 的可比性测试。\n- [ ] 已使用优化后的参考音频获得咬字清楚、音色接近、没有明显异常粘连的语音，并能独立复现完整流程。",
       "visualCode": "T-003",
       "globalCode": "X-003"
+    },
+    {
+      "id": "tools-ppt-master-workflow",
+      "slug": "tools/ppt-master-workflow",
+      "title": "PPT Master：环境配置与演示文稿制作流程",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "department": "效率工具与创作软件",
+      "subcategory": "presentation-workflow",
+      "type": "skill",
+      "status": "learning",
+      "tags": [
+        "ppt-master",
+        "AI辅助制作",
+        "PowerPoint",
+        "组会汇报",
+        "演示文稿"
+      ],
+      "summary": "使用 PPT Master 配合具备文件读写与命令执行能力的 AI Agent，将参考文档、现有演示文稿与模板整理为风格统一的可编辑 PPT，并通过逐页检查完成交付。",
+      "created": "2026-10-16",
+      "updated": "2026-10-16",
+      "version_scope": "Windows / PowerShell / Python 3.10及以上；具体依赖以所下载版本的仓库说明为准",
+      "source_urls": [
+        "https://github.com/hugohe3/ppt-master",
+        "https://github.com/hugohe3/ppt-master/releases"
+      ],
+      "prerequisites": [],
+      "related": [],
+      "aliases": [
+        "tools/ppt-master",
+        "tools/ppt-workflow"
+      ],
+      "relPath": "content/tools/ppt-master-workflow.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "核心原理与适用场景",
+          "text": "核心原理与适用场景",
+          "level": 2
+        },
+        {
+          "id": "标准操作流程",
+          "text": "标准操作流程",
+          "level": 2
+        },
+        {
+          "id": "常见排障与避坑指南",
+          "text": "常见排障与避坑指南",
+          "level": 2
+        },
+        {
+          "id": "验证清单",
+          "text": "验证清单",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>核心结论</strong>：将解压后的项目根目录设为 Agent 工作目录，先读取仓库说明并检查环境，再开始制作。</li><li><strong>核心结论</strong>：明确区分内容来源与视觉模板；合并演示文稿时，先整理叙事和重复内容，再统一风格。</li><li><strong>核心结论</strong>：科研汇报先核对材料与结论，再生成逐页方案；交付前检查内容准确性、排版和可编辑性。</li></ul>\n<p>在 PowerShell 中执行，打开官方下载页面：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"Start-Process &#39;https://github.com/hugohe3/ppt-master/releases&#39;\">COPY</button></div><pre><code>Start-Process &#39;https://github.com/hugohe3/ppt-master/releases&#39;</code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>核心结论</strong>：将解压后的项目根目录设为 Agent 工作目录，先读取仓库说明并检查环境，再开始制作。</li><li><strong>核心结论</strong>：明确区分内容来源与视觉模板；合并演示文稿时，先整理叙事和重复内容，再统一风格。</li><li><strong>核心结论</strong>：科研汇报先核对材料与结论，再生成逐页方案；交付前检查内容准确性、排版和可编辑性。</li></ul>\n<p>在 PowerShell 中执行，打开官方下载页面：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"Start-Process &#39;https://github.com/hugohe3/ppt-master/releases&#39;\">COPY</button></div><pre><code>Start-Process &#39;https://github.com/hugohe3/ppt-master/releases&#39;</code></pre></div>\n<h2 id=\"核心原理与适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#核心原理与适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>核心原理与适用场景</h2>\n<p>PPT Master 提供演示文稿制作工作流，由具备文件读写和命令执行能力的 AI Agent 调用。模型负责理解材料、组织内容和设计页面，项目中的脚本负责相应处理与导出；具体能力和依赖以所下载版本为准。参见<a href=\"https://github.com/hugohe3/ppt-master\" class=\"atlas-ext-link\" target=\"_blank\" rel=\"noopener noreferrer\">官方仓库说明 <span aria-hidden=\"true\">↗</span></a>。</p>\n<p>原笔记中的 harness 指承载模型并提供工具能力的运行环境，例如 WorkBuddy、Codex 或 Claude Code。使用时应让 Agent 能够访问项目目录、读取参考材料并执行所需命令。</p>\n<p>适用场景：</p>\n<ul class=\"atlas-list\"><li>将两份或多份 PPT 合并，去除重复内容并统一叙事与视觉风格。</li><li>基于 Word、PDF、图片或网页资料制作课程作业、项目介绍与组会汇报。</li><li>先与 AI 讨论研究问题，再将确认后的内容整理成逐页演示方案。</li><li>根据已有模板制作初稿，再对字号、配色、图片和信息密度进行迭代。</li></ul>\n<p>不宜直接采用生成结果的情况：</p>\n<ul class=\"atlas-list\"><li>原始材料存在相互矛盾的数据或尚未确认的实验结论。</li><li>要求严格保留原稿全部动画、母版或复杂对象，但尚未验证转换效果。</li><li>只有普通聊天能力，无法访问本地文件或运行项目脚本。</li></ul>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"important\"><strong class=\"atlas-callout-badge\">IMPORTANT</strong><p>“能够生成 PPT”不等于“科研内容已经核实”。数据、引用、实验状态与结论强度仍需逐项核对。</p></blockquote>\n<h2 id=\"标准操作流程\" class=\"atlas-heading atlas-h2\"><a href=\"#标准操作流程\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>标准操作流程</h2>\n<ol class=\"atlas-list\"><li><strong>下载项目并确认根目录</strong></li></ol>\n<p>输入：从<a href=\"https://github.com/hugohe3/ppt-master/releases\" class=\"atlas-ext-link\" target=\"_blank\" rel=\"noopener noreferrer\">官方 Releases 页面 <span aria-hidden=\"true\">↗</span></a>下载的项目 ZIP 包。</p>\n<p>操作：解压后定位项目根目录，避免误选 ZIP 文件或外层空目录。以下以 <code class=\"atlas-inline-code\">D:\\ppt-master</code> 为示例，执行前替换成实际路径。</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"Set-Location -LiteralPath &#39;D:\\ppt-master&#39;\nGet-ChildItem -Force\nTest-Path -LiteralPath &#39;.\\requirements.txt&#39;\">COPY</button></div><pre><code>Set-Location -LiteralPath &#39;D:\\ppt-master&#39;\nGet-ChildItem -Force\nTest-Path -LiteralPath &#39;.\\requirements.txt&#39;</code></pre></div>\n<p>预期反馈：可以看到仓库说明和项目文件；完整仓库通常包含 <code class=\"atlas-inline-code\">requirements.txt</code>。若返回 <code class=\"atlas-inline-code\">False</code>，先核对目录及下载包说明。</p>\n<ol class=\"atlas-list\" start=\"2\"><li><strong>检查 Python 并安装依赖</strong></li></ol>\n<p>输入：项目根目录，以及符合所下载版本要求的 Python 环境。</p>\n<p>以下命令使用 Windows Python 启动器 <code class=\"atlas-inline-code\">py</code>，通过项目虚拟环境安装依赖：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"py -3 --version\npy -3 -m venv .venv\n.\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\n.\\.venv\\Scripts\\python.exe -m pip check\">COPY</button></div><pre><code>py -3 --version\npy -3 -m venv .venv\n.\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\n.\\.venv\\Scripts\\python.exe -m pip check</code></pre></div>\n<p>预期反馈：Python 版本符合要求，安装命令成功结束，<code class=\"atlas-inline-code\">pip check</code> 未报告依赖冲突。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"note\"><strong class=\"atlas-callout-badge\">NOTE</strong><p>官方仓库当前说明要求 Python 3.10 及以上。上述命令直接调用虚拟环境解释器，无需运行激活脚本；其余依赖按所下载版本的说明补齐。</p></blockquote>\n<ol class=\"atlas-list\" start=\"3\"><li><strong>在 Agent 中打开项目并完成环境检查</strong></li></ol>\n<p>输入：已解压的项目目录。</p>\n<p>操作：在 harness 中创建项目或打开文件夹，将实际项目根目录设为工作目录，然后发送：</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"分析当前仓库内容，为后续 PPT 任务准备运行环境。\n先读取仓库说明及适用的工作流指引，确认项目根目录、Python 解释器、\n依赖状态、制作入口和导出位置。\n使用当前项目的 .venv 环境执行 Python 命令。\n检查完成后列出可用能力与尚未解决的问题。\">COPY</button></div><pre><code>分析当前仓库内容，为后续 PPT 任务准备运行环境。\n先读取仓库说明及适用的工作流指引，确认项目根目录、Python 解释器、\n依赖状态、制作入口和导出位置。\n使用当前项目的 .venv 环境执行 Python 命令。\n检查完成后列出可用能力与尚未解决的问题。</code></pre></div>\n<p>预期反馈：Agent 能说明所读取的文件、使用的解释器、环境检查结果及下一步入口。</p>\n<ol class=\"atlas-list\" start=\"4\"><li><strong>准备材料并说明需求</strong></li></ol>\n<p>输入：内容文档、现有 PPT、视觉模板、图片，以及必要的网页链接。</p>\n<p>操作：将材料放入当前项目中的明确目录，或通过 harness 上传。建议为每个任务分别保存原始材料，并在提示中提供实际路径。</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"请先读取我提供的全部材料，并列出文件清单。\n内容来源：[文档与演示文稿的实际路径]\n视觉模板：[模板的实际路径；没有则说明]\n参考网页：[完整 URL；无法访问时请明确指出]\n\n汇报者身份：[填写]\n听众与使用场景：[填写]\n汇报目标：[填写]\n时长与目标页数：[填写]\n偏好风格：[填写]\n必须保留的内容：[填写]\n输出要求：可编辑 PPTX，列出最终文件路径。\">COPY</button></div><pre><code>请先读取我提供的全部材料，并列出文件清单。\n内容来源：[文档与演示文稿的实际路径]\n视觉模板：[模板的实际路径；没有则说明]\n参考网页：[完整 URL；无法访问时请明确指出]\n\n汇报者身份：[填写]\n听众与使用场景：[填写]\n汇报目标：[填写]\n时长与目标页数：[填写]\n偏好风格：[填写]\n必须保留的内容：[填写]\n输出要求：可编辑 PPTX，列出最终文件路径。</code></pre></div>\n<p>预期反馈：Agent 正确区分内容来源与视觉参考，并形成与汇报目标一致的制作方案。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"tip\"><strong class=\"atlas-callout-badge\">TIP</strong><p>网页链接不是本地文件。提供完整 URL，并确认 Agent 实际读取成功；如果无法访问，可补充导出的 PDF 或网页正文。</p></blockquote>\n<ol class=\"atlas-list\" start=\"5\"><li><strong>场景一：合并两份 PPT 并统一风格</strong></li></ol>\n<p>输入：两份内容 PPT，以及一份用于视觉参考的模板。</p>\n<p>操作：先要求整理内容和页序，再制作演示文稿。</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"请合并两份内容 PPT，以第三份 PPT 作为视觉参考。\n先列出内容来源、重复内容、冲突信息及建议页序。\n保留原始事实、数据和引用；无法判断的冲突请单独列出。\n确认内容结构后，统一字体、配色、标题层级和页面布局。\n如需生成配图，请确保配图不被当作真实人物照片或实验结果。\n完成后导出可编辑 PPTX，并列出需要人工复核的页面。\">COPY</button></div><pre><code>请合并两份内容 PPT，以第三份 PPT 作为视觉参考。\n先列出内容来源、重复内容、冲突信息及建议页序。\n保留原始事实、数据和引用；无法判断的冲突请单独列出。\n确认内容结构后，统一字体、配色、标题层级和页面布局。\n如需生成配图，请确保配图不被当作真实人物照片或实验结果。\n完成后导出可编辑 PPTX，并列出需要人工复核的页面。</code></pre></div>\n<p>预期反馈：形成连贯的合并稿，重复内容得到处理，视觉风格统一，关键内容可追溯。</p>\n<ol class=\"atlas-list\" start=\"6\"><li><strong>场景二：先讨论研究材料，再制作组会 PPT</strong></li></ol>\n<p>输入：项目说明、研究方案、实验记录或阶段性结果。</p>\n<p>操作：先解读材料，讨论研究逻辑和汇报重点，再生成演示方案。</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"请阅读项目材料，先提供项目总结和关键名词解释。\n将材料中的事实、已有结果、待验证假设和建议分别说明。\n我们先讨论研究目标、实施路径与当前问题，暂不制作 PPT。\">COPY</button></div><pre><code>请阅读项目材料，先提供项目总结和关键名词解释。\n将材料中的事实、已有结果、待验证假设和建议分别说明。\n我们先讨论研究目标、实施路径与当前问题，暂不制作 PPT。</code></pre></div>\n<p>讨论完成后继续发送：</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"请根据已经确认的讨论内容，整理一份组会 PPT 制作方案。\n每页写明标题、核心信息、证据来源和建议图示。\n明确区分已完成工作、待验证假设及后续计划。\n先输出方案供我核对，通过后再使用当前仓库制作可编辑 PPTX。\">COPY</button></div><pre><code>请根据已经确认的讨论内容，整理一份组会 PPT 制作方案。\n每页写明标题、核心信息、证据来源和建议图示。\n明确区分已完成工作、待验证假设及后续计划。\n先输出方案供我核对，通过后再使用当前仓库制作可编辑 PPTX。</code></pre></div>\n<p>预期反馈：先获得可核对的逐页方案，再据此生成演示文稿。</p>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"important\"><strong class=\"atlas-callout-badge\">IMPORTANT</strong><p>如果讨论结论是不需要引入 AI，就按该结论组织汇报。不要为了突出工具而添加缺乏必要性或证据的 AI 模块。</p></blockquote>\n<ol class=\"atlas-list\" start=\"7\"><li><strong>逐页检查并按具体问题微调</strong></li></ol>\n<p>输入：生成的 PPTX，以及需要修改的页码和元素。</p>\n<p>操作：打开实际文件，检查内容与视觉效果，再提交范围明确的修改指令。</p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"请在当前版本上调整：\n8. 增大正文字号，并重新检查换行与文本框溢出。\n9. 删除首页指定的红点装饰。\n10. 保留已经核对通过的正文、数据、引用和讲者备注。\n修改后重新检查全部页面，并另存为新版本 PPTX。\">COPY</button></div><pre><code>请在当前版本上调整：\n8. 增大正文字号，并重新检查换行与文本框溢出。\n9. 删除首页指定的红点装饰。\n10. 保留已经核对通过的正文、数据、引用和讲者备注。\n修改后重新检查全部页面，并另存为新版本 PPTX。</code></pre></div>\n<p>预期反馈：指定问题得到修正，未引入内容遗漏、遮挡或新的排版问题。</p>\n<h2 id=\"常见排障与避坑指南\" class=\"atlas-heading atlas-h2\"><a href=\"#常见排障与避坑指南\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见排障与避坑指南</h2>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"note\"><strong class=\"atlas-callout-badge\">NOTE</strong><p>原笔记未记录实际安装报错。以下结合操作步骤与示例整理易错点，其中环境故障属于预防性排查。</p></blockquote>\n<ul class=\"atlas-list\"><li><strong>找不到 <code class=\"atlas-inline-code\">requirements.txt</code> → 工作目录错误，或下载包结构不同 →</strong> 执行 <code class=\"atlas-inline-code\">Get-Location</code> 和 <code class=\"atlas-inline-code\">Get-ChildItem -Force</code>，定位真实根目录后再运行安装命令。</li></ul>\n<ul class=\"atlas-list\"><li><strong>提示无法识别 <code class=\"atlas-inline-code\">py</code> → Windows Python 启动器不可用 →</strong> 执行 <code class=\"atlas-inline-code\">python --version</code> 检查解释器；若版本合适，可改用 <code class=\"atlas-inline-code\">python -m venv .venv</code>，随后仍调用 <code class=\"atlas-inline-code\">.venv\\Scripts\\python.exe</code> 安装依赖。</li></ul>\n<ul class=\"atlas-list\"><li><strong>依赖安装成功但 Agent 仍报缺少模块 → 安装与运行使用了不同解释器 →</strong> 执行 <code class=\"atlas-inline-code\">.\\.venv\\Scripts\\python.exe -m pip check</code>，并要求 Agent 使用同一解释器重试原命令。</li></ul>\n<ul class=\"atlas-list\"><li><strong>Agent 找不到材料 → 文件未上传成功、路径错误或目录不可访问 →</strong> 使用 <code class=\"atlas-inline-code\">Test-Path -LiteralPath &#39;材料的实际完整路径&#39;</code> 检查，再将准确路径交给 Agent。</li></ul>\n<ul class=\"atlas-list\"><li><strong>合并后内容重复或前后矛盾 → 只要求拼接页面，没有先整理内容 →</strong> 发送“先列出重复与冲突信息，核对后重组页序，再统一风格”。</li></ul>\n<ul class=\"atlas-list\"><li><strong>组会稿将计划写成成果 → 未区分实验状态与推测 →</strong> 发送“逐页区分已完成结果、待验证假设与后续计划，并标注证据来源”。</li></ul>\n<ul class=\"atlas-list\"><li><strong>字体太小或装饰干扰阅读 → 单页信息过多，或模板元素不适合当前内容 →</strong> 发送“指定页增大字号、拆分过密内容、删除指定装饰，并检查溢出”，不要只要求整体美化。</li></ul>\n<ul class=\"atlas-list\"><li><strong>ZIP 下载的项目无法执行 <code class=\"atlas-inline-code\">git pull</code> → 解压目录没有 Git 历史 →</strong> 从官方页面下载新版本并解压到新目录，迁移工作文件和必要配置后重新安装依赖。</li></ul>\n<ul class=\"atlas-list\"><li><strong>文件已生成但无法正常交付 → 只检查了导出成功，未检查实际打开效果 →</strong> 用目标演示软件打开 PPTX，逐页检查字体、图片、备注与对象编辑情况。</li></ul>\n<h2 id=\"验证清单\" class=\"atlas-heading atlas-h2\"><a href=\"#验证清单\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证清单</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>掌握环境检查标准：项目根目录正确，Python 版本符合要求，安装与运行使用同一解释器。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>掌握输入准备标准：内容来源、视觉模板和汇报目标分别明确，材料可被 Agent 实际读取。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>掌握内容验收标准：数据与引用可追溯，已完成结果、假设和计划没有混淆。</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>掌握交付验收标准：实际打开 PPTX 逐页检查，确认关键对象可编辑且无文本溢出、遮挡或图片缺失。</span></li></ul>",
+      "findings": [
+        "核心结论：将解压后的项目根目录设为 Agent 工作目录，先读取仓库说明并检查环境，再开始制作。",
+        "核心结论：明确区分内容来源与视觉模板；合并演示文稿时，先整理叙事和重复内容，再统一风格。",
+        "核心结论：科研汇报先核对材料与结论，再生成逐页方案；交付前检查内容准确性、排版和可编辑性。",
+        "在 PowerShell 中执行，打开官方下载页面：",
+        "PPT Master 提供演示文稿制作工作流，由具备文件读写和命令执行能力的 AI Agent 调用。模型负责理解材料、组织内容和设计页面，项目中的脚本负责相应处理与导出；具体能力和依赖以所下载版本为准。参见官方仓库说明。",
+        "原笔记中的 harness 指承载模型并提供工具能力的运行环境，例如 WorkBuddy、Codex 或 Claude Code。使用时应让 Agent 能够访问项目目录、读取参考材料并执行所需命令。"
+      ],
+      "plainText": "PPT Master：环境配置与演示文稿制作流程\n\n快速复习\n\n- 核心结论：将解压后的项目根目录设为 Agent 工作目录，先读取仓库说明并检查环境，再开始制作。\n- 核心结论：明确区分内容来源与视觉模板；合并演示文稿时，先整理叙事和重复内容，再统一风格。\n- 核心结论：科研汇报先核对材料与结论，再生成逐页方案；交付前检查内容准确性、排版和可编辑性。\n\n在 PowerShell 中执行，打开官方下载页面：\n\n~~~powershell\nStart-Process 'https://github.com/hugohe3/ppt-master/releases'\n~~~\n\n核心原理与适用场景\n\nPPT Master 提供演示文稿制作工作流，由具备文件读写和命令执行能力的 AI Agent 调用。模型负责理解材料、组织内容和设计页面，项目中的脚本负责相应处理与导出；具体能力和依赖以所下载版本为准。参见官方仓库说明。\n\n原笔记中的 harness 指承载模型并提供工具能力的运行环境，例如 WorkBuddy、Codex 或 Claude Code。使用时应让 Agent 能够访问项目目录、读取参考材料并执行所需命令。\n\n适用场景：\n\n- 将两份或多份 PPT 合并，去除重复内容并统一叙事与视觉风格。\n- 基于 Word、PDF、图片或网页资料制作课程作业、项目介绍与组会汇报。\n- 先与 AI 讨论研究问题，再将确认后的内容整理成逐页演示方案。\n- 根据已有模板制作初稿，再对字号、配色、图片和信息密度进行迭代。\n\n不宜直接采用生成结果的情况：\n\n- 原始材料存在相互矛盾的数据或尚未确认的实验结论。\n- 要求严格保留原稿全部动画、母版或复杂对象，但尚未验证转换效果。\n- 只有普通聊天能力，无法访问本地文件或运行项目脚本。\n\n> [!IMPORTANT]\n> “能够生成 PPT”不等于“科研内容已经核实”。数据、引用、实验状态与结论强度仍需逐项核对。\n\n标准操作流程\n\n1. 下载项目并确认根目录\n\n   输入：从官方 Releases 页面下载的项目 ZIP 包。\n\n   操作：解压后定位项目根目录，避免误选 ZIP 文件或外层空目录。以下以 D:\\ppt-master 为示例，执行前替换成实际路径。\n\n   ~~~powershell\n   Set-Location -LiteralPath 'D:\\ppt-master'\n   Get-ChildItem -Force\n   Test-Path -LiteralPath '.\\requirements.txt'\n   ~~~\n\n   预期反馈：可以看到仓库说明和项目文件；完整仓库通常包含 requirements.txt。若返回 False，先核对目录及下载包说明。\n\n2. 检查 Python 并安装依赖\n\n   输入：项目根目录，以及符合所下载版本要求的 Python 环境。\n\n   以下命令使用 Windows Python 启动器 py，通过项目虚拟环境安装依赖：\n\n   ~~~powershell\n   py -3 --version\n   py -3 -m venv .venv\n   .\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\n   .\\.venv\\Scripts\\python.exe -m pip check\n   ~~~\n\n   预期反馈：Python 版本符合要求，安装命令成功结束，pip check 未报告依赖冲突。\n\n   > [!NOTE]\n   > 官方仓库当前说明要求 Python 3.10 及以上。上述命令直接调用虚拟环境解释器，无需运行激活脚本；其余依赖按所下载版本的说明补齐。\n\n3. 在 Agent 中打开项目并完成环境检查\n\n   输入：已解压的项目目录。\n\n   操作：在 harness 中创建项目或打开文件夹，将实际项目根目录设为工作目录，然后发送：\n\n   ~~~text\n   分析当前仓库内容，为后续 PPT 任务准备运行环境。\n   先读取仓库说明及适用的工作流指引，确认项目根目录、Python 解释器、\n   依赖状态、制作入口和导出位置。\n   使用当前项目的 .venv 环境执行 Python 命令。\n   检查完成后列出可用能力与尚未解决的问题。\n   ~~~\n\n   预期反馈：Agent 能说明所读取的文件、使用的解释器、环境检查结果及下一步入口。\n\n4. 准备材料并说明需求\n\n   输入：内容文档、现有 PPT、视觉模板、图片，以及必要的网页链接。\n\n   操作：将材料放入当前项目中的明确目录，或通过 harness 上传。建议为每个任务分别保存原始材料，并在提示中提供实际路径。\n\n   ~~~text\n   请先读取我提供的全部材料，并列出文件清单。\n   内容来源：[文档与演示文稿的实际路径]\n   视觉模板：[模板的实际路径；没有则说明]\n   参考网页：[完整 URL；无法访问时请明确指出]\n\n   汇报者身份：[填写]\n   听众与使用场景：[填写]\n   汇报目标：[填写]\n   时长与目标页数：[填写]\n   偏好风格：[填写]\n   必须保留的内容：[填写]\n   输出要求：可编辑 PPTX，列出最终文件路径。\n   ~~~\n\n   预期反馈：Agent 正确区分内容来源与视觉参考，并形成与汇报目标一致的制作方案。\n\n   > [!TIP]\n   > 网页链接不是本地文件。提供完整 URL，并确认 Agent 实际读取成功；如果无法访问，可补充导出的 PDF 或网页正文。\n\n5. 场景一：合并两份 PPT 并统一风格\n\n   输入：两份内容 PPT，以及一份用于视觉参考的模板。\n\n   操作：先要求整理内容和页序，再制作演示文稿。\n\n   ~~~text\n   请合并两份内容 PPT，以第三份 PPT 作为视觉参考。\n   先列出内容来源、重复内容、冲突信息及建议页序。\n   保留原始事实、数据和引用；无法判断的冲突请单独列出。\n   确认内容结构后，统一字体、配色、标题层级和页面布局。\n   如需生成配图，请确保配图不被当作真实人物照片或实验结果。\n   完成后导出可编辑 PPTX，并列出需要人工复核的页面。\n   ~~~\n\n   预期反馈：形成连贯的合并稿，重复内容得到处理，视觉风格统一，关键内容可追溯。\n\n6. 场景二：先讨论研究材料，再制作组会 PPT\n\n   输入：项目说明、研究方案、实验记录或阶段性结果。\n\n   操作：先解读材料，讨论研究逻辑和汇报重点，再生成演示方案。\n\n   ~~~text\n   请阅读项目材料，先提供项目总结和关键名词解释。\n   将材料中的事实、已有结果、待验证假设和建议分别说明。\n   我们先讨论研究目标、实施路径与当前问题，暂不制作 PPT。\n   ~~~\n\n   讨论完成后继续发送：\n\n   ~~~text\n   请根据已经确认的讨论内容，整理一份组会 PPT 制作方案。\n   每页写明标题、核心信息、证据来源和建议图示。\n   明确区分已完成工作、待验证假设及后续计划。\n   先输出方案供我核对，通过后再使用当前仓库制作可编辑 PPTX。\n   ~~~\n\n   预期反馈：先获得可核对的逐页方案，再据此生成演示文稿。\n\n   > [!IMPORTANT]\n   > 如果讨论结论是不需要引入 AI，就按该结论组织汇报。不要为了突出工具而添加缺乏必要性或证据的 AI 模块。\n\n7. 逐页检查并按具体问题微调\n\n   输入：生成的 PPTX，以及需要修改的页码和元素。\n\n   操作：打开实际文件，检查内容与视觉效果，再提交范围明确的修改指令。\n\n   ~~~text\n   请在当前版本上调整：\n   8. 增大正文字号，并重新检查换行与文本框溢出。\n   9. 删除首页指定的红点装饰。\n   10. 保留已经核对通过的正文、数据、引用和讲者备注。\n   修改后重新检查全部页面，并另存为新版本 PPTX。\n   ~~~\n\n   预期反馈：指定问题得到修正，未引入内容遗漏、遮挡或新的排版问题。\n\n常见排障与避坑指南\n\n> [!NOTE]\n> 原笔记未记录实际安装报错。以下结合操作步骤与示例整理易错点，其中环境故障属于预防性排查。\n\n- 找不到 requirements.txt → 工作目录错误，或下载包结构不同 → 执行 Get-Location 和 Get-ChildItem -Force，定位真实根目录后再运行安装命令。\n\n- 提示无法识别 py → Windows Python 启动器不可用 → 执行 python --version 检查解释器；若版本合适，可改用 python -m venv .venv，随后仍调用 .venv\\Scripts\\python.exe 安装依赖。\n\n- 依赖安装成功但 Agent 仍报缺少模块 → 安装与运行使用了不同解释器 → 执行 .\\.venv\\Scripts\\python.exe -m pip check，并要求 Agent 使用同一解释器重试原命令。\n\n- Agent 找不到材料 → 文件未上传成功、路径错误或目录不可访问 → 使用 Test-Path -LiteralPath '材料的实际完整路径' 检查，再将准确路径交给 Agent。\n\n- 合并后内容重复或前后矛盾 → 只要求拼接页面，没有先整理内容 → 发送“先列出重复与冲突信息，核对后重组页序，再统一风格”。\n\n- 组会稿将计划写成成果 → 未区分实验状态与推测 → 发送“逐页区分已完成结果、待验证假设与后续计划，并标注证据来源”。\n\n- 字体太小或装饰干扰阅读 → 单页信息过多，或模板元素不适合当前内容 → 发送“指定页增大字号、拆分过密内容、删除指定装饰，并检查溢出”，不要只要求整体美化。\n\n- ZIP 下载的项目无法执行 git pull → 解压目录没有 Git 历史 → 从官方页面下载新版本并解压到新目录，迁移工作文件和必要配置后重新安装依赖。\n\n- 文件已生成但无法正常交付 → 只检查了导出成功，未检查实际打开效果 → 用目标演示软件打开 PPTX，逐页检查字体、图片、备注与对象编辑情况。\n\n验证清单\n\n- [x] 掌握环境检查标准：项目根目录正确，Python 版本符合要求，安装与运行使用同一解释器。\n- [x] 掌握输入准备标准：内容来源、视觉模板和汇报目标分别明确，材料可被 Agent 实际读取。\n- [x] 掌握内容验收标准：数据与引用可追溯，已完成结果、假设和计划没有混淆。\n- [x] 掌握交付验收标准：实际打开 PPTX 逐页检查，确认关键对象可编辑且无文本溢出、遮挡或图片缺失。",
+      "visualCode": "T-004",
+      "globalCode": "X-004"
     },
     {
       "id": "concept-markdown-basics",
@@ -350,7 +518,7 @@
       "prerequisites": [],
       "related": [
         "tool-obsidian",
-        "tool-ppt-master"
+        "tools-ppt-master-workflow"
       ],
       "aliases": [],
       "relPath": "content/computing/markdown-basics.md",
@@ -405,7 +573,7 @@
       ],
       "plainText": "Markdown 核心语法与技术写作规范\n\n快速复习\n\n- 标题：# H1（每篇仅一个主标题）、## H2（大章节，自动进入右侧 TOC 目录）、### H3（子步骤）。\n- 代码块：使用三个反引号加语言标识（如  `bash 、 `python 、 `r ），避免使用缩进式代码块。\n- 数学公式：行内公式使用单美元符号 E = mc^2，独立公式块使用双美元符号 ...。\n- 表格与清单：使用 | 列1 | 列2 | 绘制表格，使用 - [x] 与 - [ ] 记录可勾选的实验/部署核查项。\n\n核心定义\n\nMarkdown 是一种轻量级纯文本标记语言。它允许作者使用易读易写的纯文本格式编写文档，随后在构建期确定性地转换为结构化 HTML 页面。在 ATLAS 中，Markdown 是所有知识条目的唯一权威信源（Single Source of Truth）。\n\n常用语法示例\n\n1. 围栏代码块与终端命令\n\n``bash\n校验内容完整性并构建静态索引\nnpm run check:content\nnpm run build:content\n`\n\n2. 结构化对比表格\n\n| 语法元素 | 写法示例 | 典型用途 |\n| --- | --- | --- |\n| 行内代码 |  import.meta.env.BASE_URL  | 变量名、文件路径、快捷键、命令参数 |\n| 引用提示 | > 注意：操作前先备份 | 关键前提、安全警告与重点结论 |\n| 任务清单 | - [x] 已验证步骤 | 实验 SOP 核对单、发布前检查表 |\n\n3. LaTeX 数学与生化公式\n\n行内公式示例：米氏常数 K_m 表示酶促反应速率达到最大反应速率 V_{\\max} 一半时的底物浓度。\n\n独立公式块示例：\n\n\\text{pH} = \\text{p}K_a + \\log_{10}\\left(\\frac{[\\text{A}^-]}{[\\text{HA}]}\\right)\n\n易错点与规范约束\n\n1. 禁止依赖未闭合的原始 HTML 标签：为保障公开站点安全并支持多端迁移，正文内不写 <script> 或裸 <iframe>`。\n2. 中英文混排留白：建议在中文与英文单词、数字之间保持清晰可读性；代码块必须标注语言名称以启用语法高亮与一键复制。",
       "visualCode": "C-001",
-      "globalCode": "X-004"
+      "globalCode": "X-005"
     },
     {
       "id": "skill-git-workflow",
@@ -459,7 +627,7 @@
       ],
       "plainText": "Git 日常提交、救命回滚与分支速查卡\n\n快速复习\n\n``bash\n1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . && git commit --amend --no-edit\n\n3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m \"wip: 整理实验笔记\"\ngit stash pop\n\n5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10\n`\n\n状态与回退对照表\n\n| 场景 | 推荐命令 | 是否保留工作区修改 |\n| --- | --- | --- |\n| 刚 git add 错了文件想撤回暂存 | git restore --staged <file> | 保留 |\n| 想放弃单个文件的未暂存修改 | git restore <file> | 丢弃该文件修改 |\n| 刚 commit 完发现提交早了 | git reset --soft HEAD~1 | 保留 |\n| 已推送到远程分支需要公开回滚 | git revert <commit-sha>` | 生成新反向提交 |",
       "visualCode": "C-002",
-      "globalCode": "X-005"
+      "globalCode": "X-006"
     },
     {
       "id": "skill-github-pages",
@@ -550,7 +718,7 @@
       ],
       "plainText": "GitHub Actions 自动化构建与 GitHub Pages 部署\n\n快速复习\n\n1. 仓库网页端进入 Settings → Pages → Build and deployment，将 Source 改为 GitHub Actions。\n2. 在 vite.config.ts 中确保子路径基址支持环境变量（如 process.env.ATLAS_BASE || '/'），当部署在 https://<user>.github.io/<repo>/ 时设为 /<repo>/。\n3. 工作流文件置于 .github/workflows/deploy.yml，为部署作业声明最小权限：pages: write 与 id-token: write。\n\n适用场景\n\n将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。\n\n前置准备\n\n- 已创建 GitHub 公开仓库（如 Personal-Atlas）\n- 本地 npm run check:content 与 npm run build 均能正常通过\n\n操作步骤\n\n1. 配置仓库 Pages 构建源\n\n打开 GitHub 仓库页面：\n1. 点击顶部 Settings；\n2. 左侧导航栏选择 Pages；\n3. 在 Build and deployment → Source 下拉框中选择 GitHub Actions。\n\n2. 编写 .github/workflows/deploy.yml\n\n``yaml\nname: Deploy ATLAS to GitHub Pages\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: \"pages\"\n  cancel-in-progress: true\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - name: Install dependencies\n        run: npm ci\n      - name: Validate & Build Content\n        run: |\n          npm run check:content\n          npm run build\n        env:\n          ATLAS_BASE: /{{ github.event.repository.name }}/\n      - name: Upload Pages artifact\n        if: github.event_name != 'pull_request'\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: ./dist\n\n  deploy:\n    needs: build\n    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: {{ steps.deployment.outputs.page_url }}\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4\n`\n\n验证结果\n\n- 向 main 推送一次提交后，GitHub Actions 标签页中 build 与 deploy 两个作业均显示绿色勾选。\n- 打开输出的 page_url，首页、二维阅读器、搜索及三维档案模型均正常加载，浏览器控制台无 404 报错。\n\n常见问题与修复\n\n- 问题：部署成功但页面白屏，控制台提示 /assets/index-xxx.js 404`。  \n  修复：详见排错档案 Vite 部署 GitHub Pages 静态资源 404 排查。",
       "visualCode": "C-003",
-      "globalCode": "X-006"
+      "globalCode": "X-007"
     },
     {
       "id": "skill-r-dataframe",
@@ -609,7 +777,7 @@
       ],
       "plainText": "R 语言数据框（tidyverse / dplyr）高频清洗速查\n\n快速复习\n\n``r\nlibrary(tidyverse)\n\n核心五动词流水线：筛选行 -> 新增列 -> 分组汇总 -> 排序\nsummary_df <- raw_df |>\n  filter(!is.na(expression), padj < 0.05) |>\n  mutate(log2_fc = log2(treated / control)) |>\n  group_by(cell_line, treatment) |>\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = \"drop\"\n  ) |>\n  arrange(desc(abs(mean_fc)))\n`\n\n宽表与长表互转（画 ggplot2 必用）\n\n`r\n宽表转长表（把多个样本列收拢为 sample 与 value 两列）\nlong_df <- wide_df |>\n  pivot_longer(\n    cols = starts_with(\"Rep_\"),\n    names_to = \"replicate\",\n    values_to = \"intensity\"\n  )\n\n长表转回宽表\nwide_again <- long_df |>\n  pivot_wider(names_from = replicate, values_from = intensity)\n`\n\n验证与排查小贴士\n\n- 每次 left_join(a, b, by = \"gene_id\") 前，先用 count(b, gene_id) |> filter(n > 1)` 检查右表是否有重复键，防止行数意外翻倍！",
       "visualCode": "C-004",
-      "globalCode": "X-007"
+      "globalCode": "X-008"
     },
     {
       "id": "troubleshooting-vite-assets",
@@ -689,7 +857,7 @@
         }
       ],
       "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>症状</strong>：本地 <code class=\"atlas-inline-code\">npm run dev</code> 一切正常，部署到 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 后页面空白，或 Three.js 的 <code class=\"atlas-inline-code\">.glb</code> 模型、音频、图片报 <code class=\"atlas-inline-code\">404 Not Found</code>。</li><li><strong>根因</strong>：GitHub Pages 项目站点部署在子路径 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code> 下，而代码中使用了以 <code class=\"atlas-inline-code\">/</code> 开头的绝对根路径（如 <code class=\"atlas-inline-code\">fetch(&#39;/assets/model.glb&#39;)</code>），浏览器会错误请求 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/assets/model.glb</code>。</li><li><strong>三步根治</strong>：</li><li><code class=\"atlas-inline-code\">vite.config.ts</code> 配置正确的 <code class=\"atlas-inline-code\">base</code>（如 <code class=\"atlas-inline-code\">/Personal-Atlas/</code>）；</li><li>所有运行期动态资源统一经过 <code class=\"atlas-inline-code\">assetUrl(path)</code> 拼接 <code class=\"atlas-inline-code\">import.meta.env.BASE_URL</code>；</li><li><code class=\"atlas-inline-code\">index.html</code> 中的静态引用使用相对路径 <code class=\"atlas-inline-code\">./favicon.svg</code> 或由 Vite 自动转换。</li></ol>",
-      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>症状</strong>：本地 <code class=\"atlas-inline-code\">npm run dev</code> 一切正常，部署到 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 后页面空白，或 Three.js 的 <code class=\"atlas-inline-code\">.glb</code> 模型、音频、图片报 <code class=\"atlas-inline-code\">404 Not Found</code>。</li><li><strong>根因</strong>：GitHub Pages 项目站点部署在子路径 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code> 下，而代码中使用了以 <code class=\"atlas-inline-code\">/</code> 开头的绝对根路径（如 <code class=\"atlas-inline-code\">fetch(&#39;/assets/model.glb&#39;)</code>），浏览器会错误请求 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/assets/model.glb</code>。</li><li><strong>三步根治</strong>：</li><li><code class=\"atlas-inline-code\">vite.config.ts</code> 配置正确的 <code class=\"atlas-inline-code\">base</code>（如 <code class=\"atlas-inline-code\">/Personal-Atlas/</code>）；</li><li>所有运行期动态资源统一经过 <code class=\"atlas-inline-code\">assetUrl(path)</code> 拼接 <code class=\"atlas-inline-code\">import.meta.env.BASE_URL</code>；</li><li><code class=\"atlas-inline-code\">index.html</code> 中的静态引用使用相对路径 <code class=\"atlas-inline-code\">./favicon.svg</code> 或由 Vite 自动转换。</li></ol>\n<h2 id=\"问题症状与环境\" class=\"atlas-heading atlas-h2\"><a href=\"#问题症状与环境\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>问题症状与环境</h2>\n<ul class=\"atlas-list\"><li><strong>环境</strong>：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。</li><li><strong>报错信息</strong>：</li></ul>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\">COPY</button></div><pre><code>  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.</code></pre></div>\n<h2 id=\"原因分析\" class=\"atlas-heading atlas-h2\"><a href=\"#原因分析\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>原因分析</h2>\n<ol class=\"atlas-list\"><li><code class=\"atlas-inline-code\">vite.config.ts</code> 中 <code class=\"atlas-inline-code\">base</code> 默认是 <code class=\"atlas-inline-code\">&#39;/&#39;</code>，构建产物 <code class=\"atlas-inline-code\">dist/index.html</code> 引用的 JS/CSS 全部从域名根目录 <code class=\"atlas-inline-code\">/assets/...</code> 查找。</li><li>即使修改了 <code class=\"atlas-inline-code\">vite.config.ts</code> 的 <code class=\"atlas-inline-code\">base</code>，TypeScript 代码中传给 <code class=\"atlas-inline-code\">GLTFLoader.load(&#39;/assets/xxx.glb&#39;)</code> 或 <code class=\"atlas-inline-code\">new Audio(&#39;/audio/xxx.ogg&#39;)</code> 的字符串字面量不会被 Vite 自动重写。</li></ol>\n<h2 id=\"修复步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#修复步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复步骤</h2>\n<h3 id=\"1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading atlas-h3\"><a href=\"#1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 让 <code class=\"atlas-inline-code\">vite.config.ts</code> 支持可配置基址</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\">COPY</button></div><pre><code>// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});</code></pre></div>\n<h3 id=\"2-统一使用-asseturl-解析器\" class=\"atlas-heading atlas-h3\"><a href=\"#2-统一使用-asseturl-解析器\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 统一使用 <code class=\"atlas-inline-code\">assetUrl</code> 解析器</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};\">COPY</button></div><pre><code>// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};</code></pre></div>\n<h3 id=\"3-本地模拟子路径回归验证\" class=\"atlas-heading atlas-h3\"><a href=\"#3-本地模拟子路径回归验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 本地模拟子路径回归验证</h3>\n<p>无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：</p>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/\">COPY</button></div><pre><code># Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/</code></pre></div>\n<h2 id=\"修复验证\" class=\"atlas-heading atlas-h2\"><a href=\"#修复验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复验证</h2>\n<ul class=\"atlas-list\"><li>打开浏览器开发者工具 <strong>Network</strong> 面板，勾选 <code class=\"atlas-inline-code\">Disable cache</code> 并刷新页面；</li><li>确认所有 <code class=\"atlas-inline-code\">.js</code>、<code class=\"atlas-inline-code\">.css</code>、<code class=\"atlas-inline-code\">.woff2</code>、<code class=\"atlas-inline-code\">.glb</code>、<code class=\"atlas-inline-code\">entries-manifest</code> 请求的状态码均为 <code class=\"atlas-inline-code\">200</code>，且 URL 均带有正确的基址前缀。</li></ul>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>症状</strong>：本地 <code class=\"atlas-inline-code\">npm run dev</code> 一切正常，部署到 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 后页面空白，或 Three.js 的 <code class=\"atlas-inline-code\">.glb</code> 模型、音频、图片报 <code class=\"atlas-inline-code\">404 Not Found</code>。</li><li><strong>根因</strong>：GitHub Pages 项目站点部署在子路径 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code> 下，而代码中使用了以 <code class=\"atlas-inline-code\">/</code> 开头的绝对根路径（如 <code class=\"atlas-inline-code\">fetch(&#39;/assets/model.glb&#39;)</code>），浏览器会错误请求 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/assets/model.glb</code>。</li><li><strong>三步根治</strong>：</li><li><code class=\"atlas-inline-code\">vite.config.ts</code> 配置正确的 <code class=\"atlas-inline-code\">base</code>（如 <code class=\"atlas-inline-code\">/Personal-Atlas/</code>）；</li><li>所有运行期动态资源统一经过 <code class=\"atlas-inline-code\">assetUrl(path)</code> 拼接 <code class=\"atlas-inline-code\">import.meta.env.BASE_URL</code>；</li><li><code class=\"atlas-inline-code\">index.html</code> 中的静态引用使用相对路径 <code class=\"atlas-inline-code\">./favicon.svg</code> 或由 Vite 自动转换。</li></ol>\n<h2 id=\"问题症状与环境\" class=\"atlas-heading atlas-h2\"><a href=\"#问题症状与环境\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>问题症状与环境</h2>\n<ul class=\"atlas-list\"><li><strong>环境</strong>：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。</li><li><strong>报错信息</strong>：</li></ul>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\nFailed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\">COPY</button></div><pre><code>GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\nFailed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.</code></pre></div>\n<h2 id=\"原因分析\" class=\"atlas-heading atlas-h2\"><a href=\"#原因分析\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>原因分析</h2>\n<ol class=\"atlas-list\"><li><code class=\"atlas-inline-code\">vite.config.ts</code> 中 <code class=\"atlas-inline-code\">base</code> 默认是 <code class=\"atlas-inline-code\">&#39;/&#39;</code>，构建产物 <code class=\"atlas-inline-code\">dist/index.html</code> 引用的 JS/CSS 全部从域名根目录 <code class=\"atlas-inline-code\">/assets/...</code> 查找。</li><li>即使修改了 <code class=\"atlas-inline-code\">vite.config.ts</code> 的 <code class=\"atlas-inline-code\">base</code>，TypeScript 代码中传给 <code class=\"atlas-inline-code\">GLTFLoader.load(&#39;/assets/xxx.glb&#39;)</code> 或 <code class=\"atlas-inline-code\">new Audio(&#39;/audio/xxx.ogg&#39;)</code> 的字符串字面量不会被 Vite 自动重写。</li></ol>\n<h2 id=\"修复步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#修复步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复步骤</h2>\n<h3 id=\"1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading atlas-h3\"><a href=\"#1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 让 <code class=\"atlas-inline-code\">vite.config.ts</code> 支持可配置基址</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\">COPY</button></div><pre><code>// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});</code></pre></div>\n<h3 id=\"2-统一使用-asseturl-解析器\" class=\"atlas-heading atlas-h3\"><a href=\"#2-统一使用-asseturl-解析器\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 统一使用 <code class=\"atlas-inline-code\">assetUrl</code> 解析器</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};\">COPY</button></div><pre><code>// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};</code></pre></div>\n<h3 id=\"3-本地模拟子路径回归验证\" class=\"atlas-heading atlas-h3\"><a href=\"#3-本地模拟子路径回归验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 本地模拟子路径回归验证</h3>\n<p>无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：</p>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/\">COPY</button></div><pre><code># Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/</code></pre></div>\n<h2 id=\"修复验证\" class=\"atlas-heading atlas-h2\"><a href=\"#修复验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复验证</h2>\n<ul class=\"atlas-list\"><li>打开浏览器开发者工具 <strong>Network</strong> 面板，勾选 <code class=\"atlas-inline-code\">Disable cache</code> 并刷新页面；</li><li>确认所有 <code class=\"atlas-inline-code\">.js</code>、<code class=\"atlas-inline-code\">.css</code>、<code class=\"atlas-inline-code\">.woff2</code>、<code class=\"atlas-inline-code\">.glb</code>、<code class=\"atlas-inline-code\">entries-manifest</code> 请求的状态码均为 <code class=\"atlas-inline-code\">200</code>，且 URL 均带有正确的基址前缀。</li></ul>",
       "findings": [
         "症状：本地 npm run dev 一切正常，部署到 https://<user>.github.io/<repo>/ 后页面空白，或 Three.js 的 .glb 模型、音频、图片报 404 Not Found。",
         "根因：GitHub Pages 项目站点部署在子路径 /<repo>/ 下，而代码中使用了以 / 开头的绝对根路径（如 fetch('/assets/model.glb')），浏览器会错误请求 https://<user>.github.io/assets/model.glb。",
@@ -700,7 +868,7 @@
       ],
       "plainText": "Vite 部署 GitHub Pages 静态资源与模型 404 排查\n\n快速复习\n\n1. 症状：本地 npm run dev 一切正常，部署到 https://<user>.github.io/<repo>/ 后页面空白，或 Three.js 的 .glb 模型、音频、图片报 404 Not Found。\n2. 根因：GitHub Pages 项目站点部署在子路径 /<repo>/ 下，而代码中使用了以 / 开头的绝对根路径（如 fetch('/assets/model.glb')），浏览器会错误请求 https://<user>.github.io/assets/model.glb。\n3. 三步根治：\n   - vite.config.ts 配置正确的 base（如 /Personal-Atlas/）；\n   - 所有运行期动态资源统一经过 assetUrl(path) 拼接 import.meta.env.BASE_URL；\n   - index.html 中的静态引用使用相对路径 ./favicon.svg 或由 Vite 自动转换。\n\n问题症状与环境\n\n- 环境：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。\n- 报错信息：\n  ``text\n  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\n  `\n\n原因分析\n\n1. vite.config.ts 中 base 默认是 '/'，构建产物 dist/index.html 引用的 JS/CSS 全部从域名根目录 /assets/... 查找。\n2. 即使修改了 vite.config.ts 的 base，TypeScript 代码中传给 GLTFLoader.load('/assets/xxx.glb') 或 new Audio('/audio/xxx.ogg') 的字符串字面量不会被 Vite 自动重写。\n\n修复步骤\n\n1. 让 vite.config.ts 支持可配置基址\n\n`ts\n// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || \"/\";\nconst normalizedBase = rawBase.endsWith(\"/\") ? rawBase : {rawBase}/;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\n`\n\n2. 统一使用 assetUrl 解析器\n\n`ts\n// src/asset-url.ts\nexport const assetUrl = (path: string) => {\n  const clean = path.replace(/^\\.?\\//, \"\");\n  return {import.meta.env.BASE_URL}{clean};\n};\n`\n\n3. 本地模拟子路径回归验证\n\n无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：\n\n`bash\nWindows PowerShell 本地模拟子路径构建\nenv:ATLAS_BASE=\"/Personal-Atlas/\"; npm run build; npx vite preview --base /Personal-Atlas/\n`\n\n修复验证\n\n- 打开浏览器开发者工具 Network 面板，勾选 Disable cache 并刷新页面；\n- 确认所有 .js、.css、.woff2、.glb、entries-manifest 请求的状态码均为 200`，且 URL 均带有正确的基址前缀。",
       "visualCode": "C-005",
-      "globalCode": "X-008"
+      "globalCode": "X-009"
     },
     {
       "id": "skill-cell-observation",
@@ -781,7 +949,7 @@
       ],
       "plainText": "贴壁细胞日常形态观察与污染排查入门\n\n快速复习\n\n1. 先肉眼看培养液颜色与透明度：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。\n2. 低倍镜（4× / 10×）看整体分布与汇合度（Confluency）：当汇合度达 80%～85%（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。\n3. 高倍镜（20×）看状态细节：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。\n\n适用场景\n\n每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。\n\n前置准备\n\n- 75% 医用酒精喷壶、无尘擦镜纸\n- 倒置相差显微镜（确认聚光镜与相差环已对中）\n\n操作步骤\n\n1. 传代时机与汇合度评估\n\n- < 30%：稀疏生长期，换液不传代；\n- 70% ~ 85%：最佳传代与实验铺板窗口；\n- > 95%：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。\n\n2. 三大常见污染快速鉴别表\n\n| 污染类型 | 培养液外观 | 镜下典型特征 | 应急处置 |\n| --- | --- | --- | --- |\n| 细菌污染 | 12–24h 内迅速变黄、浑浊 | 细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动 | 勿开盖！直接加含氯消毒液浸泡后密封丢弃 |\n| 霉菌/酵母污染 | 初期清亮，后期出现白色/淡黄色漂浮团块 | 可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串 | 立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘 |\n| 支原体污染 | 培养液清亮，pH 变化慢，极易漏诊 | 细胞生长变慢、形态拉长或碎裂，背景有细砂状附着 | 进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理 |\n\n验证结果\n\n- 每次观察后在实验记录本登记：细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代），确保前后批次实验可追溯。",
       "visualCode": "R-001",
-      "globalCode": "X-009"
+      "globalCode": "X-010"
     },
     {
       "id": "skill-molecular-docking",
@@ -869,7 +1037,7 @@
       ],
       "plainText": "AutoDock Vina 分子对接标准流程概览\n\n快速复习\n\n1. 受体准备（Receptor）：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 .pdbqt。\n2. 配体准备（Ligand）：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 .pdbqt。\n3. 对接盒子（Grid Box）：以原结晶配体质心或预测口袋为中心，边长通常设为 20 Å × 20 Å × 20 Å（确保包裹整个活性位点且不过大）。\n4. 判读经验阈值：Vina 结合自由能 \\Delta G \\le -7.0\\text{ kcal/mol} 通常指示较强结合潜力，但必须结合 氢键距离（< 3.5 Å） 与疏水相互作用构象合理性综合判断。\n\n适用场景\n\n靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。\n\n前置准备\n\n- 已安装 AutoDock Vina、AutoDockTools (MGLTools) 或 Meeko、OpenBabel、PyMOL\n- 靶标蛋白晶体结构（优先选择分辨率 < 2.5\\text{ \\AA} 且含共晶配体的 PDB 条目）\n\n操作步骤\n\n1. 编写 Vina 对接配置文件 config.txt\n\n``ini\nreceptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\n`\n\n2. 运行对接与重对接验证（Redocking）\n\n`bash\n运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\n`\n\n> 金标准控制（Redocking）：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 \\text{RMSD}。当 \\text{RMSD} < 2.0\\text{ \\AA} 时，说明当前参数与盒子设置可靠。\n\n验证结果\n\n- docked_poses.pdbqt 生成多个打分构象，Mode 1 结合能最低；\n- 在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 \\pi-\\pi 堆积，且无明显空间位阻碰撞（Clash）。\n\n常见问题与修复\n\n- 问题：对接打分全部为正值（如 +15.2 kcal/mol）。  \n  原因：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。  \n  修复：在 PyMOL 中选中原配体执行 get_extent ligand` 重新核对中心坐标 (x, y, z)。",
       "visualCode": "R-002",
-      "globalCode": "X-010"
+      "globalCode": "X-011"
     },
     {
       "id": "academics-biostatistics-tests",
@@ -922,7 +1090,7 @@
       ],
       "plainText": "生物统计常用假设检验方法选择速查卡\n\n快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| 两组独立样本 | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| 两组配对样本 | Paired t-test | — | Wilcoxon 符号秩检验 |\n| 三组及以上独立样本 | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| 分类变量频数表 | 卡方检验（\\chi^2，n \\ge 40 且期望频数 \\ge 5） | — | Fisher 精确检验（小样本首选） |\n\n待补充核对项（TODO）\n\n- [ ] 补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段\n- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明",
       "visualCode": "A-001",
-      "globalCode": "X-011"
+      "globalCode": "X-012"
     },
     {
       "id": "concept-enzyme-kinetics",
@@ -988,7 +1156,7 @@
       ],
       "plainText": "米氏方程（Michaelis-Menten）与酶抑制类型判读\n\n快速复习\n\n- 米氏方程标准形式：\n  v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\n- K_m 的核心意义：当反应初速度 v_0 = \\frac{1}{2} V_{\\max} 时的底物浓度 [S]（单位与浓度相同，如 \\text{mmol/L}）。K_m 越小，表示酶对底物的表观亲和力越高。\n- 三大可逆抑制速记：\n  - 竞争性抑制：抢活性中心 → V_{\\max} 不变，表观 K_m 增大；\n  - 非竞争性抑制：绑别构位点降活性 → V_{\\max} 降低，表观 K_m 不变；\n  - 反竞争性抑制：只绑 ES 复合物 → V_{\\max} 与 K_m 同比例降低。\n\n核心定义与稳态推导\n\n在酶促反应体系中，酶 E 与底物 S 可逆结合生成中间复合物 ES，随后生成产物 P：\n\nE + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P\n\n在稳态近似（\\frac{d[ES]}{dt} = 0）条件下，定义米氏常数 K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}，且最大反应速率 V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}。\n\nLineweaver-Burk 双倒数方程\n\n对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：\n\n\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}\n\n| 抑制类型 | 结合对象 | 表观 V_{\\max} | 表观 K_m | 双倒数图交点位置 |\n| --- | --- | --- | --- | --- |\n| 竞争性抑制 | 游离酶 E | 不变 | 增大 (1 + [I]/K_i) | 交于纵轴（y 轴截距不变） |\n| 非竞争性抑制 | E 与 ES 均結合 | 减小 | 不变 | 交于横轴（x 轴截距不变） |\n| 反竞争性抑制 | 仅结合 ES 复合物 | 减小 | 减小 | 多条平行线（斜率 K_m/V_{\\max} 不变） |\n\n易错点与实验建议\n\n1. K_m 与酶浓度无关：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 V_{\\max} 与体系中加入的酶总浓度 [E]_t 成正比。\n2. 拟合软件推荐：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用非线性回归（Nonlinear regression）拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。",
       "visualCode": "A-002",
-      "globalCode": "X-012"
+      "globalCode": "X-013"
     },
     {
       "id": "life-feynman-teaching",
@@ -1015,7 +1183,7 @@
       "prerequisites": [],
       "related": [
         "skill-cell-observation",
-        "tool-ppt-master"
+        "tools-ppt-master-workflow"
       ],
       "aliases": [],
       "relPath": "content/life/feynman-teaching.md",
@@ -1060,7 +1228,7 @@
       ],
       "plainText": "费曼技巧与实验室新人带教四步法\n\n快速复习\n\n1. 先讲“为什么要做这一步（Why & 失败后果）”，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。\n2. 三遍带教节奏：\n   - 第一遍：我做你看，我讲关键控制点；\n   - 第二遍：你做我看，操作前先口述下一步；\n   - 第三遍：你独立做，对照 ATLAS 档案清单自检结果。\n3. 卡壳即知识盲区：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 inbox/ 查文献补齐。\n\n操作步骤\n\n1. 拆解操作颗粒度\n\n将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。\n\n2. 让学习者用自己的话复述\n\n不要问“听懂了吗？”（回答永远是“懂了”），而是问：\n- “如果这一步离心转速设高了一倍，沉淀会出什么问题？”\n- “你现在复述一下接下来 5 分钟的三个动作顺序。”\n\n验证结果\n\n- 被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。",
       "visualCode": "L-001",
-      "globalCode": "X-013"
+      "globalCode": "X-014"
     },
     {
       "id": "life-video-export-presets",
@@ -1109,7 +1277,7 @@
       ],
       "plainText": "视频导出与压制常用 H.264 / AAC 参数速查\n\n快速复习\n\n日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：\n\n``bash\n1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\n`\n\n关键参数备忘\n\n- -pix_fmt yuv420p：必加，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。\n- -movflags +faststart：将 moov atom` 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。",
       "visualCode": "L-002",
-      "globalCode": "X-014"
+      "globalCode": "X-015"
     },
     {
       "id": "inbox-docker-port-conflict",
@@ -1145,7 +1313,7 @@
       ],
       "plainText": "Windows 端口被占用（EADDRINUSE）快速定位与释放\n\n刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：\n\n``powershell\n查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n根据 PID 结束进程\nStop-Process -Id <PID> -Force\n``",
       "visualCode": "D-001",
-      "globalCode": "X-015"
+      "globalCode": "X-016"
     }
   ]
 }

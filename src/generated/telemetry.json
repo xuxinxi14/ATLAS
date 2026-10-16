@@ -1,0 +1,164 @@
+{
+  "generatedAt": "2026-10-16",
+  "totalEntries": 14,
+  "inboxCount": 1,
+  "statusCounts": {
+    "proficient": 11,
+    "learning": 1,
+    "todo": 1,
+    "review": 1,
+    "draft": 1
+  },
+  "typeCounts": {
+    "concept": 2,
+    "skill": 7,
+    "troubleshooting": 1,
+    "snippet": 5
+  },
+  "portalStats": [
+    {
+      "id": "tools",
+      "title": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "codePrefix": "T",
+      "description": "PPT-Master、Aegisub、Obsidian、办公与科研工具链操作指南",
+      "total": 3,
+      "proficient": 3,
+      "learning": 0,
+      "todo": 0,
+      "review": 0
+    },
+    {
+      "id": "computing",
+      "title": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "codePrefix": "C",
+      "description": "Markdown、Git、Python、R、Vite、AI Agent 协作与技术排错",
+      "total": 5,
+      "proficient": 4,
+      "learning": 1,
+      "todo": 0,
+      "review": 0
+    },
+    {
+      "id": "research",
+      "title": "科研与实验",
+      "en": "RESEARCH & LAB",
+      "codePrefix": "R",
+      "description": "细胞培养、分子对接、实验操作标准流程（SOP）与文献工作流",
+      "total": 2,
+      "proficient": 1,
+      "learning": 0,
+      "todo": 0,
+      "review": 1
+    },
+    {
+      "id": "academics",
+      "title": "学科知识",
+      "en": "ACADEMICS & CORE",
+      "codePrefix": "A",
+      "description": "生物学、生物化学、统计学、数学公式推导与核心课程总结",
+      "total": 2,
+      "proficient": 1,
+      "learning": 0,
+      "todo": 1,
+      "review": 0
+    },
+    {
+      "id": "life",
+      "title": "创作与生活",
+      "en": "CREATIVE & LIFE",
+      "codePrefix": "L",
+      "description": "视频后期、教学技巧、运动健康与日常实用问题解决记录",
+      "total": 2,
+      "proficient": 2,
+      "learning": 0,
+      "todo": 0,
+      "review": 0
+    }
+  ],
+  "reviewQueue": [
+    {
+      "id": "skill-molecular-docking",
+      "slug": "research/molecular-docking",
+      "title": "AutoDock Vina 分子对接标准流程概览",
+      "category": "research",
+      "categoryTitle": "科研与实验",
+      "updated": "2026-03-15",
+      "daysSinceUpdate": 215,
+      "reason": "已标记为需校准 (review)"
+    }
+  ],
+  "recentEntries": [
+    {
+      "id": "tool-aegisub",
+      "slug": "tools/aegisub",
+      "title": "Aegisub 字幕时间轴与样式基础",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "T-001"
+    },
+    {
+      "id": "tool-obsidian",
+      "slug": "tools/obsidian",
+      "title": "Obsidian 本地知识库与 ATLAS 协同工作流",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "T-002"
+    },
+    {
+      "id": "tool-ppt-master",
+      "slug": "tools/ppt-master",
+      "title": "PPT-Master 演示文稿工作流指南",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "T-003"
+    },
+    {
+      "id": "concept-markdown-basics",
+      "slug": "computing/markdown-basics",
+      "title": "Markdown 核心语法与技术写作规范",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "type": "concept",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "C-001"
+    },
+    {
+      "id": "skill-git-workflow",
+      "slug": "computing/git-workflow",
+      "title": "Git 日常提交、救命回滚与分支速查卡",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "type": "snippet",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "C-002"
+    },
+    {
+      "id": "skill-github-pages",
+      "slug": "computing/github-pages",
+      "title": "GitHub Actions 自动化构建与 GitHub Pages 部署",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-10-16",
+      "visualCode": "C-003"
+    }
+  ],
+  "activityByDate": {
+    "2026-10-16": 14,
+    "2026-03-15": 1
+  }
+}

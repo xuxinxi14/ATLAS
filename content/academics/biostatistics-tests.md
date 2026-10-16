@@ -1,0 +1,35 @@
+---
+id: academics-biostatistics-tests
+title: 生物统计常用假设检验方法选择速查卡
+slug: academics/biostatistics-tests
+type: snippet
+category: academics
+subcategory: statistics
+tags: [生物统计, 假设检验, t检验, ANOVA, 速查卡]
+status: todo
+summary: 根据样本组数、正态性与方差齐性快速决定使用 Student's t-test、Welch's t-test、Mann-Whitney U 还是 ANOVA。
+created: 2026-10-10
+updated: 2026-10-16
+version_scope: "实验设计与统计分析通用规则"
+source_urls: []
+prerequisites: []
+related:
+  - skill-r-dataframe
+aliases: []
+---
+
+# 生物统计常用假设检验方法选择速查卡
+
+## 快速复习
+
+| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |
+| --- | --- | --- | --- |
+| **两组独立样本** | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |
+| **两组配对样本** | Paired t-test | — | Wilcoxon 符号秩检验 |
+| **三组及以上独立样本** | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |
+| **分类变量频数表** | 卡方检验（$\chi^2$，$n \ge 40$ 且期望频数 $\ge 5$） | — | Fisher 精确检验（小样本首选） |
+
+## 待补充核对项（TODO）
+
+- [ ] 补充 R 语言中 `shapiro.test()` 正态性检验与 `car::leveneTest()` 方差齐性检验代码片段
+- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明

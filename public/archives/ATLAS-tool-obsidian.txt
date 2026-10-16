@@ -1,0 +1,62 @@
+﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
+FILE T-002 (tool-obsidian) / Obsidian 本地知识库与 ATLAS 协同工作流
+TOOLS & WORKFLOW · SKILL · STATUS: PROFICIENT
+
+所属领域：软件与工具 (tools)
+适用范围：Obsidian 1.6+
+更新日期：2026-10-16
+标签：Obsidian, Markdown, 知识管理, Git
+
+【摘要】
+将 ATLAS 的 content/ 目录作为 Obsidian 仓库直接打开，实现同级截图粘贴与无感 Git 归档。
+
+【核心要点】
+1. 打开 Obsidian → 打开本地仓库（Open folder as vault） → 直接选择本项目下的 e:\ATLAS\content 目录。
+2. 在 Obsidian 设置 → 文件与链接 中，将 附件默认存放路径 设为 当前文件所在目录下的子文件夹，子文件夹名称填 assets，并开启 使用相对路径。
+3. 如此配置后，在 Obsidian 里直接 Ctrl + V 粘贴截图会自动存入 ./assets/，与 ATLAS 构建流水线 100% 兼容！
+4. 日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。
+5. 已安装 Obsidian 桌面端
+6. 本机已拉取 ATLAS 仓库
+
+【正文内容】
+Obsidian 本地知识库与 ATLAS 协同工作流
+
+快速复习
+
+1. 打开 Obsidian → 打开本地仓库（Open folder as vault） → 直接选择本项目下的 e:\ATLAS\content 目录。
+2. 在 Obsidian 设置 → 文件与链接 中，将 附件默认存放路径 设为 当前文件所在目录下的子文件夹，子文件夹名称填 assets，并开启 使用相对路径。
+3. 如此配置后，在 Obsidian 里直接 Ctrl + V 粘贴截图会自动存入 ./assets/，与 ATLAS 构建流水线 100% 兼容！
+
+适用场景
+
+日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。
+
+前置准备
+
+- 已安装 Obsidian 桌面端
+- 本机已拉取 ATLAS 仓库
+
+操作步骤
+
+1. 关键设置对齐（一次性配置）
+
+在 Obsidian 设置中调整以下三项，确保生成的 Markdown 可移植且通过 ATLAS 构建校验：
+
+| 设置位置 | 推荐配置值 | 作用 |
+| --- | --- | --- |
+| 文件与链接 → 新建笔记的默认位置 | in the folder specified below → inbox | 随手按 Ctrl+N 新建的闪念自动进入 inbox/ 草稿箱 |
+| 文件与链接 → 新建链接的格式 | 基于文件路径的相对路径 | 确保普通 Markdown 工具也能解析链接 |
+| 文件与链接 → 新附件的默认位置 | 当前文件所在文件夹下指定的子文件夹 → assets | 完美匹配 ATLAS 的就近图片（Co-location）打包规则 |
+
+2. 日常随手记与正式归档流
+
+1. 随手记：按 Ctrl + N 在 inbox/ 中记录几行实验观察或排错命令，无需填写 YAML Front Matter。
+2. 归档入列：整理完毕后，将文件拖拽移入 tools/、computing/、research/、academics/ 或 life/ 之一。
+3. 构建与同步：运行 npm run build:content（或配合 Obsidian Git 插件自动提交），新档案即刻在三维档案大厅点亮。
+
+验证结果
+
+- 在 Obsidian 中粘贴一张图片并在本地预览正常；运行 npm run check:content 校验通过，浏览器阅读器中图片正常加载且无 404。
+
+参考来源：
+- https://help.obsidian.md/

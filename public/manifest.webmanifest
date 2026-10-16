@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "Rhine Lab · Analysis OS",
-  "short_name": "Rhine Lab",
-  "description": "莱茵生命交互式三维研究档案终端",
+  "name": "ATLAS · Personal Knowledge Terminal",
+  "short_name": "ATLAS",
+  "description": "ATLAS 个人知识库终端 · 莱茵生命科研交互视觉",
   "lang": "zh-CN",
   "start_url": "./?source=pwa",
   "scope": "./",

@@ -1,0 +1,55 @@
+---
+id: skill-git-workflow
+title: Git 日常提交、救命回滚与分支速查卡
+slug: computing/git-workflow
+type: snippet
+category: computing
+subcategory: version-control
+tags: [Git, 速查卡, 版本控制, 命令行]
+status: proficient
+summary: 高频使用的 Git 暂存、修改上次提交、撤销误操作与安全管理远程地址的 6 条核心命令。
+created: 2026-09-12
+updated: 2026-10-16
+version_scope: "Git 2.30+"
+source_urls:
+  - https://git-scm.com/docs
+prerequisites: []
+related:
+  - skill-github-pages
+  - tool-obsidian
+aliases: []
+---
+
+# Git 日常提交、救命回滚与分支速查卡
+
+## 快速复习
+
+```bash
+# 1. 新建并切换到功能分支
+git switch -c feat/new-knowledge
+
+# 2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）
+git add . && git commit --amend --no-edit
+
+# 3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）
+git reset --soft HEAD~1
+
+# 4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来
+git stash push -m "wip: 整理实验笔记"
+git stash pop
+
+# 5. 彻底禁止向某个上游远端（upstream）误 push
+git remote set-url --push upstream DISABLED
+
+# 6. 误删分支或误 reset 后找回历史哈希
+git reflog -n 10
+```
+
+## 状态与回退对照表
+
+| 场景 | 推荐命令 | 是否保留工作区修改 |
+| --- | --- | --- |
+| 刚 `git add` 错了文件想撤回暂存 | `git restore --staged <file>` | 保留 |
+| 想放弃单个文件的未暂存修改 | `git restore <file>` | **丢弃**该文件修改 |
+| 刚 `commit` 完发现提交早了 | `git reset --soft HEAD~1` | 保留 |
+| 已推送到远程分支需要公开回滚 | `git revert <commit-sha>` | 生成新反向提交 |

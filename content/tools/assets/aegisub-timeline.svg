@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" width="800" height="220">
+  <rect width="800" height="220" fill="#121417" rx="8"/>
+  <g stroke="#2a2f37" stroke-width="1">
+    <line x1="60" y1="30" x2="60" y2="180"/>
+    <line x1="220" y1="30" x2="220" y2="180"/>
+    <line x1="380" y1="30" x2="380" y2="180"/>
+    <line x1="540" y1="30" x2="540" y2="180"/>
+    <line x1="700" y1="30" x2="700" y2="180"/>
+    <line x1="40" y1="105" x2="760" y2="105"/>
+  </g>
+  <rect x="140" y="42" width="360" height="126" fill="rgba(237, 130, 27, 0.14)" stroke="#ed821b" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="140" y1="25" x2="140" y2="185" stroke="#ff5e3a" stroke-width="3"/>
+  <line x1="500" y1="25" x2="500" y2="185" stroke="#38bdf8" stroke-width="3"/>
+  <path d="M40 105 L130 105 L145 65 L155 145 L170 50 L185 155 L205 70 L225 135 L250 60 L275 148 L300 75 L330 130 L360 55 L390 150 L420 80 L450 128 L480 90 L500 105 L760 105" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <text x="148" y="60" fill="#ff5e3a" font-family="monospace" font-size="13" font-weight="bold">START [S / Left Click] 00:01:12.40</text>
+  <text x="355" y="162" fill="#38bdf8" font-family="monospace" font-size="13" font-weight="bold">END [D / Right Click] 00:01:15.80</text>
+  <text x="60" y="204" fill="#cbd5e1" font-family="sans-serif" font-size="12">Aegisub 音频频谱时间轴校准示意：左键定起点（红线），右键定终点（蓝线），Space/S 播放选中区间</text>
+</svg>

@@ -1,8 +1,9 @@
-import { archiveColumns, columnFiles, fileLocation } from "./data.ts";
+import { archiveColumns, columnFiles, fileLocation, records } from "./data.ts";
 
 export type ArchiveCell = { lane: number; row: number };
 export type ArchiveNavigation =
-  { axis: "row" | "lane"; direction: number } | { cell: ArchiveCell };
+  | { axis: "row" | "lane"; direction: number }
+  | { cell: ArchiveCell };
 
 export const LOOP_COLUMNS = 9;
 export const LOOP_ROWS = 32;
@@ -11,6 +12,7 @@ export const ROW_SPACING = 0.62;
 const POOL_LANES = [0, 1, 2, 3, 4, -2, -1, 5, 6];
 
 export function wrap(value: number, count: number) {
+  if (count <= 0) return 0;
   return ((value % count) + count) % count;
 }
 
@@ -21,11 +23,22 @@ export function nearestOccurrence(
   center: number,
   period: number,
 ) {
+  if (period <= 0) return center;
   return value + Math.floor((center - value + period / 2) / period) * period;
 }
 
-export function fileAtCell({ lane, row }: ArchiveCell) {
-  const files = columnFiles(wrap(lane, archiveColumns.length));
+export function fileAtCell(
+  { lane, row }: ArchiveCell,
+  customRecords = records,
+  customColumns = archiveColumns,
+) {
+  if (customRecords.length === 0 || customColumns.length === 0) return 0;
+  const files = columnFiles(
+    wrap(lane, customColumns.length),
+    customRecords,
+    customColumns,
+  );
+  if (files.length === 0) return 0;
   return files[wrap(row - 12, files.length)];
 }
 
@@ -33,14 +46,16 @@ export function selectionCell(
   index: number,
   current: ArchiveCell,
   navigation?: ArchiveNavigation,
+  customRecords = records,
+  customColumns = archiveColumns,
 ): ArchiveCell {
   if (navigation && "cell" in navigation) return { ...navigation.cell };
-  const next = fileLocation(index);
-  const row = nearestOccurrence(
-    next.row,
-    current.row,
-    columnFiles(next.lane).length,
+  const next = fileLocation(index, customRecords, customColumns);
+  const colLen = Math.max(
+    1,
+    columnFiles(next.lane, customRecords, customColumns).length,
   );
+  const row = nearestOccurrence(next.row, current.row, colLen);
   if (navigation?.axis === "row") {
     return { lane: current.lane, row: current.row + navigation.direction };
   }
@@ -48,7 +63,11 @@ export function selectionCell(
     lane:
       navigation?.axis === "lane"
         ? current.lane + navigation.direction
-        : nearestOccurrence(next.lane, current.lane, archiveColumns.length),
+        : nearestOccurrence(
+            next.lane,
+            current.lane,
+            Math.max(1, customColumns.length),
+          ),
     row,
   };
 }

@@ -1,0 +1,1151 @@
+{
+  "portals": [
+    {
+      "id": "tools",
+      "title": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "codePrefix": "T",
+      "department": "效率工具与创作软件",
+      "description": "PPT-Master、Aegisub、Obsidian、办公与科研工具链操作指南"
+    },
+    {
+      "id": "computing",
+      "title": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "codePrefix": "C",
+      "department": "代码工程与智能体协作",
+      "description": "Markdown、Git、Python、R、Vite、AI Agent 协作与技术排错"
+    },
+    {
+      "id": "research",
+      "title": "科研与实验",
+      "en": "RESEARCH & LAB",
+      "codePrefix": "R",
+      "department": "实验方案与生物信息",
+      "description": "细胞培养、分子对接、实验操作标准流程（SOP）与文献工作流"
+    },
+    {
+      "id": "academics",
+      "title": "学科知识",
+      "en": "ACADEMICS & CORE",
+      "codePrefix": "A",
+      "department": "基础学科与课程体系",
+      "description": "生物学、生物化学、统计学、数学公式推导与核心课程总结"
+    },
+    {
+      "id": "life",
+      "title": "创作与生活",
+      "en": "CREATIVE & LIFE",
+      "codePrefix": "L",
+      "department": "日常技能与创作实践",
+      "description": "视频后期、教学技巧、运动健康与日常实用问题解决记录"
+    }
+  ],
+  "inbox": {
+    "id": "inbox",
+    "title": "闪念草稿箱",
+    "en": "INBOX & DRAFTS",
+    "codePrefix": "D",
+    "department": "待整理碎片",
+    "description": "随手记录的命令片段、报错日志与待 AI 整理归档的草稿"
+  },
+  "entries": [
+    {
+      "id": "tool-aegisub",
+      "slug": "tools/aegisub",
+      "title": "Aegisub 字幕时间轴与样式基础",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "department": "效率工具与创作软件",
+      "subcategory": "video-subtitle",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "Aegisub",
+        "字幕",
+        "时间轴",
+        "视频制作"
+      ],
+      "summary": "利用音频频谱模式与 G/S/D 快捷键在 Aegisub 中 30 秒内完成精准打轴与整体时间平移。",
+      "created": "2026-09-20",
+      "updated": "2026-10-16",
+      "version_scope": "Aegisub 3.2.2 / 3.3+",
+      "source_urls": [
+        "https://aegisub.org/docs/latest/"
+      ],
+      "prerequisites": [],
+      "related": [
+        "tool-ppt-master"
+      ],
+      "aliases": [],
+      "relPath": "content/tools/aegisub.md",
+      "autoInferred": false,
+      "images": [
+        "media/entries/tool-aegisub/aegisub-timeline.svg"
+      ],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-音频频谱精准打轴",
+          "text": "1. 音频频谱精准打轴",
+          "level": 3
+        },
+        {
+          "id": "2-批量平移错位字幕（shift-times）",
+          "text": "2. 批量平移错位字幕（Shift Times）",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        },
+        {
+          "id": "常见问题与修复",
+          "text": "常见问题与修复",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>开启频谱视图</strong>：点击音频波形栏底部的「频谱模式（Spectrum mode）」按钮，人声起止边界比普通波形图清晰数倍。</li><li><strong>高频打轴四键流</strong>：</li><li><code class=\"atlas-inline-code\">鼠标左键</code>（或 <code class=\"atlas-inline-code\">A</code>）：设定当前行<strong>起点时间</strong></li><li><code class=\"atlas-inline-code\">鼠标右键</code>（或 <code class=\"atlas-inline-code\">F</code>）：设定当前行<strong>终点时间</strong></li><li><code class=\"atlas-inline-code\">S</code>（或 <code class=\"atlas-inline-code\">Space</code>）：播放当前选中时间段音频</li><li><code class=\"atlas-inline-code\">G</code>（或 <code class=\"atlas-inline-code\">Enter</code>）：提交当前行修改并<strong>自动跳到下一行</strong></li><li><strong>整体平移时间轴</strong>：菜单栏 <code class=\"atlas-inline-code\">计时（Timing） → 平移时间（Shift Times）</code>（快捷键 <code class=\"atlas-inline-code\">Ctrl + I</code>）。</li></ul>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>开启频谱视图</strong>：点击音频波形栏底部的「频谱模式（Spectrum mode）」按钮，人声起止边界比普通波形图清晰数倍。</li><li><strong>高频打轴四键流</strong>：</li><li><code class=\"atlas-inline-code\">鼠标左键</code>（或 <code class=\"atlas-inline-code\">A</code>）：设定当前行<strong>起点时间</strong></li><li><code class=\"atlas-inline-code\">鼠标右键</code>（或 <code class=\"atlas-inline-code\">F</code>）：设定当前行<strong>终点时间</strong></li><li><code class=\"atlas-inline-code\">S</code>（或 <code class=\"atlas-inline-code\">Space</code>）：播放当前选中时间段音频</li><li><code class=\"atlas-inline-code\">G</code>（或 <code class=\"atlas-inline-code\">Enter</code>）：提交当前行修改并<strong>自动跳到下一行</strong></li><li><strong>整体平移时间轴</strong>：菜单栏 <code class=\"atlas-inline-code\">计时（Timing） → 平移时间（Shift Times）</code>（快捷键 <code class=\"atlas-inline-code\">Ctrl + I</code>）。</li></ul>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>为课程录像、实验操作演示视频、双语科普视频制作高精度 <code class=\"atlas-inline-code\">.ass</code> 或 <code class=\"atlas-inline-code\">.srt</code> 字幕，或修复外部下载字幕整体快慢偏移的问题。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ol class=\"atlas-list\"><li>准备待打轴视频文件（推荐 <code class=\"atlas-inline-code\">.mp4</code> H.264 编码）与纯文本台词稿（每行一句）。</li><li>打开 Aegisub，依次执行：</li><li><code class=\"atlas-inline-code\">文件 → 打开字幕</code>（或直接粘贴纯文本）</li><li><code class=\"atlas-inline-code\">视频 → 打开视频</code>（音频会自动关联载入）</li></ol>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-音频频谱精准打轴\" class=\"atlas-heading atlas-h3\"><a href=\"#1-音频频谱精准打轴\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 音频频谱精准打轴</h3>\n<p>在音频区域开启 <strong>频谱模式（Spectrum）</strong> + <strong>自动滚动音频视图</strong>，观察高亮亮斑对应的人声元音起点：</p>\n<p><figure class=\"atlas-figure\"><img src=\"media/entries/tool-aegisub/aegisub-timeline.svg\" alt=\"Aegisub 音频频谱时间轴校准示意\" loading=\"lazy\" data-atlas-image=\"media/entries/tool-aegisub/aegisub-timeline.svg\" /><figcaption>Aegisub 音频频谱时间轴校准示意</figcaption></figure></p>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"打轴标准循环：\n选中首行 → 左键点亮斑前 50ms → 右键点句尾后 150ms → 按 S 试听确认 → 按 G 提交并进入下一行\">COPY</button></div><pre><code>打轴标准循环：\n选中首行 → 左键点亮斑前 50ms → 右键点句尾后 150ms → 按 S 试听确认 → 按 G 提交并进入下一行</code></pre></div>\n<h3 id=\"2-批量平移错位字幕（shift-times）\" class=\"atlas-heading atlas-h3\"><a href=\"#2-批量平移错位字幕（shift-times）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 批量平移错位字幕（Shift Times）</h3>\n<p>当视频片头增减了时长导致后续所有字幕整体慢了 <code class=\"atlas-inline-code\">1.5 秒</code> 时：</p>\n<ol class=\"atlas-list\"><li>按 <code class=\"atlas-inline-code\">Ctrl + I</code> 打开 <strong>平移时间（Shift Times）</strong>；</li><li>时间填写 <code class=\"atlas-inline-code\">0:00:01.50</code>，方向选择 <strong>向前（Forward，延后出现）</strong> 或 <strong>向后（Backward，提前出现）</strong>；</li><li>影响行选择 <strong>所有行（All rows）</strong> 或 <strong>选中行及后续行（Selection onward）</strong>；</li><li>时间字段勾选 <strong>起始和结束时间（Start and End times）</strong>，点击确定。</li></ol>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>播放视频预览窗口，字幕切入时间位于人声发声前 <code class=\"atlas-inline-code\">0.05s ~ 0.10s</code>，无闪帧（相邻两句间隔小于 <code class=\"atlas-inline-code\">0.2s</code> 时可使用 <code class=\"atlas-inline-code\">计时 → 连结字幕</code> 自动对齐）。</li><li>导出 <code class=\"atlas-inline-code\">.srt</code>（<code class=\"atlas-inline-code\">文件 → 导出字幕 → UTF-8</code>）在播放器中无乱码。</li></ul>\n<h2 id=\"常见问题与修复\" class=\"atlas-heading atlas-h2\"><a href=\"#常见问题与修复\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见问题与修复</h2>\n<ul class=\"atlas-list\"><li><strong>问题</strong>：压制或高分屏预览时 <code class=\"atlas-inline-code\">.ass</code> 字幕字号异常巨大或位置偏离。</li></ul>\n<p><strong>原因</strong>：脚本分辨率（PlayResX / PlayResY）未与视频分辨率对齐（默认常为 <code class=\"atlas-inline-code\">384×288</code>）。 <strong>修复</strong>：点击菜单 <code class=\"atlas-inline-code\">文件 → 属性</code>，点击「从视频获取分辨率（如 <code class=\"atlas-inline-code\">1920 × 1080</code>）」，再在样式管理器中统一设定字号（1080p 下正文推荐 <code class=\"atlas-inline-code\">52–60</code>）。</p>",
+      "findings": [
+        "开启频谱视图：点击音频波形栏底部的「频谱模式（Spectrum mode）」按钮，人声起止边界比普通波形图清晰数倍。",
+        "高频打轴四键流：",
+        "鼠标左键（或 A）：设定当前行起点时间",
+        "鼠标右键（或 F）：设定当前行终点时间",
+        "S（或 Space）：播放当前选中时间段音频",
+        "G（或 Enter）：提交当前行修改并自动跳到下一行"
+      ],
+      "plainText": "Aegisub 字幕时间轴与样式基础\n\n快速复习\n\n- 开启频谱视图：点击音频波形栏底部的「频谱模式（Spectrum mode）」按钮，人声起止边界比普通波形图清晰数倍。\n- 高频打轴四键流：\n  - 鼠标左键（或 A）：设定当前行起点时间\n  - 鼠标右键（或 F）：设定当前行终点时间\n  - S（或 Space）：播放当前选中时间段音频\n  - G（或 Enter）：提交当前行修改并自动跳到下一行\n- 整体平移时间轴：菜单栏 计时（Timing） → 平移时间（Shift Times）（快捷键 Ctrl + I）。\n\n适用场景\n\n为课程录像、实验操作演示视频、双语科普视频制作高精度 .ass 或 .srt 字幕，或修复外部下载字幕整体快慢偏移的问题。\n\n前置准备\n\n1. 准备待打轴视频文件（推荐 .mp4 H.264 编码）与纯文本台词稿（每行一句）。\n2. 打开 Aegisub，依次执行：\n   - 文件 → 打开字幕（或直接粘贴纯文本）\n   - 视频 → 打开视频（音频会自动关联载入）\n\n操作步骤\n\n1. 音频频谱精准打轴\n\n在音频区域开启 频谱模式（Spectrum） + 自动滚动音频视图，观察高亮亮斑对应的人声元音起点：\n\nAegisub 音频频谱时间轴校准示意\n\n``text\n打轴标准循环：\n选中首行 → 左键点亮斑前 50ms → 右键点句尾后 150ms → 按 S 试听确认 → 按 G 提交并进入下一行\n`\n\n2. 批量平移错位字幕（Shift Times）\n\n当视频片头增减了时长导致后续所有字幕整体慢了 1.5 秒 时：\n\n1. 按 Ctrl + I 打开 平移时间（Shift Times）；\n2. 时间填写 0:00:01.50，方向选择 向前（Forward，延后出现） 或 向后（Backward，提前出现）；\n3. 影响行选择 所有行（All rows） 或 选中行及后续行（Selection onward）；\n4. 时间字段勾选 起始和结束时间（Start and End times），点击确定。\n\n验证结果\n\n- 播放视频预览窗口，字幕切入时间位于人声发声前 0.05s ~ 0.10s，无闪帧（相邻两句间隔小于 0.2s 时可使用 计时 → 连结字幕 自动对齐）。\n- 导出 .srt（文件 → 导出字幕 → UTF-8）在播放器中无乱码。\n\n常见问题与修复\n\n- 问题：压制或高分屏预览时 .ass 字幕字号异常巨大或位置偏离。  \n  原因：脚本分辨率（PlayResX / PlayResY）未与视频分辨率对齐（默认常为 384×288）。  \n  修复：点击菜单 文件 → 属性，点击「从视频获取分辨率（如 1920 × 1080）」，再在样式管理器中统一设定字号（1080p 下正文推荐 52–60`）。",
+      "visualCode": "T-001",
+      "globalCode": "X-001"
+    },
+    {
+      "id": "tool-obsidian",
+      "slug": "tools/obsidian",
+      "title": "Obsidian 本地知识库与 ATLAS 协同工作流",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "department": "效率工具与创作软件",
+      "subcategory": "note-taking",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "Obsidian",
+        "Markdown",
+        "知识管理",
+        "Git"
+      ],
+      "summary": "将 ATLAS 的 content/ 目录作为 Obsidian 仓库直接打开，实现同级截图粘贴与无感 Git 归档。",
+      "created": "2026-09-25",
+      "updated": "2026-10-16",
+      "version_scope": "Obsidian 1.6+",
+      "source_urls": [
+        "https://help.obsidian.md/"
+      ],
+      "prerequisites": [
+        "concept-markdown-basics"
+      ],
+      "related": [
+        "tool-ppt-master",
+        "skill-git-workflow"
+      ],
+      "aliases": [],
+      "relPath": "content/tools/obsidian.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-关键设置对齐（一次性配置）",
+          "text": "1. 关键设置对齐（一次性配置）",
+          "level": 3
+        },
+        {
+          "id": "2-日常随手记与正式归档流",
+          "text": "2. 日常随手记与正式归档流",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li>打开 Obsidian → <strong>打开本地仓库（Open folder as vault）</strong> → 直接选择本项目下的 <code class=\"atlas-inline-code\">e:\\ATLAS\\content</code> 目录。</li><li>在 Obsidian <code class=\"atlas-inline-code\">设置 → 文件与链接</code> 中，将 <strong>附件默认存放路径</strong> 设为 <strong>当前文件所在目录下的子文件夹</strong>，子文件夹名称填 <code class=\"atlas-inline-code\">assets</code>，并开启 <strong>使用相对路径</strong>。</li><li>如此配置后，在 Obsidian 里直接 <code class=\"atlas-inline-code\">Ctrl + V</code> 粘贴截图会自动存入 <code class=\"atlas-inline-code\">./assets/</code>，与 ATLAS 构建流水线 100% 兼容！</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li>打开 Obsidian → <strong>打开本地仓库（Open folder as vault）</strong> → 直接选择本项目下的 <code class=\"atlas-inline-code\">e:\\ATLAS\\content</code> 目录。</li><li>在 Obsidian <code class=\"atlas-inline-code\">设置 → 文件与链接</code> 中，将 <strong>附件默认存放路径</strong> 设为 <strong>当前文件所在目录下的子文件夹</strong>，子文件夹名称填 <code class=\"atlas-inline-code\">assets</code>，并开启 <strong>使用相对路径</strong>。</li><li>如此配置后，在 Obsidian 里直接 <code class=\"atlas-inline-code\">Ctrl + V</code> 粘贴截图会自动存入 <code class=\"atlas-inline-code\">./assets/</code>，与 ATLAS 构建流水线 100% 兼容！</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>已安装 Obsidian 桌面端</li><li>本机已拉取 <code class=\"atlas-inline-code\">ATLAS</code> 仓库</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-关键设置对齐（一次性配置）\" class=\"atlas-heading atlas-h3\"><a href=\"#1-关键设置对齐（一次性配置）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 关键设置对齐（一次性配置）</h3>\n<p>在 Obsidian 设置中调整以下三项，确保生成的 Markdown 可移植且通过 ATLAS 构建校验：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>设置位置</th><th>推荐配置值</th><th>作用</th></tr></thead><tbody><tr><td><code class=\"atlas-inline-code\">文件与链接 → 新建笔记的默认位置</code></td><td><code class=\"atlas-inline-code\">in the folder specified below</code> → <code class=\"atlas-inline-code\">inbox</code></td><td>随手按 <code class=\"atlas-inline-code\">Ctrl+N</code> 新建的闪念自动进入 <code class=\"atlas-inline-code\">inbox/</code> 草稿箱</td></tr><tr><td><code class=\"atlas-inline-code\">文件与链接 → 新建链接的格式</code></td><td><code class=\"atlas-inline-code\">基于文件路径的相对路径</code></td><td>确保普通 Markdown 工具也能解析链接</td></tr><tr><td><code class=\"atlas-inline-code\">文件与链接 → 新附件的默认位置</code></td><td><code class=\"atlas-inline-code\">当前文件所在文件夹下指定的子文件夹</code> → <code class=\"atlas-inline-code\">assets</code></td><td>完美匹配 ATLAS 的就近图片（Co-location）打包规则</td></tr></tbody></table></div>\n<h3 id=\"2-日常随手记与正式归档流\" class=\"atlas-heading atlas-h3\"><a href=\"#2-日常随手记与正式归档流\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 日常随手记与正式归档流</h3>\n<ol class=\"atlas-list\"><li><strong>随手记</strong>：按 <code class=\"atlas-inline-code\">Ctrl + N</code> 在 <code class=\"atlas-inline-code\">inbox/</code> 中记录几行实验观察或排错命令，无需填写 YAML Front Matter。</li><li><strong>归档入列</strong>：整理完毕后，将文件拖拽移入 <code class=\"atlas-inline-code\">tools/</code>、<code class=\"atlas-inline-code\">computing/</code>、<code class=\"atlas-inline-code\">research/</code>、<code class=\"atlas-inline-code\">academics/</code> 或 <code class=\"atlas-inline-code\">life/</code> 之一。</li><li><strong>构建与同步</strong>：运行 <code class=\"atlas-inline-code\">npm run build:content</code>（或配合 <code class=\"atlas-inline-code\">Obsidian Git</code> 插件自动提交），新档案即刻在三维档案大厅点亮。</li></ol>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>在 Obsidian 中粘贴一张图片并在本地预览正常；运行 <code class=\"atlas-inline-code\">npm run check:content</code> 校验通过，浏览器阅读器中图片正常加载且无 404。</li></ul>",
+      "findings": [
+        "打开 Obsidian → 打开本地仓库（Open folder as vault） → 直接选择本项目下的 e:\\ATLAS\\content 目录。",
+        "在 Obsidian 设置 → 文件与链接 中，将 附件默认存放路径 设为 当前文件所在目录下的子文件夹，子文件夹名称填 assets，并开启 使用相对路径。",
+        "如此配置后，在 Obsidian 里直接 Ctrl + V 粘贴截图会自动存入 ./assets/，与 ATLAS 构建流水线 100% 兼容！",
+        "日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。",
+        "已安装 Obsidian 桌面端",
+        "本机已拉取 ATLAS 仓库"
+      ],
+      "plainText": "Obsidian 本地知识库与 ATLAS 协同工作流\n\n快速复习\n\n1. 打开 Obsidian → 打开本地仓库（Open folder as vault） → 直接选择本项目下的 e:\\ATLAS\\content 目录。\n2. 在 Obsidian 设置 → 文件与链接 中，将 附件默认存放路径 设为 当前文件所在目录下的子文件夹，子文件夹名称填 assets，并开启 使用相对路径。\n3. 如此配置后，在 Obsidian 里直接 Ctrl + V 粘贴截图会自动存入 ./assets/，与 ATLAS 构建流水线 100% 兼容！\n\n适用场景\n\n日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。\n\n前置准备\n\n- 已安装 Obsidian 桌面端\n- 本机已拉取 ATLAS 仓库\n\n操作步骤\n\n1. 关键设置对齐（一次性配置）\n\n在 Obsidian 设置中调整以下三项，确保生成的 Markdown 可移植且通过 ATLAS 构建校验：\n\n| 设置位置 | 推荐配置值 | 作用 |\n| --- | --- | --- |\n| 文件与链接 → 新建笔记的默认位置 | in the folder specified below → inbox | 随手按 Ctrl+N 新建的闪念自动进入 inbox/ 草稿箱 |\n| 文件与链接 → 新建链接的格式 | 基于文件路径的相对路径 | 确保普通 Markdown 工具也能解析链接 |\n| 文件与链接 → 新附件的默认位置 | 当前文件所在文件夹下指定的子文件夹 → assets | 完美匹配 ATLAS 的就近图片（Co-location）打包规则 |\n\n2. 日常随手记与正式归档流\n\n1. 随手记：按 Ctrl + N 在 inbox/ 中记录几行实验观察或排错命令，无需填写 YAML Front Matter。\n2. 归档入列：整理完毕后，将文件拖拽移入 tools/、computing/、research/、academics/ 或 life/ 之一。\n3. 构建与同步：运行 npm run build:content（或配合 Obsidian Git 插件自动提交），新档案即刻在三维档案大厅点亮。\n\n验证结果\n\n- 在 Obsidian 中粘贴一张图片并在本地预览正常；运行 npm run check:content 校验通过，浏览器阅读器中图片正常加载且无 404。",
+      "visualCode": "T-002",
+      "globalCode": "X-002"
+    },
+    {
+      "id": "tool-ppt-master",
+      "slug": "tools/ppt-master",
+      "title": "PPT-Master 演示文稿工作流指南",
+      "category": "tools",
+      "categoryTitle": "软件与工具",
+      "en": "TOOLS & WORKFLOW",
+      "department": "效率工具与创作软件",
+      "subcategory": "presentation",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "PPT",
+        "演示文稿",
+        "自动化",
+        "排版"
+      ],
+      "summary": "结构化大纲拆解、母版规范设定与 PPT-Master 辅助生成及视觉验收标准流程。",
+      "created": "2026-09-18",
+      "updated": "2026-10-16",
+      "version_scope": "PowerPoint 2021 / Microsoft 365 & PPT-Master 工作流",
+      "source_urls": [
+        "https://learn.microsoft.com/zh-cn/office/troubleshoot/powerpoint/"
+      ],
+      "prerequisites": [
+        "concept-markdown-basics"
+      ],
+      "related": [
+        "tool-obsidian"
+      ],
+      "aliases": [
+        "tools/ppt-workflow"
+      ],
+      "relPath": "content/tools/ppt-master.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-大纲转页面骨架",
+          "text": "1. 大纲转页面骨架",
+          "level": 3
+        },
+        {
+          "id": "2-版心与三级视觉层次设定",
+          "text": "2. 版心与三级视觉层次设定",
+          "level": 3
+        },
+        {
+          "id": "3-批量检查与导出",
+          "text": "3. 批量检查与导出",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        },
+        {
+          "id": "常见问题与修复",
+          "text": "常见问题与修复",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>先写 Markdown 结构化大纲</strong>，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。</li><li><strong>统一母版与网格</strong>：16:9 画布（<code class=\"atlas-inline-code\">33.867 cm × 19.05 cm</code>），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。</li><li><strong>单页信息密度上限</strong>：字号不小于 <code class=\"atlas-inline-code\">14pt</code>，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 <code class=\"atlas-inline-code\">#ED821B</code>）」。</li><li><strong>导出前必做三查</strong>：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>先写 Markdown 结构化大纲</strong>，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。</li><li><strong>统一母版与网格</strong>：16:9 画布（<code class=\"atlas-inline-code\">33.867 cm × 19.05 cm</code>），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。</li><li><strong>单页信息密度上限</strong>：字号不小于 <code class=\"atlas-inline-code\">14pt</code>，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 <code class=\"atlas-inline-code\">#ED821B</code>）」。</li><li><strong>导出前必做三查</strong>：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>一份已梳理清晰的 Markdown 提纲（参考 <a href=\"#/entry/computing/markdown-basics\" class=\"atlas-int-link\" data-entry-link=\"computing/markdown-basics\">Markdown 基本语法</a>）：</li><li><code class=\"atlas-inline-code\">#</code> 对应封面标题</li><li><code class=\"atlas-inline-code\">##</code> 对应章节过渡页</li><li><code class=\"atlas-inline-code\">###</code> 对应单页核心结论（一句话标题）</li><li>预设色板与单位标志（SVG 矢量格式优先，避免低分辨率带白底 PNG）。</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-大纲转页面骨架\" class=\"atlas-heading atlas-h3\"><a href=\"#1-大纲转页面骨架\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 大纲转页面骨架</h3>\n<p>将提纲按页拆分，确保每一页标题直接表达结论而非仅写名词：</p>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>常见弱标题（避免）</th><th>结论型标题（推荐）</th></tr></thead><tbody><tr><td>实验结果分析</td><td>化合物 A 在 10 μM 浓度下显著抑制细胞迁移（抑制率 68%）</td></tr><tr><td>静态资源路径问题</td><td>统一使用 <code class=\"atlas-inline-code\">BASE_URL</code> 解析器可彻底消除子路径 404</td></tr></tbody></table></div>\n<h3 id=\"2-版心与三级视觉层次设定\" class=\"atlas-heading atlas-h3\"><a href=\"#2-版心与三级视觉层次设定\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 版心与三级视觉层次设定</h3>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+\">COPY</button></div><pre><code>+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+</code></pre></div>\n<h3 id=\"3-批量检查与导出\" class=\"atlas-heading atlas-h3\"><a href=\"#3-批量检查与导出\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 批量检查与导出</h3>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>检查所有图表坐标轴文字是否清晰可读</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>在「文件 → 选项 → 保存」中勾选 <strong>将字体嵌入文件（仅嵌入演示文稿中使用的字符）</strong></span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>同时导出 <code class=\"atlas-inline-code\">.pptx</code> 与 <code class=\"atlas-inline-code\">.pdf</code> 双版本备存</span></li></ul>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>在无预装第三方字体的设备上打开 <code class=\"atlas-inline-code\">.pptx</code>，标题与正文字重不发生回退变形。</li><li>任意抽取一页，观众可在 <strong>5 秒内</strong> 读出该页核心结论。</li></ul>\n<h2 id=\"常见问题与修复\" class=\"atlas-heading atlas-h2\"><a href=\"#常见问题与修复\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见问题与修复</h2>\n<ul class=\"atlas-list\"><li><strong>问题</strong>：嵌入字体后保存报错或体积暴增至上百 MB。</li></ul>\n<p><strong>原因</strong>：使用了不支持子集嵌入的完整 CJK 字体包或 OTF 变体。 <strong>修复</strong>：改用标准 TTF 格式字重，或将封面特殊艺术字转为 SVG 矢量形状后再保存。</p>",
+      "findings": [
+        "先写 Markdown 结构化大纲，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。",
+        "统一母版与网格：16:9 画布（33.867 cm × 19.05 cm），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。",
+        "单页信息密度上限：字号不小于 14pt，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 #ED821B）」。",
+        "导出前必做三查：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。",
+        "适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。",
+        "一份已梳理清晰的 Markdown 提纲（参考 Markdown 基本语法）："
+      ],
+      "plainText": "PPT-Master 演示文稿工作流指南\n\n快速复习\n\n1. 先写 Markdown 结构化大纲，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。\n2. 统一母版与网格：16:9 画布（33.867 cm × 19.05 cm），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。\n3. 单页信息密度上限：字号不小于 14pt，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 #ED821B）」。\n4. 导出前必做三查：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。\n\n适用场景\n\n适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。\n\n前置准备\n\n- 一份已梳理清晰的 Markdown 提纲（参考 Markdown 基本语法）：\n  - # 对应封面标题\n  - ## 对应章节过渡页\n  - ### 对应单页核心结论（一句话标题）\n- 预设色板与单位标志（SVG 矢量格式优先，避免低分辨率带白底 PNG）。\n\n操作步骤\n\n1. 大纲转页面骨架\n\n将提纲按页拆分，确保每一页标题直接表达结论而非仅写名词：\n\n| 常见弱标题（避免） | 结论型标题（推荐） |\n| --- | --- |\n| 实验结果分析 | 化合物 A 在 10 μM 浓度下显著抑制细胞迁移（抑制率 68%） |\n| 静态资源路径问题 | 统一使用 BASE_URL 解析器可彻底消除子路径 404 |\n\n2. 版心与三级视觉层次设定\n\n``text\n+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+\n`\n\n3. 批量检查与导出\n\n- [x] 检查所有图表坐标轴文字是否清晰可读\n- [x] 在「文件 → 选项 → 保存」中勾选 将字体嵌入文件（仅嵌入演示文稿中使用的字符）\n- [x] 同时导出 .pptx 与 .pdf 双版本备存\n\n验证结果\n\n- 在无预装第三方字体的设备上打开 .pptx`，标题与正文字重不发生回退变形。\n- 任意抽取一页，观众可在 5 秒内 读出该页核心结论。\n\n常见问题与修复\n\n- 问题：嵌入字体后保存报错或体积暴增至上百 MB。  \n  原因：使用了不支持子集嵌入的完整 CJK 字体包或 OTF 变体。  \n  修复：改用标准 TTF 格式字重，或将封面特殊艺术字转为 SVG 矢量形状后再保存。",
+      "visualCode": "T-003",
+      "globalCode": "X-003"
+    },
+    {
+      "id": "concept-markdown-basics",
+      "slug": "computing/markdown-basics",
+      "title": "Markdown 核心语法与技术写作规范",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "department": "代码工程与智能体协作",
+      "subcategory": "documentation",
+      "type": "concept",
+      "status": "proficient",
+      "tags": [
+        "Markdown",
+        "GFM",
+        "数学公式",
+        "技术写作"
+      ],
+      "summary": "掌握 GitHub Flavored Markdown（GFM）标题层级、代码块、表格、任务列表与 LaTeX 公式语法。",
+      "created": "2026-09-10",
+      "updated": "2026-10-16",
+      "version_scope": "CommonMark / GFM + KaTeX",
+      "source_urls": [
+        "https://docs.github.com/zh/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax"
+      ],
+      "prerequisites": [],
+      "related": [
+        "tool-obsidian",
+        "tool-ppt-master"
+      ],
+      "aliases": [],
+      "relPath": "content/computing/markdown-basics.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "核心定义",
+          "text": "核心定义",
+          "level": 2
+        },
+        {
+          "id": "常用语法示例",
+          "text": "常用语法示例",
+          "level": 2
+        },
+        {
+          "id": "1-围栏代码块与终端命令",
+          "text": "1. 围栏代码块与终端命令",
+          "level": 3
+        },
+        {
+          "id": "2-结构化对比表格",
+          "text": "2. 结构化对比表格",
+          "level": 3
+        },
+        {
+          "id": "3-latex-数学与生化公式",
+          "text": "3. LaTeX 数学与生化公式",
+          "level": 3
+        },
+        {
+          "id": "易错点与规范约束",
+          "text": "易错点与规范约束",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>标题</strong>：<code class=\"atlas-inline-code\"># H1</code>（每篇仅一个主标题）、<code class=\"atlas-inline-code\">## H2</code>（大章节，自动进入右侧 TOC 目录）、<code class=\"atlas-inline-code\">### H3</code>（子步骤）。</li><li><strong>代码块</strong>：使用三个反引号加语言标识（如 <code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">bash </code>、<code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">python </code>、<code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">r </code>），避免使用缩进式代码块。</li><li><strong>数学公式</strong>：行内公式使用单美元符号 <code class=\"atlas-inline-code\">$E = mc^2$</code>，独立公式块使用双美元符号 <code class=\"atlas-inline-code\">$$...$$</code>。</li><li><strong>表格与清单</strong>：使用 <code class=\"atlas-inline-code\">| 列1 | 列2 |</code> 绘制表格，使用 <code class=\"atlas-inline-code\">- [x]</code> 与 <code class=\"atlas-inline-code\">- [ ]</code> 记录可勾选的实验/部署核查项。</li></ul>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>标题</strong>：<code class=\"atlas-inline-code\"># H1</code>（每篇仅一个主标题）、<code class=\"atlas-inline-code\">## H2</code>（大章节，自动进入右侧 TOC 目录）、<code class=\"atlas-inline-code\">### H3</code>（子步骤）。</li><li><strong>代码块</strong>：使用三个反引号加语言标识（如 <code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">bash </code>、<code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">python </code>、<code class=\"atlas-inline-code\"> </code>`<code class=\"atlas-inline-code\">r </code>），避免使用缩进式代码块。</li><li><strong>数学公式</strong>：行内公式使用单美元符号 <code class=\"atlas-inline-code\">$E = mc^2$</code>，独立公式块使用双美元符号 <code class=\"atlas-inline-code\">$$...$$</code>。</li><li><strong>表格与清单</strong>：使用 <code class=\"atlas-inline-code\">| 列1 | 列2 |</code> 绘制表格，使用 <code class=\"atlas-inline-code\">- [x]</code> 与 <code class=\"atlas-inline-code\">- [ ]</code> 记录可勾选的实验/部署核查项。</li></ul>\n<h2 id=\"核心定义\" class=\"atlas-heading atlas-h2\"><a href=\"#核心定义\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>核心定义</h2>\n<p><strong>Markdown</strong> 是一种轻量级纯文本标记语言。它允许作者使用易读易写的纯文本格式编写文档，随后在构建期确定性地转换为结构化 HTML 页面。在 ATLAS 中，Markdown 是所有知识条目的<strong>唯一权威信源（Single Source of Truth）</strong>。</p>\n<h2 id=\"常用语法示例\" class=\"atlas-heading atlas-h2\"><a href=\"#常用语法示例\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常用语法示例</h2>\n<h3 id=\"1-围栏代码块与终端命令\" class=\"atlas-heading atlas-h3\"><a href=\"#1-围栏代码块与终端命令\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 围栏代码块与终端命令</h3>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 校验内容完整性并构建静态索引\nnpm run check:content\nnpm run build:content\">COPY</button></div><pre><code># 校验内容完整性并构建静态索引\nnpm run check:content\nnpm run build:content</code></pre></div>\n<h3 id=\"2-结构化对比表格\" class=\"atlas-heading atlas-h3\"><a href=\"#2-结构化对比表格\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 结构化对比表格</h3>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>语法元素</th><th>写法示例</th><th>典型用途</th></tr></thead><tbody><tr><td>行内代码</td><td>`<code class=\"atlas-inline-code\"> </code>import.meta.env.BASE_URL<code class=\"atlas-inline-code\"> </code>`</td><td>变量名、文件路径、快捷键、命令参数</td></tr><tr><td>引用提示</td><td><code class=\"atlas-inline-code\">&gt; **注意**：操作前先备份</code></td><td>关键前提、安全警告与重点结论</td></tr><tr><td>任务清单</td><td><code class=\"atlas-inline-code\">- [x] 已验证步骤</code></td><td>实验 SOP 核对单、发布前检查表</td></tr></tbody></table></div>\n<h3 id=\"3-latex-数学与生化公式\" class=\"atlas-heading atlas-h3\"><a href=\"#3-latex-数学与生化公式\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. LaTeX 数学与生化公式</h3>\n<p>行内公式示例：米氏常数 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 表示酶促反应速率达到最大反应速率 <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 一半时的底物浓度。</p>\n<p>独立公式块示例：</p>\n<div class=\"atlas-math-block\" data-latex=\"\\text{pH} = \\text{p}K_a + \\log_{10}\\left(\\frac{[\\text{A}^-]}{[\\text{HA}]}\\right)\"><span class=\"math-roman\">pH</span> = <span class=\"math-roman\">p</span>K<sub>a</sub> + log<sub>10</sub>≤ft(<span class=\"math-frac\"><span class=\"math-num\">[<span class=\"math-roman\">A</span><sup>-</sup>]</span><span class=\"math-den\">[<span class=\"math-roman\">HA</span>]</span></span>)</div>\n<h2 id=\"易错点与规范约束\" class=\"atlas-heading atlas-h2\"><a href=\"#易错点与规范约束\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>易错点与规范约束</h2>\n<ol class=\"atlas-list\"><li><strong>禁止依赖未闭合的原始 HTML 标签</strong>：为保障公开站点安全并支持多端迁移，正文内不写 <code class=\"atlas-inline-code\">&lt;script&gt;</code> 或裸 <code class=\"atlas-inline-code\">&lt;iframe&gt;</code>。</li><li><strong>中英文混排留白</strong>：建议在中文与英文单词、数字之间保持清晰可读性；代码块必须标注语言名称以启用语法高亮与一键复制。</li></ol>",
+      "findings": [
+        "标题：# H1（每篇仅一个主标题）、## H2（大章节，自动进入右侧 TOC 目录）、### H3（子步骤）。",
+        "代码块：使用三个反引号加语言标识（如  `bash 、 `python 、 `r ），避免使用缩进式代码块。",
+        "数学公式：行内公式使用单美元符号 E = mc^2，独立公式块使用双美元符号 ...。",
+        "表格与清单：使用 | 列1 | 列2 | 绘制表格，使用 - [x] 与 - [ ] 记录可勾选的实验/部署核查项。",
+        "Markdown 是一种轻量级纯文本标记语言。它允许作者使用易读易写的纯文本格式编写文档，随后在构建期确定性地转换为结构化 HTML 页面。在 ATLAS 中，Markdown 是所有知识条目的唯一权威信源（Single Source of Truth）。",
+        "行内公式示例：米氏常数 K_m 表示酶促反应速率达到最大反应速率 V_{\\max} 一半时的底物浓度。"
+      ],
+      "plainText": "Markdown 核心语法与技术写作规范\n\n快速复习\n\n- 标题：# H1（每篇仅一个主标题）、## H2（大章节，自动进入右侧 TOC 目录）、### H3（子步骤）。\n- 代码块：使用三个反引号加语言标识（如  `bash 、 `python 、 `r ），避免使用缩进式代码块。\n- 数学公式：行内公式使用单美元符号 E = mc^2，独立公式块使用双美元符号 ...。\n- 表格与清单：使用 | 列1 | 列2 | 绘制表格，使用 - [x] 与 - [ ] 记录可勾选的实验/部署核查项。\n\n核心定义\n\nMarkdown 是一种轻量级纯文本标记语言。它允许作者使用易读易写的纯文本格式编写文档，随后在构建期确定性地转换为结构化 HTML 页面。在 ATLAS 中，Markdown 是所有知识条目的唯一权威信源（Single Source of Truth）。\n\n常用语法示例\n\n1. 围栏代码块与终端命令\n\n``bash\n校验内容完整性并构建静态索引\nnpm run check:content\nnpm run build:content\n`\n\n2. 结构化对比表格\n\n| 语法元素 | 写法示例 | 典型用途 |\n| --- | --- | --- |\n| 行内代码 |  import.meta.env.BASE_URL  | 变量名、文件路径、快捷键、命令参数 |\n| 引用提示 | > 注意：操作前先备份 | 关键前提、安全警告与重点结论 |\n| 任务清单 | - [x] 已验证步骤 | 实验 SOP 核对单、发布前检查表 |\n\n3. LaTeX 数学与生化公式\n\n行内公式示例：米氏常数 K_m 表示酶促反应速率达到最大反应速率 V_{\\max} 一半时的底物浓度。\n\n独立公式块示例：\n\n\\text{pH} = \\text{p}K_a + \\log_{10}\\left(\\frac{[\\text{A}^-]}{[\\text{HA}]}\\right)\n\n易错点与规范约束\n\n1. 禁止依赖未闭合的原始 HTML 标签：为保障公开站点安全并支持多端迁移，正文内不写 <script> 或裸 <iframe>`。\n2. 中英文混排留白：建议在中文与英文单词、数字之间保持清晰可读性；代码块必须标注语言名称以启用语法高亮与一键复制。",
+      "visualCode": "C-001",
+      "globalCode": "X-004"
+    },
+    {
+      "id": "skill-git-workflow",
+      "slug": "computing/git-workflow",
+      "title": "Git 日常提交、救命回滚与分支速查卡",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "department": "代码工程与智能体协作",
+      "subcategory": "version-control",
+      "type": "snippet",
+      "status": "proficient",
+      "tags": [
+        "Git",
+        "速查卡",
+        "版本控制",
+        "命令行"
+      ],
+      "summary": "高频使用的 Git 暂存、修改上次提交、撤销误操作与安全管理远程地址的 6 条核心命令。",
+      "created": "2026-09-12",
+      "updated": "2026-10-16",
+      "version_scope": "Git 2.30+",
+      "source_urls": [
+        "https://git-scm.com/docs"
+      ],
+      "prerequisites": [],
+      "related": [
+        "skill-github-pages",
+        "tool-obsidian"
+      ],
+      "aliases": [],
+      "relPath": "content/computing/git-workflow.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "状态与回退对照表",
+          "text": "状态与回退对照表",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n# 2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . &amp;&amp; git commit --amend --no-edit\n\n# 3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n# 4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m &quot;wip: 整理实验笔记&quot;\ngit stash pop\n\n# 5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n# 6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10\">COPY</button></div><pre><code># 1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n# 2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . &amp;&amp; git commit --amend --no-edit\n\n# 3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n# 4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m &quot;wip: 整理实验笔记&quot;\ngit stash pop\n\n# 5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n# 6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10</code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n# 2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . &amp;&amp; git commit --amend --no-edit\n\n# 3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n# 4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m &quot;wip: 整理实验笔记&quot;\ngit stash pop\n\n# 5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n# 6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10\">COPY</button></div><pre><code># 1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n# 2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . &amp;&amp; git commit --amend --no-edit\n\n# 3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n# 4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m &quot;wip: 整理实验笔记&quot;\ngit stash pop\n\n# 5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n# 6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10</code></pre></div>\n<h2 id=\"状态与回退对照表\" class=\"atlas-heading atlas-h2\"><a href=\"#状态与回退对照表\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>状态与回退对照表</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>场景</th><th>推荐命令</th><th>是否保留工作区修改</th></tr></thead><tbody><tr><td>刚 <code class=\"atlas-inline-code\">git add</code> 错了文件想撤回暂存</td><td><code class=\"atlas-inline-code\">git restore --staged &lt;file&gt;</code></td><td>保留</td></tr><tr><td>想放弃单个文件的未暂存修改</td><td><code class=\"atlas-inline-code\">git restore &lt;file&gt;</code></td><td><strong>丢弃</strong>该文件修改</td></tr><tr><td>刚 <code class=\"atlas-inline-code\">commit</code> 完发现提交早了</td><td><code class=\"atlas-inline-code\">git reset --soft HEAD~1</code></td><td>保留</td></tr><tr><td>已推送到远程分支需要公开回滚</td><td><code class=\"atlas-inline-code\">git revert &lt;commit-sha&gt;</code></td><td>生成新反向提交</td></tr></tbody></table></div>",
+      "findings": [
+        "高频使用的 Git 暂存、修改上次提交、撤销误操作与安全管理远程地址的 6 条核心命令。"
+      ],
+      "plainText": "Git 日常提交、救命回滚与分支速查卡\n\n快速复习\n\n``bash\n1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . && git commit --amend --no-edit\n\n3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m \"wip: 整理实验笔记\"\ngit stash pop\n\n5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10\n`\n\n状态与回退对照表\n\n| 场景 | 推荐命令 | 是否保留工作区修改 |\n| --- | --- | --- |\n| 刚 git add 错了文件想撤回暂存 | git restore --staged <file> | 保留 |\n| 想放弃单个文件的未暂存修改 | git restore <file> | 丢弃该文件修改 |\n| 刚 commit 完发现提交早了 | git reset --soft HEAD~1 | 保留 |\n| 已推送到远程分支需要公开回滚 | git revert <commit-sha>` | 生成新反向提交 |",
+      "visualCode": "C-002",
+      "globalCode": "X-005"
+    },
+    {
+      "id": "skill-github-pages",
+      "slug": "computing/github-pages",
+      "title": "GitHub Actions 自动化构建与 GitHub Pages 部署",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "department": "代码工程与智能体协作",
+      "subcategory": "devops",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "GitHub Pages",
+        "GitHub Actions",
+        "CI/CD",
+        "Vite"
+      ],
+      "summary": "配置 GitHub Actions 工作流实现推送 main 分支自动校验、构建 Vite 静态站点并发布至 GitHub Pages。",
+      "created": "2026-09-28",
+      "updated": "2026-10-16",
+      "version_scope": "actions/deploy-pages@v4 / Node.js 22+",
+      "source_urls": [
+        "https://docs.github.com/zh/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages",
+        "https://vite.dev/guide/static-deploy.html"
+      ],
+      "prerequisites": [
+        "skill-git-workflow"
+      ],
+      "related": [
+        "troubleshooting-vite-assets"
+      ],
+      "aliases": [],
+      "relPath": "content/computing/github-pages.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-配置仓库-pages-构建源",
+          "text": "1. 配置仓库 Pages 构建源",
+          "level": 3
+        },
+        {
+          "id": "2-编写-github-workflows-deploy-yml",
+          "text": "2. 编写 .github/workflows/deploy.yml",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        },
+        {
+          "id": "常见问题与修复",
+          "text": "常见问题与修复",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li>仓库网页端进入 <code class=\"atlas-inline-code\">Settings → Pages → Build and deployment</code>，将 <strong>Source</strong> 改为 <strong>GitHub Actions</strong>。</li><li>在 <code class=\"atlas-inline-code\">vite.config.ts</code> 中确保子路径基址支持环境变量（如 <code class=\"atlas-inline-code\">process.env.ATLAS_BASE || &#39;/&#39;</code>），当部署在 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 时设为 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code>。</li><li>工作流文件置于 <code class=\"atlas-inline-code\">.github/workflows/deploy.yml</code>，为部署作业声明最小权限：<code class=\"atlas-inline-code\">pages: write</code> 与 <code class=\"atlas-inline-code\">id-token: write</code>。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li>仓库网页端进入 <code class=\"atlas-inline-code\">Settings → Pages → Build and deployment</code>，将 <strong>Source</strong> 改为 <strong>GitHub Actions</strong>。</li><li>在 <code class=\"atlas-inline-code\">vite.config.ts</code> 中确保子路径基址支持环境变量（如 <code class=\"atlas-inline-code\">process.env.ATLAS_BASE || &#39;/&#39;</code>），当部署在 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 时设为 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code>。</li><li>工作流文件置于 <code class=\"atlas-inline-code\">.github/workflows/deploy.yml</code>，为部署作业声明最小权限：<code class=\"atlas-inline-code\">pages: write</code> 与 <code class=\"atlas-inline-code\">id-token: write</code>。</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>已创建 GitHub 公开仓库（如 <code class=\"atlas-inline-code\">Personal-Atlas</code>）</li><li>本地 <code class=\"atlas-inline-code\">npm run check:content</code> 与 <code class=\"atlas-inline-code\">npm run build</code> 均能正常通过</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-配置仓库-pages-构建源\" class=\"atlas-heading atlas-h3\"><a href=\"#1-配置仓库-pages-构建源\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 配置仓库 Pages 构建源</h3>\n<p>打开 GitHub 仓库页面：</p>\n<ol class=\"atlas-list\"><li>点击顶部 <strong>Settings</strong>；</li><li>左侧导航栏选择 <strong>Pages</strong>；</li><li>在 <strong>Build and deployment → Source</strong> 下拉框中选择 <strong>GitHub Actions</strong>。</li></ol>\n<h3 id=\"2-编写-github-workflows-deploy-yml\" class=\"atlas-heading atlas-h3\"><a href=\"#2-编写-github-workflows-deploy-yml\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 编写 <code class=\"atlas-inline-code\">.github/workflows/deploy.yml</code></h3>\n<div class=\"atlas-code-block\" data-lang=\"yaml\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">YAML</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"name: Deploy ATLAS to GitHub Pages\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: &quot;pages&quot;\n  cancel-in-progress: true\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - name: Install dependencies\n        run: npm ci\n      - name: Validate &amp; Build Content\n        run: |\n          npm run check:content\n          npm run build\n        env:\n          ATLAS_BASE: /${{ github.event.repository.name }}/\n      - name: Upload Pages artifact\n        if: github.event_name != &#39;pull_request&#39;\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: ./dist\n\n  deploy:\n    needs: build\n    if: github.ref == &#39;refs/heads/main&#39; &amp;&amp; github.event_name != &#39;pull_request&#39;\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: ${{ steps.deployment.outputs.page_url }}\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4\">COPY</button></div><pre><code>name: Deploy ATLAS to GitHub Pages\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: &quot;pages&quot;\n  cancel-in-progress: true\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - name: Install dependencies\n        run: npm ci\n      - name: Validate &amp; Build Content\n        run: |\n          npm run check:content\n          npm run build\n        env:\n          ATLAS_BASE: /${{ github.event.repository.name }}/\n      - name: Upload Pages artifact\n        if: github.event_name != &#39;pull_request&#39;\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: ./dist\n\n  deploy:\n    needs: build\n    if: github.ref == &#39;refs/heads/main&#39; &amp;&amp; github.event_name != &#39;pull_request&#39;\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: ${{ steps.deployment.outputs.page_url }}\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4</code></pre></div>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>向 <code class=\"atlas-inline-code\">main</code> 推送一次提交后，GitHub <strong>Actions</strong> 标签页中 <code class=\"atlas-inline-code\">build</code> 与 <code class=\"atlas-inline-code\">deploy</code> 两个作业均显示绿色勾选。</li><li>打开输出的 <code class=\"atlas-inline-code\">page_url</code>，首页、二维阅读器、搜索及三维档案模型均正常加载，浏览器控制台无 404 报错。</li></ul>\n<h2 id=\"常见问题与修复\" class=\"atlas-heading atlas-h2\"><a href=\"#常见问题与修复\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见问题与修复</h2>\n<ul class=\"atlas-list\"><li><strong>问题</strong>：部署成功但页面白屏，控制台提示 <code class=\"atlas-inline-code\">/assets/index-xxx.js 404</code>。</li></ul>\n<p><strong>修复</strong>：详见排错档案 <a href=\"#/entry/computing/vite-assets-404\" class=\"atlas-int-link\" data-entry-link=\"computing/vite-assets-404\">Vite 部署 GitHub Pages 静态资源 404 排查</a>。</p>",
+      "findings": [
+        "仓库网页端进入 Settings → Pages → Build and deployment，将 Source 改为 GitHub Actions。",
+        "在 vite.config.ts 中确保子路径基址支持环境变量（如 process.env.ATLAS_BASE || '/'），当部署在 https://<user>.github.io/<repo>/ 时设为 /<repo>/。",
+        "工作流文件置于 .github/workflows/deploy.yml，为部署作业声明最小权限：pages: write 与 id-token: write。",
+        "将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。",
+        "已创建 GitHub 公开仓库（如 Personal-Atlas）",
+        "本地 npm run check:content 与 npm run build 均能正常通过"
+      ],
+      "plainText": "GitHub Actions 自动化构建与 GitHub Pages 部署\n\n快速复习\n\n1. 仓库网页端进入 Settings → Pages → Build and deployment，将 Source 改为 GitHub Actions。\n2. 在 vite.config.ts 中确保子路径基址支持环境变量（如 process.env.ATLAS_BASE || '/'），当部署在 https://<user>.github.io/<repo>/ 时设为 /<repo>/。\n3. 工作流文件置于 .github/workflows/deploy.yml，为部署作业声明最小权限：pages: write 与 id-token: write。\n\n适用场景\n\n将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。\n\n前置准备\n\n- 已创建 GitHub 公开仓库（如 Personal-Atlas）\n- 本地 npm run check:content 与 npm run build 均能正常通过\n\n操作步骤\n\n1. 配置仓库 Pages 构建源\n\n打开 GitHub 仓库页面：\n1. 点击顶部 Settings；\n2. 左侧导航栏选择 Pages；\n3. 在 Build and deployment → Source 下拉框中选择 GitHub Actions。\n\n2. 编写 .github/workflows/deploy.yml\n\n``yaml\nname: Deploy ATLAS to GitHub Pages\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: \"pages\"\n  cancel-in-progress: true\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - name: Install dependencies\n        run: npm ci\n      - name: Validate & Build Content\n        run: |\n          npm run check:content\n          npm run build\n        env:\n          ATLAS_BASE: /{{ github.event.repository.name }}/\n      - name: Upload Pages artifact\n        if: github.event_name != 'pull_request'\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: ./dist\n\n  deploy:\n    needs: build\n    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: {{ steps.deployment.outputs.page_url }}\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4\n`\n\n验证结果\n\n- 向 main 推送一次提交后，GitHub Actions 标签页中 build 与 deploy 两个作业均显示绿色勾选。\n- 打开输出的 page_url，首页、二维阅读器、搜索及三维档案模型均正常加载，浏览器控制台无 404 报错。\n\n常见问题与修复\n\n- 问题：部署成功但页面白屏，控制台提示 /assets/index-xxx.js 404`。  \n  修复：详见排错档案 Vite 部署 GitHub Pages 静态资源 404 排查。",
+      "visualCode": "C-003",
+      "globalCode": "X-006"
+    },
+    {
+      "id": "skill-r-dataframe",
+      "slug": "computing/r-dataframe",
+      "title": "R 语言数据框（tidyverse / dplyr）高频清洗速查",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "department": "代码工程与智能体协作",
+      "subcategory": "data-science",
+      "type": "snippet",
+      "status": "learning",
+      "tags": [
+        "R语言",
+        "tidyverse",
+        "dplyr",
+        "数据清洗",
+        "生信"
+      ],
+      "summary": "使用 dplyr 管道操作符筛选样本行、挑选基因列、分组汇总均值标准差及长宽表转换。",
+      "created": "2026-10-02",
+      "updated": "2026-10-16",
+      "version_scope": "R 4.3+ / tidyverse 2.0+",
+      "source_urls": [
+        "https://dplyr.tidyverse.org/"
+      ],
+      "prerequisites": [],
+      "related": [
+        "academics-biostatistics-tests"
+      ],
+      "aliases": [],
+      "relPath": "content/computing/r-dataframe.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "宽表与长表互转（画-ggplot2-必用）",
+          "text": "宽表与长表互转（画 ggplot2 必用）",
+          "level": 2
+        },
+        {
+          "id": "验证与排查小贴士",
+          "text": "验证与排查小贴士",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"library(tidyverse)\n\n# 核心五动词流水线：筛选行 -&gt; 新增列 -&gt; 分组汇总 -&gt; 排序\nsummary_df &lt;- raw_df |&gt;\n  filter(!is.na(expression), padj &lt; 0.05) |&gt;\n  mutate(log2_fc = log2(treated / control)) |&gt;\n  group_by(cell_line, treatment) |&gt;\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = &quot;drop&quot;\n  ) |&gt;\n  arrange(desc(abs(mean_fc)))\">COPY</button></div><pre><code>library(tidyverse)\n\n# 核心五动词流水线：筛选行 -&gt; 新增列 -&gt; 分组汇总 -&gt; 排序\nsummary_df &lt;- raw_df |&gt;\n  filter(!is.na(expression), padj &lt; 0.05) |&gt;\n  mutate(log2_fc = log2(treated / control)) |&gt;\n  group_by(cell_line, treatment) |&gt;\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = &quot;drop&quot;\n  ) |&gt;\n  arrange(desc(abs(mean_fc)))</code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"library(tidyverse)\n\n# 核心五动词流水线：筛选行 -&gt; 新增列 -&gt; 分组汇总 -&gt; 排序\nsummary_df &lt;- raw_df |&gt;\n  filter(!is.na(expression), padj &lt; 0.05) |&gt;\n  mutate(log2_fc = log2(treated / control)) |&gt;\n  group_by(cell_line, treatment) |&gt;\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = &quot;drop&quot;\n  ) |&gt;\n  arrange(desc(abs(mean_fc)))\">COPY</button></div><pre><code>library(tidyverse)\n\n# 核心五动词流水线：筛选行 -&gt; 新增列 -&gt; 分组汇总 -&gt; 排序\nsummary_df &lt;- raw_df |&gt;\n  filter(!is.na(expression), padj &lt; 0.05) |&gt;\n  mutate(log2_fc = log2(treated / control)) |&gt;\n  group_by(cell_line, treatment) |&gt;\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = &quot;drop&quot;\n  ) |&gt;\n  arrange(desc(abs(mean_fc)))</code></pre></div>\n<h2 id=\"宽表与长表互转（画-ggplot2-必用）\" class=\"atlas-heading atlas-h2\"><a href=\"#宽表与长表互转（画-ggplot2-必用）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>宽表与长表互转（画 ggplot2 必用）</h2>\n<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 宽表转长表（把多个样本列收拢为 sample 与 value 两列）\nlong_df &lt;- wide_df |&gt;\n  pivot_longer(\n    cols = starts_with(&quot;Rep_&quot;),\n    names_to = &quot;replicate&quot;,\n    values_to = &quot;intensity&quot;\n  )\n\n# 长表转回宽表\nwide_again &lt;- long_df |&gt;\n  pivot_wider(names_from = replicate, values_from = intensity)\">COPY</button></div><pre><code># 宽表转长表（把多个样本列收拢为 sample 与 value 两列）\nlong_df &lt;- wide_df |&gt;\n  pivot_longer(\n    cols = starts_with(&quot;Rep_&quot;),\n    names_to = &quot;replicate&quot;,\n    values_to = &quot;intensity&quot;\n  )\n\n# 长表转回宽表\nwide_again &lt;- long_df |&gt;\n  pivot_wider(names_from = replicate, values_from = intensity)</code></pre></div>\n<h2 id=\"验证与排查小贴士\" class=\"atlas-heading atlas-h2\"><a href=\"#验证与排查小贴士\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证与排查小贴士</h2>\n<ul class=\"atlas-list\"><li>每次 <code class=\"atlas-inline-code\">left_join(a, b, by = &quot;gene_id&quot;)</code> 前，先用 <code class=\"atlas-inline-code\">count(b, gene_id) |&gt; filter(n &gt; 1)</code> 检查右表是否有重复键，防止行数意外翻倍！</li></ul>",
+      "findings": [
+        "每次 left_join(a, b, by = \"gene_id\") 前，先用 count(b, gene_id) |> filter(n > 1) 检查右表是否有重复键，防止行数意外翻倍！"
+      ],
+      "plainText": "R 语言数据框（tidyverse / dplyr）高频清洗速查\n\n快速复习\n\n``r\nlibrary(tidyverse)\n\n核心五动词流水线：筛选行 -> 新增列 -> 分组汇总 -> 排序\nsummary_df <- raw_df |>\n  filter(!is.na(expression), padj < 0.05) |>\n  mutate(log2_fc = log2(treated / control)) |>\n  group_by(cell_line, treatment) |>\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = \"drop\"\n  ) |>\n  arrange(desc(abs(mean_fc)))\n`\n\n宽表与长表互转（画 ggplot2 必用）\n\n`r\n宽表转长表（把多个样本列收拢为 sample 与 value 两列）\nlong_df <- wide_df |>\n  pivot_longer(\n    cols = starts_with(\"Rep_\"),\n    names_to = \"replicate\",\n    values_to = \"intensity\"\n  )\n\n长表转回宽表\nwide_again <- long_df |>\n  pivot_wider(names_from = replicate, values_from = intensity)\n`\n\n验证与排查小贴士\n\n- 每次 left_join(a, b, by = \"gene_id\") 前，先用 count(b, gene_id) |> filter(n > 1)` 检查右表是否有重复键，防止行数意外翻倍！",
+      "visualCode": "C-004",
+      "globalCode": "X-007"
+    },
+    {
+      "id": "troubleshooting-vite-assets",
+      "slug": "computing/vite-assets-404",
+      "title": "Vite 部署 GitHub Pages 静态资源與模型 404 排查",
+      "category": "computing",
+      "categoryTitle": "编程与 AI",
+      "en": "COMPUTING & AI",
+      "department": "代码工程与智能体协作",
+      "subcategory": "frontend-build",
+      "type": "troubleshooting",
+      "status": "proficient",
+      "tags": [
+        "Vite",
+        "GitHub Pages",
+        "404",
+        "静态资源",
+        "Three.js"
+      ],
+      "summary": "定位并修复 GitHub Pages 仓库子路径（/RepoName/）下硬编码根路径导致的 GLB 模型、图片与 Service Worker 404 错误。",
+      "created": "2026-10-05",
+      "updated": "2026-10-16",
+      "version_scope": "Vite 5 / 6 / 7",
+      "source_urls": [
+        "https://vite.dev/guide/build.html#public-base-path"
+      ],
+      "prerequisites": [
+        "skill-github-pages"
+      ],
+      "related": [
+        "skill-git-workflow"
+      ],
+      "aliases": [],
+      "relPath": "content/computing/vite-assets-404.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "问题症状与环境",
+          "text": "问题症状与环境",
+          "level": 2
+        },
+        {
+          "id": "原因分析",
+          "text": "原因分析",
+          "level": 2
+        },
+        {
+          "id": "修复步骤",
+          "text": "修复步骤",
+          "level": 2
+        },
+        {
+          "id": "1-让-vite-config-ts-支持可配置基址",
+          "text": "1. 让 vite.config.ts 支持可配置基址",
+          "level": 3
+        },
+        {
+          "id": "2-统一使用-asseturl-解析器",
+          "text": "2. 统一使用 assetUrl 解析器",
+          "level": 3
+        },
+        {
+          "id": "3-本地模拟子路径回归验证",
+          "text": "3. 本地模拟子路径回归验证",
+          "level": 3
+        },
+        {
+          "id": "修复验证",
+          "text": "修复验证",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>症状</strong>：本地 <code class=\"atlas-inline-code\">npm run dev</code> 一切正常，部署到 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 后页面空白，或 Three.js 的 <code class=\"atlas-inline-code\">.glb</code> 模型、音频、图片报 <code class=\"atlas-inline-code\">404 Not Found</code>。</li><li><strong>根因</strong>：GitHub Pages 项目站点部署在子路径 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code> 下，而代码中使用了以 <code class=\"atlas-inline-code\">/</code> 开头的绝对根路径（如 <code class=\"atlas-inline-code\">fetch(&#39;/assets/model.glb&#39;)</code>），浏览器会错误请求 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/assets/model.glb</code>。</li><li><strong>三步根治</strong>：</li><li><code class=\"atlas-inline-code\">vite.config.ts</code> 配置正确的 <code class=\"atlas-inline-code\">base</code>（如 <code class=\"atlas-inline-code\">/Personal-Atlas/</code>）；</li><li>所有运行期动态资源统一经过 <code class=\"atlas-inline-code\">assetUrl(path)</code> 拼接 <code class=\"atlas-inline-code\">import.meta.env.BASE_URL</code>；</li><li><code class=\"atlas-inline-code\">index.html</code> 中的静态引用使用相对路径 <code class=\"atlas-inline-code\">./favicon.svg</code> 或由 Vite 自动转换。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>症状</strong>：本地 <code class=\"atlas-inline-code\">npm run dev</code> 一切正常，部署到 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/&lt;repo&gt;/</code> 后页面空白，或 Three.js 的 <code class=\"atlas-inline-code\">.glb</code> 模型、音频、图片报 <code class=\"atlas-inline-code\">404 Not Found</code>。</li><li><strong>根因</strong>：GitHub Pages 项目站点部署在子路径 <code class=\"atlas-inline-code\">/&lt;repo&gt;/</code> 下，而代码中使用了以 <code class=\"atlas-inline-code\">/</code> 开头的绝对根路径（如 <code class=\"atlas-inline-code\">fetch(&#39;/assets/model.glb&#39;)</code>），浏览器会错误请求 <code class=\"atlas-inline-code\">https://&lt;user&gt;.github.io/assets/model.glb</code>。</li><li><strong>三步根治</strong>：</li><li><code class=\"atlas-inline-code\">vite.config.ts</code> 配置正确的 <code class=\"atlas-inline-code\">base</code>（如 <code class=\"atlas-inline-code\">/Personal-Atlas/</code>）；</li><li>所有运行期动态资源统一经过 <code class=\"atlas-inline-code\">assetUrl(path)</code> 拼接 <code class=\"atlas-inline-code\">import.meta.env.BASE_URL</code>；</li><li><code class=\"atlas-inline-code\">index.html</code> 中的静态引用使用相对路径 <code class=\"atlas-inline-code\">./favicon.svg</code> 或由 Vite 自动转换。</li></ol>\n<h2 id=\"问题症状与环境\" class=\"atlas-heading atlas-h2\"><a href=\"#问题症状与环境\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>问题症状与环境</h2>\n<ul class=\"atlas-list\"><li><strong>环境</strong>：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。</li><li><strong>报错信息</strong>：</li></ul>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\">COPY</button></div><pre><code>  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.</code></pre></div>\n<h2 id=\"原因分析\" class=\"atlas-heading atlas-h2\"><a href=\"#原因分析\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>原因分析</h2>\n<ol class=\"atlas-list\"><li><code class=\"atlas-inline-code\">vite.config.ts</code> 中 <code class=\"atlas-inline-code\">base</code> 默认是 <code class=\"atlas-inline-code\">&#39;/&#39;</code>，构建产物 <code class=\"atlas-inline-code\">dist/index.html</code> 引用的 JS/CSS 全部从域名根目录 <code class=\"atlas-inline-code\">/assets/...</code> 查找。</li><li>即使修改了 <code class=\"atlas-inline-code\">vite.config.ts</code> 的 <code class=\"atlas-inline-code\">base</code>，TypeScript 代码中传给 <code class=\"atlas-inline-code\">GLTFLoader.load(&#39;/assets/xxx.glb&#39;)</code> 或 <code class=\"atlas-inline-code\">new Audio(&#39;/audio/xxx.ogg&#39;)</code> 的字符串字面量不会被 Vite 自动重写。</li></ol>\n<h2 id=\"修复步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#修复步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复步骤</h2>\n<h3 id=\"1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading atlas-h3\"><a href=\"#1-让-vite-config-ts-支持可配置基址\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 让 <code class=\"atlas-inline-code\">vite.config.ts</code> 支持可配置基址</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\">COPY</button></div><pre><code>// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || &quot;/&quot;;\nconst normalizedBase = rawBase.endsWith(&quot;/&quot;) ? rawBase : `${rawBase}/`;\n\nexport default defineConfig({\n  base: normalizedBase,\n});</code></pre></div>\n<h3 id=\"2-统一使用-asseturl-解析器\" class=\"atlas-heading atlas-h3\"><a href=\"#2-统一使用-asseturl-解析器\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 统一使用 <code class=\"atlas-inline-code\">assetUrl</code> 解析器</h3>\n<div class=\"atlas-code-block\" data-lang=\"ts\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TS</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};\">COPY</button></div><pre><code>// src/asset-url.ts\nexport const assetUrl = (path: string) =&gt; {\n  const clean = path.replace(/^\\.?\\//, &quot;&quot;);\n  return `${import.meta.env.BASE_URL}${clean}`;\n};</code></pre></div>\n<h3 id=\"3-本地模拟子路径回归验证\" class=\"atlas-heading atlas-h3\"><a href=\"#3-本地模拟子路径回归验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>3. 本地模拟子路径回归验证</h3>\n<p>无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：</p>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/\">COPY</button></div><pre><code># Windows PowerShell 本地模拟子路径构建\n$env:ATLAS_BASE=&quot;/Personal-Atlas/&quot;; npm run build; npx vite preview --base /Personal-Atlas/</code></pre></div>\n<h2 id=\"修复验证\" class=\"atlas-heading atlas-h2\"><a href=\"#修复验证\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>修复验证</h2>\n<ul class=\"atlas-list\"><li>打开浏览器开发者工具 <strong>Network</strong> 面板，勾选 <code class=\"atlas-inline-code\">Disable cache</code> 并刷新页面；</li><li>确认所有 <code class=\"atlas-inline-code\">.js</code>、<code class=\"atlas-inline-code\">.css</code>、<code class=\"atlas-inline-code\">.woff2</code>、<code class=\"atlas-inline-code\">.glb</code>、<code class=\"atlas-inline-code\">entries-manifest</code> 请求的状态码均为 <code class=\"atlas-inline-code\">200</code>，且 URL 均带有正确的基址前缀。</li></ul>",
+      "findings": [
+        "症状：本地 npm run dev 一切正常，部署到 https://<user>.github.io/<repo>/ 后页面空白，或 Three.js 的 .glb 模型、音频、图片报 404 Not Found。",
+        "根因：GitHub Pages 项目站点部署在子路径 /<repo>/ 下，而代码中使用了以 / 开头的绝对根路径（如 fetch('/assets/model.glb')），浏览器会错误请求 https://<user>.github.io/assets/model.glb。",
+        "三步根治：",
+        "vite.config.ts 配置正确的 base（如 /Personal-Atlas/）；",
+        "所有运行期动态资源统一经过 assetUrl(path) 拼接 import.meta.env.BASE_URL；",
+        "index.html 中的静态引用使用相对路径 ./favicon.svg 或由 Vite 自动转换。"
+      ],
+      "plainText": "Vite 部署 GitHub Pages 静态资源与模型 404 排查\n\n快速复习\n\n1. 症状：本地 npm run dev 一切正常，部署到 https://<user>.github.io/<repo>/ 后页面空白，或 Three.js 的 .glb 模型、音频、图片报 404 Not Found。\n2. 根因：GitHub Pages 项目站点部署在子路径 /<repo>/ 下，而代码中使用了以 / 开头的绝对根路径（如 fetch('/assets/model.glb')），浏览器会错误请求 https://<user>.github.io/assets/model.glb。\n3. 三步根治：\n   - vite.config.ts 配置正确的 base（如 /Personal-Atlas/）；\n   - 所有运行期动态资源统一经过 assetUrl(path) 拼接 import.meta.env.BASE_URL；\n   - index.html 中的静态引用使用相对路径 ./favicon.svg 或由 Vite 自动转换。\n\n问题症状与环境\n\n- 环境：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。\n- 报错信息：\n  ``text\n  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\n  `\n\n原因分析\n\n1. vite.config.ts 中 base 默认是 '/'，构建产物 dist/index.html 引用的 JS/CSS 全部从域名根目录 /assets/... 查找。\n2. 即使修改了 vite.config.ts 的 base，TypeScript 代码中传给 GLTFLoader.load('/assets/xxx.glb') 或 new Audio('/audio/xxx.ogg') 的字符串字面量不会被 Vite 自动重写。\n\n修复步骤\n\n1. 让 vite.config.ts 支持可配置基址\n\n`ts\n// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || \"/\";\nconst normalizedBase = rawBase.endsWith(\"/\") ? rawBase : {rawBase}/;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\n`\n\n2. 统一使用 assetUrl 解析器\n\n`ts\n// src/asset-url.ts\nexport const assetUrl = (path: string) => {\n  const clean = path.replace(/^\\.?\\//, \"\");\n  return {import.meta.env.BASE_URL}{clean};\n};\n`\n\n3. 本地模拟子路径回归验证\n\n无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：\n\n`bash\nWindows PowerShell 本地模拟子路径构建\nenv:ATLAS_BASE=\"/Personal-Atlas/\"; npm run build; npx vite preview --base /Personal-Atlas/\n`\n\n修复验证\n\n- 打开浏览器开发者工具 Network 面板，勾选 Disable cache 并刷新页面；\n- 确认所有 .js、.css、.woff2、.glb、entries-manifest 请求的状态码均为 200`，且 URL 均带有正确的基址前缀。",
+      "visualCode": "C-005",
+      "globalCode": "X-008"
+    },
+    {
+      "id": "skill-cell-observation",
+      "slug": "research/cell-observation",
+      "title": "贴壁细胞日常形态观察与污染排查入门",
+      "category": "research",
+      "categoryTitle": "科研与实验",
+      "en": "RESEARCH & LAB",
+      "department": "实验方案与生物信息",
+      "subcategory": "cell-culture",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "细胞培养",
+        "显微镜观察",
+        "无菌操作",
+        "实验SOP"
+      ],
+      "summary": "倒置相差显微镜下判断细胞汇合度、边缘折光性，以及细菌、真菌、支原体污染的早期鉴别。",
+      "created": "2026-09-30",
+      "updated": "2026-10-16",
+      "version_scope": "常规哺乳动物贴壁细胞系 SOP",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [
+        "skill-molecular-docking"
+      ],
+      "aliases": [],
+      "relPath": "content/research/cell-observation.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-传代时机与汇合度评估",
+          "text": "1. 传代时机与汇合度评估",
+          "level": 3
+        },
+        {
+          "id": "2-三大常见污染快速鉴别表",
+          "text": "2. 三大常见污染快速鉴别表",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>先肉眼看培养液颜色与透明度</strong>：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。</li><li><strong>低倍镜（4× / 10×）看整体分布与汇合度（Confluency）</strong>：当汇合度达 <strong>80%～85%</strong>（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。</li><li><strong>高倍镜（20×）看状态细节</strong>：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>先肉眼看培养液颜色与透明度</strong>：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。</li><li><strong>低倍镜（4× / 10×）看整体分布与汇合度（Confluency）</strong>：当汇合度达 <strong>80%～85%</strong>（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。</li><li><strong>高倍镜（20×）看状态细节</strong>：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>75% 医用酒精喷壶、无尘擦镜纸</li><li>倒置相差显微镜（确认聚光镜与相差环已对中）</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-传代时机与汇合度评估\" class=\"atlas-heading atlas-h3\"><a href=\"#1-传代时机与汇合度评估\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 传代时机与汇合度评估</h3>\n<ul class=\"atlas-list\"><li><strong>&lt; 30%</strong>：稀疏生长期，换液不传代；</li><li><strong>70% ~ 85%</strong>：最佳传代与实验铺板窗口；</li><li><strong>&gt; 95%</strong>：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。</li></ul>\n<h3 id=\"2-三大常见污染快速鉴别表\" class=\"atlas-heading atlas-h3\"><a href=\"#2-三大常见污染快速鉴别表\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 三大常见污染快速鉴别表</h3>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>污染类型</th><th>培养液外观</th><th>镜下典型特征</th><th>应急处置</th></tr></thead><tbody><tr><td><strong>细菌污染</strong></td><td>12–24h 内迅速变黄、浑浊</td><td>细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动</td><td>勿开盖！直接加含氯消毒液浸泡后密封丢弃</td></tr><tr><td><strong>霉菌/酵母污染</strong></td><td>初期清亮，后期出现白色/淡黄色漂浮团块</td><td>可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串</td><td>立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘</td></tr><tr><td><strong>支原体污染</strong></td><td>培养液清亮，pH 变化慢，极易漏诊</td><td>细胞生长变慢、形态拉长或碎裂，背景有细砂状附着</td><td>进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理</td></tr></tbody></table></div>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>每次观察后在实验记录本登记：<strong>细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代）</strong>，确保前后批次实验可追溯。</li></ul>",
+      "findings": [
+        "先肉眼看培养液颜色与透明度：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。",
+        "低倍镜（4× / 10×）看整体分布与汇合度（Confluency）：当汇合度达 80%～85%（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。",
+        "高倍镜（20×）看状态细节：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。",
+        "每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。",
+        "75% 医用酒精喷壶、无尘擦镜纸",
+        "倒置相差显微镜（确认聚光镜与相差环已对中）"
+      ],
+      "plainText": "贴壁细胞日常形态观察与污染排查入门\n\n快速复习\n\n1. 先肉眼看培养液颜色与透明度：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。\n2. 低倍镜（4× / 10×）看整体分布与汇合度（Confluency）：当汇合度达 80%～85%（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。\n3. 高倍镜（20×）看状态细节：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。\n\n适用场景\n\n每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。\n\n前置准备\n\n- 75% 医用酒精喷壶、无尘擦镜纸\n- 倒置相差显微镜（确认聚光镜与相差环已对中）\n\n操作步骤\n\n1. 传代时机与汇合度评估\n\n- < 30%：稀疏生长期，换液不传代；\n- 70% ~ 85%：最佳传代与实验铺板窗口；\n- > 95%：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。\n\n2. 三大常见污染快速鉴别表\n\n| 污染类型 | 培养液外观 | 镜下典型特征 | 应急处置 |\n| --- | --- | --- | --- |\n| 细菌污染 | 12–24h 内迅速变黄、浑浊 | 细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动 | 勿开盖！直接加含氯消毒液浸泡后密封丢弃 |\n| 霉菌/酵母污染 | 初期清亮，后期出现白色/淡黄色漂浮团块 | 可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串 | 立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘 |\n| 支原体污染 | 培养液清亮，pH 变化慢，极易漏诊 | 细胞生长变慢、形态拉长或碎裂，背景有细砂状附着 | 进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理 |\n\n验证结果\n\n- 每次观察后在实验记录本登记：细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代），确保前后批次实验可追溯。",
+      "visualCode": "R-001",
+      "globalCode": "X-009"
+    },
+    {
+      "id": "skill-molecular-docking",
+      "slug": "research/molecular-docking",
+      "title": "AutoDock Vina 分子对接标准流程概览",
+      "category": "research",
+      "categoryTitle": "科研与实验",
+      "en": "RESEARCH & LAB",
+      "department": "实验方案与生物信息",
+      "subcategory": "structural-biology",
+      "type": "skill",
+      "status": "review",
+      "tags": [
+        "分子对接",
+        "AutoDock Vina",
+        "PyMOL",
+        "结构生物学"
+      ],
+      "summary": "受体蛋白去水加氢、配体小分子 3D 构象能量最小化、Grid Box 活性口袋设置与结合能结果判读。",
+      "created": "2026-03-10",
+      "updated": "2026-03-15",
+      "version_scope": "AutoDock Vina 1.2.x / PyMOL 2.5",
+      "source_urls": [
+        "https://autodock-vina.readthedocs.io/"
+      ],
+      "prerequisites": [],
+      "related": [
+        "concept-enzyme-kinetics"
+      ],
+      "aliases": [],
+      "relPath": "content/research/molecular-docking.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "适用场景",
+          "text": "适用场景",
+          "level": 2
+        },
+        {
+          "id": "前置准备",
+          "text": "前置准备",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-编写-vina-对接配置文件-config-txt",
+          "text": "1. 编写 Vina 对接配置文件 config.txt",
+          "level": 3
+        },
+        {
+          "id": "2-运行对接与重对接验证（redocking）",
+          "text": "2. 运行对接与重对接验证（Redocking）",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        },
+        {
+          "id": "常见问题与修复",
+          "text": "常见问题与修复",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>受体准备（Receptor）</strong>：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 <code class=\"atlas-inline-code\">.pdbqt</code>。</li><li><strong>配体准备（Ligand）</strong>：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 <code class=\"atlas-inline-code\">.pdbqt</code>。</li><li><strong>对接盒子（Grid Box）</strong>：以原结晶配体质心或预测口袋为中心，边长通常设为 <code class=\"atlas-inline-code\">20 Å × 20 Å × 20 Å</code>（确保包裹整个活性位点且不过大）。</li><li><strong>判读经验阈值</strong>：Vina 结合自由能 <span class=\"atlas-math-inline\" data-latex=\"\\Delta G \\le -7.0\\text{ kcal/mol}\">Δ G ≤ -7.0<span class=\"math-roman\"> kcal/mol</span></span> 通常指示较强结合潜力，但必须结合 <strong>氢键距离（&lt; 3.5 Å）</strong> 与疏水相互作用构象合理性综合判断。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>受体准备（Receptor）</strong>：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 <code class=\"atlas-inline-code\">.pdbqt</code>。</li><li><strong>配体准备（Ligand）</strong>：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 <code class=\"atlas-inline-code\">.pdbqt</code>。</li><li><strong>对接盒子（Grid Box）</strong>：以原结晶配体质心或预测口袋为中心，边长通常设为 <code class=\"atlas-inline-code\">20 Å × 20 Å × 20 Å</code>（确保包裹整个活性位点且不过大）。</li><li><strong>判读经验阈值</strong>：Vina 结合自由能 <span class=\"atlas-math-inline\" data-latex=\"\\Delta G \\le -7.0\\text{ kcal/mol}\">Δ G ≤ -7.0<span class=\"math-roman\"> kcal/mol</span></span> 通常指示较强结合潜力，但必须结合 <strong>氢键距离（&lt; 3.5 Å）</strong> 与疏水相互作用构象合理性综合判断。</li></ol>\n<h2 id=\"适用场景\" class=\"atlas-heading atlas-h2\"><a href=\"#适用场景\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>适用场景</h2>\n<p>靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。</p>\n<h2 id=\"前置准备\" class=\"atlas-heading atlas-h2\"><a href=\"#前置准备\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>前置准备</h2>\n<ul class=\"atlas-list\"><li>已安装 <code class=\"atlas-inline-code\">AutoDock Vina</code>、<code class=\"atlas-inline-code\">AutoDockTools (MGLTools)</code> 或 <code class=\"atlas-inline-code\">Meeko</code>、<code class=\"atlas-inline-code\">OpenBabel</code>、<code class=\"atlas-inline-code\">PyMOL</code></li><li>靶标蛋白晶体结构（优先选择分辨率 <span class=\"atlas-math-inline\" data-latex=\"&lt; 2.5\\text{ \\AA}\">&lt; 2.5<span class=\"math-roman\"> Å</span></span> 且含共晶配体的 PDB 条目）</li></ul>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-编写-vina-对接配置文件-config-txt\" class=\"atlas-heading atlas-h3\"><a href=\"#1-编写-vina-对接配置文件-config-txt\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 编写 Vina 对接配置文件 <code class=\"atlas-inline-code\">config.txt</code></h3>\n<div class=\"atlas-code-block\" data-lang=\"ini\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">INI</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"receptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\">COPY</button></div><pre><code>receptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3</code></pre></div>\n<h3 id=\"2-运行对接与重对接验证（redocking）\" class=\"atlas-heading atlas-h3\"><a href=\"#2-运行对接与重对接验证（redocking）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 运行对接与重对接验证（Redocking）</h3>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\">COPY</button></div><pre><code># 运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log</code></pre></div>\n<blockquote class=\"atlas-blockquote\"><p><strong>金标准控制（Redocking）</strong>：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 <span class=\"atlas-math-inline\" data-latex=\"\\text{RMSD}\"><span class=\"math-roman\">RMSD</span></span>。当 <span class=\"atlas-math-inline\" data-latex=\"\\text{RMSD} &lt; 2.0\\text{ \\AA}\"><span class=\"math-roman\">RMSD</span> &lt; 2.0<span class=\"math-roman\"> Å</span></span> 时，说明当前参数与盒子设置可靠。</p></blockquote>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li><code class=\"atlas-inline-code\">docked_poses.pdbqt</code> 生成多个打分构象，Mode 1 结合能最低；</li><li>在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 <span class=\"atlas-math-inline\" data-latex=\"\\pi-\\pi\">π-π</span> 堆积，且无明显空间位阻碰撞（Clash）。</li></ul>\n<h2 id=\"常见问题与修复\" class=\"atlas-heading atlas-h2\"><a href=\"#常见问题与修复\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常见问题与修复</h2>\n<ul class=\"atlas-list\"><li><strong>问题</strong>：对接打分全部为正值（如 <code class=\"atlas-inline-code\">+15.2 kcal/mol</code>）。</li></ul>\n<p><strong>原因</strong>：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。 <strong>修复</strong>：在 PyMOL 中选中原配体执行 <code class=\"atlas-inline-code\">get_extent ligand</code> 重新核对中心坐标 <span class=\"atlas-math-inline\" data-latex=\"(x, y, z)\">(x, y, z)</span>。</p>",
+      "findings": [
+        "受体准备（Receptor）：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 .pdbqt。",
+        "配体准备（Ligand）：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 .pdbqt。",
+        "对接盒子（Grid Box）：以原结晶配体质心或预测口袋为中心，边长通常设为 20 Å × 20 Å × 20 Å（确保包裹整个活性位点且不过大）。",
+        "判读经验阈值：Vina 结合自由能 \\Delta G \\le -7.0\\text{ kcal/mol} 通常指示较强结合潜力，但必须结合 氢键距离（< 3.5 Å） 与疏水相互作用构象合理性综合判断。",
+        "靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。",
+        "已安装 AutoDock Vina、AutoDockTools (MGLTools) 或 Meeko、OpenBabel、PyMOL"
+      ],
+      "plainText": "AutoDock Vina 分子对接标准流程概览\n\n快速复习\n\n1. 受体准备（Receptor）：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 .pdbqt。\n2. 配体准备（Ligand）：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 .pdbqt。\n3. 对接盒子（Grid Box）：以原结晶配体质心或预测口袋为中心，边长通常设为 20 Å × 20 Å × 20 Å（确保包裹整个活性位点且不过大）。\n4. 判读经验阈值：Vina 结合自由能 \\Delta G \\le -7.0\\text{ kcal/mol} 通常指示较强结合潜力，但必须结合 氢键距离（< 3.5 Å） 与疏水相互作用构象合理性综合判断。\n\n适用场景\n\n靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。\n\n前置准备\n\n- 已安装 AutoDock Vina、AutoDockTools (MGLTools) 或 Meeko、OpenBabel、PyMOL\n- 靶标蛋白晶体结构（优先选择分辨率 < 2.5\\text{ \\AA} 且含共晶配体的 PDB 条目）\n\n操作步骤\n\n1. 编写 Vina 对接配置文件 config.txt\n\n``ini\nreceptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\n`\n\n2. 运行对接与重对接验证（Redocking）\n\n`bash\n运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\n`\n\n> 金标准控制（Redocking）：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 \\text{RMSD}。当 \\text{RMSD} < 2.0\\text{ \\AA} 时，说明当前参数与盒子设置可靠。\n\n验证结果\n\n- docked_poses.pdbqt 生成多个打分构象，Mode 1 结合能最低；\n- 在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 \\pi-\\pi 堆积，且无明显空间位阻碰撞（Clash）。\n\n常见问题与修复\n\n- 问题：对接打分全部为正值（如 +15.2 kcal/mol）。  \n  原因：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。  \n  修复：在 PyMOL 中选中原配体执行 get_extent ligand` 重新核对中心坐标 (x, y, z)。",
+      "visualCode": "R-002",
+      "globalCode": "X-010"
+    },
+    {
+      "id": "academics-biostatistics-tests",
+      "slug": "academics/biostatistics-tests",
+      "title": "生物统计常用假设检验方法选择速查卡",
+      "category": "academics",
+      "categoryTitle": "学科知识",
+      "en": "ACADEMICS & CORE",
+      "department": "基础学科与课程体系",
+      "subcategory": "statistics",
+      "type": "snippet",
+      "status": "todo",
+      "tags": [
+        "生物统计",
+        "假设检验",
+        "t检验",
+        "ANOVA",
+        "速查卡"
+      ],
+      "summary": "根据样本组数、正态性与方差齐性快速决定使用 Student's t-test、Welch's t-test、Mann-Whitney U 还是 ANOVA。",
+      "created": "2026-10-10",
+      "updated": "2026-10-16",
+      "version_scope": "实验设计与统计分析通用规则",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [
+        "skill-r-dataframe"
+      ],
+      "aliases": [],
+      "relPath": "content/academics/biostatistics-tests.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "待补充核对项（todo）",
+          "text": "待补充核对项（TODO）",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>比较场景</th><th>满足正态性 + 方差齐性（参数检验）</th><th>正态但方差不齐</th><th>不满足正态分布（非参数检验）</th></tr></thead><tbody><tr><td><strong>两组独立样本</strong></td><td>Student&#39;s t-test</td><td>Welch&#39;s t-test（推荐默认）</td><td>Mann-Whitney U 检验（Wilcoxon 秩和）</td></tr><tr><td><strong>两组配对样本</strong></td><td>Paired t-test</td><td>—</td><td>Wilcoxon 符号秩检验</td></tr><tr><td><strong>三组及以上独立样本</strong></td><td>One-way ANOVA + Tukey HSD</td><td>Welch&#39;s ANOVA + Games-Howell</td><td>Kruskal-Wallis 检验 + Dunn&#39;s 检验</td></tr><tr><td><strong>分类变量频数表</strong></td><td>卡方检验（<span class=\"atlas-math-inline\" data-latex=\"\\chi^2\">χ<sup>2</sup></span>，<span class=\"atlas-math-inline\" data-latex=\"n \\ge 40\">n ≥ 40</span> 且期望频数 <span class=\"atlas-math-inline\" data-latex=\"\\ge 5\">≥ 5</span>）</td><td>—</td><td>Fisher 精确检验（小样本首选）</td></tr></tbody></table></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>比较场景</th><th>满足正态性 + 方差齐性（参数检验）</th><th>正态但方差不齐</th><th>不满足正态分布（非参数检验）</th></tr></thead><tbody><tr><td><strong>两组独立样本</strong></td><td>Student&#39;s t-test</td><td>Welch&#39;s t-test（推荐默认）</td><td>Mann-Whitney U 检验（Wilcoxon 秩和）</td></tr><tr><td><strong>两组配对样本</strong></td><td>Paired t-test</td><td>—</td><td>Wilcoxon 符号秩检验</td></tr><tr><td><strong>三组及以上独立样本</strong></td><td>One-way ANOVA + Tukey HSD</td><td>Welch&#39;s ANOVA + Games-Howell</td><td>Kruskal-Wallis 检验 + Dunn&#39;s 检验</td></tr><tr><td><strong>分类变量频数表</strong></td><td>卡方检验（<span class=\"atlas-math-inline\" data-latex=\"\\chi^2\">χ<sup>2</sup></span>，<span class=\"atlas-math-inline\" data-latex=\"n \\ge 40\">n ≥ 40</span> 且期望频数 <span class=\"atlas-math-inline\" data-latex=\"\\ge 5\">≥ 5</span>）</td><td>—</td><td>Fisher 精确检验（小样本首选）</td></tr></tbody></table></div>\n<h2 id=\"待补充核对项（todo）\" class=\"atlas-heading atlas-h2\"><a href=\"#待补充核对项（todo）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>待补充核对项（TODO）</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>补充 R 语言中 <code class=\"atlas-inline-code\">shapiro.test()</code> 正态性检验与 <code class=\"atlas-inline-code\">car::leveneTest()</code> 方差齐性检验代码片段</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明</span></li></ul>",
+      "findings": [
+        "补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段",
+        "补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明"
+      ],
+      "plainText": "生物统计常用假设检验方法选择速查卡\n\n快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| 两组独立样本 | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| 两组配对样本 | Paired t-test | — | Wilcoxon 符号秩检验 |\n| 三组及以上独立样本 | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| 分类变量频数表 | 卡方检验（\\chi^2，n \\ge 40 且期望频数 \\ge 5） | — | Fisher 精确检验（小样本首选） |\n\n待补充核对项（TODO）\n\n- [ ] 补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段\n- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明",
+      "visualCode": "A-001",
+      "globalCode": "X-011"
+    },
+    {
+      "id": "concept-enzyme-kinetics",
+      "slug": "academics/enzyme-kinetics",
+      "title": "米氏方程（Michaelis-Menten）与酶抑制类型判读",
+      "category": "academics",
+      "categoryTitle": "学科知识",
+      "en": "ACADEMICS & CORE",
+      "department": "基础学科与课程体系",
+      "subcategory": "biochemistry",
+      "type": "concept",
+      "status": "proficient",
+      "tags": [
+        "生物化学",
+        "酶工程",
+        "动力学",
+        "数学公式"
+      ],
+      "summary": "理解米氏常数 Km 与最大反应速率 Vmax 的物理意义，掌握竞争性、非竞争性与反竞争性抑制的动力学特征。",
+      "created": "2026-09-22",
+      "updated": "2026-10-16",
+      "version_scope": "生物化学核心概念",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [
+        "skill-molecular-docking"
+      ],
+      "aliases": [],
+      "relPath": "content/academics/enzyme-kinetics.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "核心定义与稳态推导",
+          "text": "核心定义与稳态推导",
+          "level": 2
+        },
+        {
+          "id": "lineweaver-burk-双倒数方程",
+          "text": "Lineweaver-Burk 双倒数方程",
+          "level": 2
+        },
+        {
+          "id": "易错点与实验建议",
+          "text": "易错点与实验建议",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>米氏方程标准形式</strong>：</li></ul>\n<div class=\"atlas-math-block\" data-latex=\"v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\">v<sub>0</sub> = \\frac{V<sub>max</sub> [S]}{K<sub>m</sub> + [S]}</div>\n<ul class=\"atlas-list\"><li><strong><span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 的核心意义</strong>：当反应初速度 <span class=\"atlas-math-inline\" data-latex=\"v_0 = \\frac{1}{2} V_{\\max}\">v<sub>0</sub> = <span class=\"math-frac\"><span class=\"math-num\">1</span><span class=\"math-den\">2</span></span> V<sub>max</sub></span> 时的底物浓度 <span class=\"atlas-math-inline\" data-latex=\"[S]\">[S]</span>（单位与浓度相同，如 <span class=\"atlas-math-inline\" data-latex=\"\\text{mmol/L}\"><span class=\"math-roman\">mmol/L</span></span>）。<span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 越小，表示酶对底物的表观亲和力越高。</li><li><strong>三大可逆抑制速记</strong>：</li><li><strong>竞争性抑制</strong>：抢活性中心 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 不变，表观 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 增大；</li><li><strong>非竞争性抑制</strong>：绑别构位点降活性 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 降低，表观 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 不变；</li><li><strong>反竞争性抑制</strong>：只绑 <span class=\"atlas-math-inline\" data-latex=\"ES\">ES</span> 复合物 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 与 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 同比例降低。</li></ul>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>米氏方程标准形式</strong>：</li></ul>\n<div class=\"atlas-math-block\" data-latex=\"v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\">v<sub>0</sub> = \\frac{V<sub>max</sub> [S]}{K<sub>m</sub> + [S]}</div>\n<ul class=\"atlas-list\"><li><strong><span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 的核心意义</strong>：当反应初速度 <span class=\"atlas-math-inline\" data-latex=\"v_0 = \\frac{1}{2} V_{\\max}\">v<sub>0</sub> = <span class=\"math-frac\"><span class=\"math-num\">1</span><span class=\"math-den\">2</span></span> V<sub>max</sub></span> 时的底物浓度 <span class=\"atlas-math-inline\" data-latex=\"[S]\">[S]</span>（单位与浓度相同，如 <span class=\"atlas-math-inline\" data-latex=\"\\text{mmol/L}\"><span class=\"math-roman\">mmol/L</span></span>）。<span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 越小，表示酶对底物的表观亲和力越高。</li><li><strong>三大可逆抑制速记</strong>：</li><li><strong>竞争性抑制</strong>：抢活性中心 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 不变，表观 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 增大；</li><li><strong>非竞争性抑制</strong>：绑别构位点降活性 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 降低，表观 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 不变；</li><li><strong>反竞争性抑制</strong>：只绑 <span class=\"atlas-math-inline\" data-latex=\"ES\">ES</span> 复合物 → <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 与 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 同比例降低。</li></ul>\n<h2 id=\"核心定义与稳态推导\" class=\"atlas-heading atlas-h2\"><a href=\"#核心定义与稳态推导\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>核心定义与稳态推导</h2>\n<p>在酶促反应体系中，酶 <span class=\"atlas-math-inline\" data-latex=\"E\">E</span> 与底物 <span class=\"atlas-math-inline\" data-latex=\"S\">S</span> 可逆结合生成中间复合物 <span class=\"atlas-math-inline\" data-latex=\"ES\">ES</span>，随后生成产物 <span class=\"atlas-math-inline\" data-latex=\"P\">P</span>：</p>\n<div class=\"atlas-math-block\" data-latex=\"E + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P\">E + S \\underset{k<sub>-1</sub>}{\\overset{k<sub>1</sub>}{⇌}} ES \\overset{k<sub><span class=\"math-roman\">cat</span></sub>}{⟶} E + P</div>\n<p>在稳态近似（<span class=\"atlas-math-inline\" data-latex=\"\\frac{d[ES]}{dt} = 0\"><span class=\"math-frac\"><span class=\"math-num\">d[ES]</span><span class=\"math-den\">dt</span></span> = 0</span>）条件下，定义米氏常数 <span class=\"atlas-math-inline\" data-latex=\"K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}\">K<sub>m</sub> = \\frac{k<sub>-1</sub> + k<sub><span class=\"math-roman\">cat</span></sub>}{k<sub>1</sub>}</span>，且最大反应速率 <span class=\"atlas-math-inline\" data-latex=\"V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}\">V<sub>max</sub> = k<sub><span class=\"math-roman\">cat</span></sub> [E]<sub><span class=\"math-roman\">total</span></sub></span>。</p>\n<h2 id=\"lineweaver-burk-双倒数方程\" class=\"atlas-heading atlas-h2\"><a href=\"#lineweaver-burk-双倒数方程\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>Lineweaver-Burk 双倒数方程</h2>\n<p>对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：</p>\n<div class=\"atlas-math-block\" data-latex=\"\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}\"><span class=\"math-frac\"><span class=\"math-num\">1</span><span class=\"math-den\">v<sub>0</sub></span></span> = \\frac{K<sub>m</sub>}{V<sub>max</sub>} · <span class=\"math-frac\"><span class=\"math-num\">1</span><span class=\"math-den\">[S]</span></span> + \\frac{1}{V<sub>max</sub>}</div>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>抑制类型</th><th>结合对象</th><th>表观 <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span></th><th>表观 <span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span></th><th>双倒数图交点位置</th></tr></thead><tbody><tr><td><strong>竞争性抑制</strong></td><td>游离酶 <span class=\"atlas-math-inline\" data-latex=\"E\">E</span></td><td>不变</td><td><strong>增大</strong> <span class=\"atlas-math-inline\" data-latex=\"(1 + [I]/K_i)\">(1 + [I]/K<sub>i</sub>)</span></td><td>交于纵轴（<span class=\"atlas-math-inline\" data-latex=\"y\">y</span> 轴截距不变）</td></tr><tr><td><strong>非竞争性抑制</strong></td><td><span class=\"atlas-math-inline\" data-latex=\"E\">E</span> 与 <span class=\"atlas-math-inline\" data-latex=\"ES\">ES</span> 均結合</td><td><strong>减小</strong></td><td>不变</td><td>交于横轴（<span class=\"atlas-math-inline\" data-latex=\"x\">x</span> 轴截距不变）</td></tr><tr><td><strong>反竞争性抑制</strong></td><td>仅结合 <span class=\"atlas-math-inline\" data-latex=\"ES\">ES</span> 复合物</td><td><strong>减小</strong></td><td><strong>减小</strong></td><td>多条平行线（斜率 <span class=\"atlas-math-inline\" data-latex=\"K_m/V_{\\max}\">K<sub>m</sub>/V<sub>max</sub></span> 不变）</td></tr></tbody></table></div>\n<h2 id=\"易错点与实验建议\" class=\"atlas-heading atlas-h2\"><a href=\"#易错点与实验建议\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>易错点与实验建议</h2>\n<ol class=\"atlas-list\"><li><strong><span class=\"atlas-math-inline\" data-latex=\"K_m\">K<sub>m</sub></span> 与酶浓度无关</strong>：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 <span class=\"atlas-math-inline\" data-latex=\"V_{\\max}\">V<sub>max</sub></span> 与体系中加入的酶总浓度 <span class=\"atlas-math-inline\" data-latex=\"[E]_t\">[E]<sub>t</sub></span> 成正比。</li><li><strong>拟合软件推荐</strong>：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用<strong>非线性回归（Nonlinear regression）</strong>拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。</li></ol>",
+      "findings": [
+        "米氏方程标准形式：",
+        "K_m 的核心意义：当反应初速度 v_0 = \\frac{1}{2} V_{\\max} 时的底物浓度 [S]（单位与浓度相同，如 \\text{mmol/L}）。K_m 越小，表示酶对底物的表观亲和力越高。",
+        "三大可逆抑制速记：",
+        "竞争性抑制：抢活性中心 → V_{\\max} 不变，表观 K_m 增大；",
+        "非竞争性抑制：绑别构位点降活性 → V_{\\max} 降低，表观 K_m 不变；",
+        "反竞争性抑制：只绑 ES 复合物 → V_{\\max} 与 K_m 同比例降低。"
+      ],
+      "plainText": "米氏方程（Michaelis-Menten）与酶抑制类型判读\n\n快速复习\n\n- 米氏方程标准形式：\n  v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\n- K_m 的核心意义：当反应初速度 v_0 = \\frac{1}{2} V_{\\max} 时的底物浓度 [S]（单位与浓度相同，如 \\text{mmol/L}）。K_m 越小，表示酶对底物的表观亲和力越高。\n- 三大可逆抑制速记：\n  - 竞争性抑制：抢活性中心 → V_{\\max} 不变，表观 K_m 增大；\n  - 非竞争性抑制：绑别构位点降活性 → V_{\\max} 降低，表观 K_m 不变；\n  - 反竞争性抑制：只绑 ES 复合物 → V_{\\max} 与 K_m 同比例降低。\n\n核心定义与稳态推导\n\n在酶促反应体系中，酶 E 与底物 S 可逆结合生成中间复合物 ES，随后生成产物 P：\n\nE + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P\n\n在稳态近似（\\frac{d[ES]}{dt} = 0）条件下，定义米氏常数 K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}，且最大反应速率 V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}。\n\nLineweaver-Burk 双倒数方程\n\n对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：\n\n\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}\n\n| 抑制类型 | 结合对象 | 表观 V_{\\max} | 表观 K_m | 双倒数图交点位置 |\n| --- | --- | --- | --- | --- |\n| 竞争性抑制 | 游离酶 E | 不变 | 增大 (1 + [I]/K_i) | 交于纵轴（y 轴截距不变） |\n| 非竞争性抑制 | E 与 ES 均結合 | 减小 | 不变 | 交于横轴（x 轴截距不变） |\n| 反竞争性抑制 | 仅结合 ES 复合物 | 减小 | 减小 | 多条平行线（斜率 K_m/V_{\\max} 不变） |\n\n易错点与实验建议\n\n1. K_m 与酶浓度无关：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 V_{\\max} 与体系中加入的酶总浓度 [E]_t 成正比。\n2. 拟合软件推荐：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用非线性回归（Nonlinear regression）拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。",
+      "visualCode": "A-002",
+      "globalCode": "X-012"
+    },
+    {
+      "id": "life-feynman-teaching",
+      "slug": "life/feynman-teaching",
+      "title": "费曼技巧与实验室新人带教四步法",
+      "category": "life",
+      "categoryTitle": "创作与生活",
+      "en": "CREATIVE & LIFE",
+      "department": "日常技能与创作实践",
+      "subcategory": "teaching",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "教学技巧",
+        "费曼学习法",
+        "实验带教",
+        "知识内化"
+      ],
+      "summary": "通过“界定目标—无术语复述—示范纠偏—独立复现”四步法高效带教师弟师妹并检验自身知识盲区。",
+      "created": "2026-10-08",
+      "updated": "2026-10-16",
+      "version_scope": "课程助教与实验室日常带教",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [
+        "skill-cell-observation",
+        "tool-ppt-master"
+      ],
+      "aliases": [],
+      "relPath": "content/life/feynman-teaching.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "操作步骤",
+          "text": "操作步骤",
+          "level": 2
+        },
+        {
+          "id": "1-拆解操作颗粒度",
+          "text": "1. 拆解操作颗粒度",
+          "level": 3
+        },
+        {
+          "id": "2-让学习者用自己的话复述",
+          "text": "2. 让学习者用自己的话复述",
+          "level": 3
+        },
+        {
+          "id": "验证结果",
+          "text": "验证结果",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ol class=\"atlas-list\"><li><strong>先讲“为什么要做这一步（Why &amp; 失败后果）”</strong>，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。</li><li><strong>三遍带教节奏</strong>：</li><li>第一遍：<strong>我做你看，我讲关键控制点</strong>；</li><li>第二遍：<strong>你做我看，操作前先口述下一步</strong>；</li><li>第三遍：<strong>你独立做，对照 ATLAS 档案清单自检结果</strong>。</li><li><strong>卡壳即知识盲区</strong>：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 <code class=\"atlas-inline-code\">inbox/</code> 查文献补齐。</li></ol>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ol class=\"atlas-list\"><li><strong>先讲“为什么要做这一步（Why &amp; 失败后果）”</strong>，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。</li><li><strong>三遍带教节奏</strong>：</li><li>第一遍：<strong>我做你看，我讲关键控制点</strong>；</li><li>第二遍：<strong>你做我看，操作前先口述下一步</strong>；</li><li>第三遍：<strong>你独立做，对照 ATLAS 档案清单自检结果</strong>。</li><li><strong>卡壳即知识盲区</strong>：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 <code class=\"atlas-inline-code\">inbox/</code> 查文献补齐。</li></ol>\n<h2 id=\"操作步骤\" class=\"atlas-heading atlas-h2\"><a href=\"#操作步骤\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>操作步骤</h2>\n<h3 id=\"1-拆解操作颗粒度\" class=\"atlas-heading atlas-h3\"><a href=\"#1-拆解操作颗粒度\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>1. 拆解操作颗粒度</h3>\n<p>将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。</p>\n<h3 id=\"2-让学习者用自己的话复述\" class=\"atlas-heading atlas-h3\"><a href=\"#2-让学习者用自己的话复述\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>2. 让学习者用自己的话复述</h3>\n<p>不要问“听懂了吗？”（回答永远是“懂了”），而是问：</p>\n<ul class=\"atlas-list\"><li>“如果这一步离心转速设高了一倍，沉淀会出什么问题？”</li><li>“你现在复述一下接下来 5 分钟的三个动作顺序。”</li></ul>\n<h2 id=\"验证结果\" class=\"atlas-heading atlas-h2\"><a href=\"#验证结果\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证结果</h2>\n<ul class=\"atlas-list\"><li>被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。</li></ul>",
+      "findings": [
+        "先讲“为什么要做这一步（Why & 失败后果）”，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。",
+        "三遍带教节奏：",
+        "第一遍：我做你看，我讲关键控制点；",
+        "第二遍：你做我看，操作前先口述下一步；",
+        "第三遍：你独立做，对照 ATLAS 档案清单自检结果。",
+        "卡壳即知识盲区：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 inbox/ 查文献补齐。"
+      ],
+      "plainText": "费曼技巧与实验室新人带教四步法\n\n快速复习\n\n1. 先讲“为什么要做这一步（Why & 失败后果）”，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。\n2. 三遍带教节奏：\n   - 第一遍：我做你看，我讲关键控制点；\n   - 第二遍：你做我看，操作前先口述下一步；\n   - 第三遍：你独立做，对照 ATLAS 档案清单自检结果。\n3. 卡壳即知识盲区：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 inbox/ 查文献补齐。\n\n操作步骤\n\n1. 拆解操作颗粒度\n\n将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。\n\n2. 让学习者用自己的话复述\n\n不要问“听懂了吗？”（回答永远是“懂了”），而是问：\n- “如果这一步离心转速设高了一倍，沉淀会出什么问题？”\n- “你现在复述一下接下来 5 分钟的三个动作顺序。”\n\n验证结果\n\n- 被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。",
+      "visualCode": "L-001",
+      "globalCode": "X-013"
+    },
+    {
+      "id": "life-video-export-presets",
+      "slug": "life/video-export-presets",
+      "title": "视频导出与压制常用 H.264 / AAC 参数速查",
+      "category": "life",
+      "categoryTitle": "创作与生活",
+      "en": "CREATIVE & LIFE",
+      "department": "日常技能与创作实践",
+      "subcategory": "general",
+      "type": "snippet",
+      "status": "proficient",
+      "tags": [
+        "创作与生活",
+        "snippet"
+      ],
+      "summary": "日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：",
+      "created": "2026-10-16",
+      "updated": "2026-10-16",
+      "version_scope": "通用版本",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [],
+      "aliases": [],
+      "relPath": "content/life/video-export-presets.md",
+      "autoInferred": true,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "关键参数备忘",
+          "text": "关键参数备忘",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<p>日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：</p>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n# 2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\">COPY</button></div><pre><code># 1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n# 2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4</code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<p>日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：</p>\n<div class=\"atlas-code-block\" data-lang=\"bash\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">BASH</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n# 2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\">COPY</button></div><pre><code># 1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n# 2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4</code></pre></div>\n<h2 id=\"关键参数备忘\" class=\"atlas-heading atlas-h2\"><a href=\"#关键参数备忘\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>关键参数备忘</h2>\n<ul class=\"atlas-list\"><li><code class=\"atlas-inline-code\">-pix_fmt yuv420p</code>：<strong>必加</strong>，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。</li><li><code class=\"atlas-inline-code\">-movflags +faststart</code>：将 <code class=\"atlas-inline-code\">moov atom</code> 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。</li></ul>",
+      "findings": [
+        "日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：",
+        "-pix_fmt yuv420p：必加，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。",
+        "-movflags +faststart：将 moov atom 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。"
+      ],
+      "plainText": "视频导出与压制常用 H.264 / AAC 参数速查\n\n快速复习\n\n日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：\n\n``bash\n1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\n`\n\n关键参数备忘\n\n- -pix_fmt yuv420p：必加，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。\n- -movflags +faststart：将 moov atom` 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。",
+      "visualCode": "L-002",
+      "globalCode": "X-014"
+    },
+    {
+      "id": "inbox-docker-port-conflict",
+      "slug": "inbox/docker-port-conflict",
+      "title": "Windows 端口被占用（EADDRINUSE）快速定位与释放",
+      "category": "inbox",
+      "categoryTitle": "闪念草稿箱",
+      "en": "INBOX & DRAFTS",
+      "department": "待整理碎片",
+      "subcategory": "general",
+      "type": "snippet",
+      "status": "draft",
+      "tags": [
+        "闪念草稿箱",
+        "snippet"
+      ],
+      "summary": "刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：",
+      "created": "2026-10-16",
+      "updated": "2026-10-16",
+      "version_scope": "通用版本",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [],
+      "aliases": [],
+      "relPath": "content/inbox/docker-port-conflict.md",
+      "autoInferred": true,
+      "images": [],
+      "toc": [],
+      "quickstartHtml": "",
+      "html": "<p>刚启动本地服务遇到 <code class=\"atlas-inline-code\">Error: listen EADDRINUSE: address already in use :::5173</code> 时随手记一下 PowerShell 一键排查命令：</p>\n<div class=\"atlas-code-block\" data-lang=\"powershell\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">POWERSHELL</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n# 根据 PID 结束进程\nStop-Process -Id &lt;PID&gt; -Force\">COPY</button></div><pre><code># 查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n# 根据 PID 结束进程\nStop-Process -Id &lt;PID&gt; -Force</code></pre></div>",
+      "findings": [
+        "刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令："
+      ],
+      "plainText": "Windows 端口被占用（EADDRINUSE）快速定位与释放\n\n刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：\n\n``powershell\n查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n根据 PID 结束进程\nStop-Process -Id <PID> -Force\n``",
+      "visualCode": "D-001",
+      "globalCode": "X-015"
+    }
+  ]
+}

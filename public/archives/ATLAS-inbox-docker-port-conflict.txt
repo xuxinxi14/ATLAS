@@ -1,0 +1,30 @@
+﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
+FILE D-001 (inbox-docker-port-conflict) / Windows 端口被占用（EADDRINUSE）快速定位与释放
+INBOX & DRAFTS · SNIPPET · STATUS: DRAFT
+
+所属领域：闪念草稿箱 (inbox)
+适用范围：通用版本
+更新日期：2026-10-16
+标签：闪念草稿箱, snippet
+
+【摘要】
+刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：
+
+【核心要点】
+1. 刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：
+
+【正文内容】
+Windows 端口被占用（EADDRINUSE）快速定位与释放
+
+刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：
+
+``powershell
+查看占用 5173 端口的进程 PID
+Get-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess
+
+根据 PID 结束进程
+Stop-Process -Id <PID> -Force
+``
+
+参考来源：
+- 本地实践记录

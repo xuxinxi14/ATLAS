@@ -1,0 +1,119 @@
+---
+id: skill-github-pages
+title: GitHub Actions 自动化构建与 GitHub Pages 部署
+slug: computing/github-pages
+type: skill
+category: computing
+subcategory: devops
+tags: [GitHub Pages, GitHub Actions, CI/CD, Vite]
+status: proficient
+summary: 配置 GitHub Actions 工作流实现推送 main 分支自动校验、构建 Vite 静态站点并发布至 GitHub Pages。
+created: 2026-09-28
+updated: 2026-10-16
+version_scope: "actions/deploy-pages@v4 / Node.js 22+"
+source_urls:
+  - https://docs.github.com/zh/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages
+  - https://vite.dev/guide/static-deploy.html
+prerequisites:
+  - skill-git-workflow
+related:
+  - troubleshooting-vite-assets
+aliases: []
+---
+
+# GitHub Actions 自动化构建与 GitHub Pages 部署
+
+## 快速复习
+
+1. 仓库网页端进入 `Settings → Pages → Build and deployment`，将 **Source** 改为 **GitHub Actions**。
+2. 在 `vite.config.ts` 中确保子路径基址支持环境变量（如 `process.env.ATLAS_BASE || '/'`），当部署在 `https://<user>.github.io/<repo>/` 时设为 `/<repo>/`。
+3. 工作流文件置于 `.github/workflows/deploy.yml`，为部署作业声明最小权限：`pages: write` 与 `id-token: write`。
+
+## 适用场景
+
+将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。
+
+## 前置准备
+
+- 已创建 GitHub 公开仓库（如 `Personal-Atlas`）
+- 本地 `npm run check:content` 与 `npm run build` 均能正常通过
+
+## 操作步骤
+
+### 1. 配置仓库 Pages 构建源
+
+打开 GitHub 仓库页面：
+1. 点击顶部 **Settings**；
+2. 左侧导航栏选择 **Pages**；
+3. 在 **Build and deployment → Source** 下拉框中选择 **GitHub Actions**。
+
+### 2. 编写 `.github/workflows/deploy.yml`
+
+```yaml
+name: Deploy ATLAS to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate & Build Content
+        run: |
+          npm run check:content
+          npm run build
+        env:
+          ATLAS_BASE: /${{ github.event.repository.name }}/
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+## 验证结果
+
+- 向 `main` 推送一次提交后，GitHub **Actions** 标签页中 `build` 与 `deploy` 两个作业均显示绿色勾选。
+- 打开输出的 `page_url`，首页、二维阅读器、搜索及三维档案模型均正常加载，浏览器控制台无 404 报错。
+
+## 常见问题与修复
+
+- **问题**：部署成功但页面白屏，控制台提示 `/assets/index-xxx.js 404`。  
+  **修复**：详见排错档案 [Vite 部署 GitHub Pages 静态资源 404 排查](troubleshooting-vite-assets)。

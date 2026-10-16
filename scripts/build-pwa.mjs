@@ -4,8 +4,9 @@ import { resolve } from "node:path";
 const root=resolve('dist');
 const all=await readdir(root,{recursive:true});
 const files=all.map(path=>path.replaceAll('\\','/')).filter(path=>
-  path==='index.html'||path==='manifest.webmanifest'||path==='favicon.svg'||
+  path==='index.html'||path==='manifest.webmanifest'||path==='favicon.svg'||path==='search-index.json'||
   /^(assets|icons|archives|licenses)\/[^/]+\.[^/]+$/.test(path)||
+  /^media\/.*\.(svg|png|jpg|jpeg|webp|gif|avif)$/i.test(path)||
   /^fonts\/.*\.(woff2|pdf|txt|json|md)$/.test(path)||
   /^audio\/(atmosphere|motif|pulse)\.ogg$/.test(path)
 ).filter(path=>!/^assets\/archive-(cassette|assembly)\.glb$/.test(path)).sort();

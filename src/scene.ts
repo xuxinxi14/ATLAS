@@ -20,7 +20,7 @@ import { applyTextureQuality, resizeQuality } from "./quality-renderer";
 import { CardAppearance } from "./appearance";
 import { configureInternalOptics } from "./internal-optics";
 import { DecryptionController } from "./decryption";
-import { fileAtSlot, fileLocation } from "./data";
+import { fileAtSlot, fileLocation, records } from "./data";
 import {
   cellKey,
   sameCell,
@@ -780,6 +780,7 @@ export class ArchiveScene {
   }
   private drawLabel(index: number) {
     if (!this.labelTexture) return;
+    const record = records[index];
     const c = this.labelCanvas.getContext("2d")!;
     c.fillStyle = "#e6e2d9";
     c.fillRect(0, 0, 1024, 440);
@@ -790,7 +791,13 @@ export class ArchiveScene {
     c.fillText("RHINE LAB, LLC.", 22, 116);
     c.font = "32px MiSans";
     c.fillStyle = "#878476";
-    c.fillText("INTERNAL DATABASE", 25, 174);
+    c.fillText(
+      record
+        ? `ATLAS // ${record.visualCode} · ${record.status.toUpperCase()}`
+        : "INTERNAL DATABASE",
+      25,
+      174,
+    );
     c.fillStyle = "#171713";
     c.font = "bold 130px MiSans";
     c.fillText("NO." + String(index + 1).padStart(3, "0"), 22, 360);

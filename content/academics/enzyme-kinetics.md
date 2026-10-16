@@ -1,0 +1,56 @@
+---
+id: concept-enzyme-kinetics
+title: 米氏方程（Michaelis-Menten）与酶抑制类型判读
+slug: academics/enzyme-kinetics
+type: concept
+category: academics
+subcategory: biochemistry
+tags: [生物化学, 酶工程, 动力学, 数学公式]
+status: proficient
+summary: 理解米氏常数 Km 与最大反应速率 Vmax 的物理意义，掌握竞争性、非竞争性与反竞争性抑制的动力学特征。
+created: 2026-09-22
+updated: 2026-10-16
+version_scope: "生物化学核心概念"
+source_urls: []
+prerequisites: []
+related:
+  - skill-molecular-docking
+aliases: []
+---
+
+# 米氏方程（Michaelis-Menten）与酶抑制类型判读
+
+## 快速复习
+
+- **米氏方程标准形式**：
+  $$v_0 = \frac{V_{\max} [S]}{K_m + [S]}$$
+- **$K_m$ 的核心意义**：当反应初速度 $v_0 = \frac{1}{2} V_{\max}$ 时的底物浓度 $[S]$（单位与浓度相同，如 $\text{mmol/L}$）。$K_m$ 越小，表示酶对底物的表观亲和力越高。
+- **三大可逆抑制速记**：
+  - **竞争性抑制**：抢活性中心 → $V_{\max}$ 不变，表观 $K_m$ 增大；
+  - **非竞争性抑制**：绑别构位点降活性 → $V_{\max}$ 降低，表观 $K_m$ 不变；
+  - **反竞争性抑制**：只绑 $ES$ 复合物 → $V_{\max}$ 与 $K_m$ 同比例降低。
+
+## 核心定义与稳态推导
+
+在酶促反应体系中，酶 $E$ 与底物 $S$ 可逆结合生成中间复合物 $ES$，随后生成产物 $P$：
+
+$$E + S \underset{k_{-1}}{\overset{k_1}{\rightleftharpoons}} ES \overset{k_{\text{cat}}}{\longrightarrow} E + P$$
+
+在稳态近似（$\frac{d[ES]}{dt} = 0$）条件下，定义米氏常数 $K_m = \frac{k_{-1} + k_{\text{cat}}}{k_1}$，且最大反应速率 $V_{\max} = k_{\text{cat}} [E]_{\text{total}}$。
+
+## Lineweaver-Burk 双倒数方程
+
+对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：
+
+$$\frac{1}{v_0} = \frac{K_m}{V_{\max}} \cdot \frac{1}{[S]} + \frac{1}{V_{\max}}$$
+
+| 抑制类型 | 结合对象 | 表观 $V_{\max}$ | 表观 $K_m$ | 双倒数图交点位置 |
+| --- | --- | --- | --- | --- |
+| **竞争性抑制** | 游离酶 $E$ | 不变 | **增大** $(1 + [I]/K_i)$ | 交于纵轴（$y$ 轴截距不变） |
+| **非竞争性抑制** | $E$ 与 $ES$ 均結合 | **减小** | 不变 | 交于横轴（$x$ 轴截距不变） |
+| **反竞争性抑制** | 仅结合 $ES$ 复合物 | **减小** | **减小** | 多条平行线（斜率 $K_m/V_{\max}$ 不变） |
+
+## 易错点与实验建议
+
+1. **$K_m$ 与酶浓度无关**：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 $V_{\max}$ 与体系中加入的酶总浓度 $[E]_t$ 成正比。
+2. **拟合软件推荐**：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用**非线性回归（Nonlinear regression）**拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。

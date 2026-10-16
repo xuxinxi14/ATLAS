@@ -16,6 +16,7 @@ import "@kitlangton/rolling-number/styles.css";
 import "./style.css";
 import "./quality-settings.css";
 import "./responsive.css";
+import "./styles/atlas-views.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
 import { initPwa, pwaSettingsMarkup } from "./pwa";
@@ -32,10 +33,33 @@ import { wrap, type ArchiveNavigation } from "./archive-loop";
 import {
   records,
   categories,
+  portals,
   archiveColumns,
   columnFiles,
   fileLocation,
 } from "./data";
+import {
+  knowledgeRepository,
+  statusMeta,
+  typeMeta,
+} from "./knowledge/repository";
+import type { EntryStatus, EntryType } from "./knowledge/types";
+import {
+  parseHashRoute,
+  buildEntryHash,
+  buildLibraryHash,
+  type RouteView,
+} from "./app/router";
+import { searchKnowledge } from "./search/search-engine";
+import { renderTelemetryHomeMarkup } from "./app/telemetry-view";
+import {
+  renderLibraryViewMarkup,
+  type LibraryState,
+} from "./library/library-view";
+import {
+  renderReaderViewMarkup,
+  hydrateEntryHtmlImages,
+} from "./reader/reader-view";
 import { TerminalAudio } from "./audio";
 import { audioSettingsMarkup } from "./audio-settings";
 import {
@@ -80,6 +104,9 @@ $("#stage").innerHTML = `
   <div id="boot-background" class="boot-background"><svg viewBox="0 0 1920 1080" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="3"><path d="M-210 705C-45 705 182 704 247 567C337 377 99 306 4 435S27 680 169 631C309 584 227 314 279 111S568-113 568-113"/><path d="M1560-80C1374 114 1671 168 1601 323S1371 367 1431 480S1692 666 1559 787S1329 886 1498 1130"/><circle cx="1450" cy="648" r="346"/><circle cx="1450" cy="648" r="348"/></g></svg></div>
   <header class="brand">${brandHeading}</header>
   <nav class="system-nav" aria-label="系统导航">
+    <button class="nav-mode-btn" data-action="nav-home" title="遥测中枢概览 (#/home)">TELEMETRY <span class="key">H</span></button>
+    <button class="nav-mode-btn" data-action="nav-library" title="二维知识索引目录 (#/library)">2D LIBRARY <span class="key">L</span></button>
+    <button class="nav-mode-btn active" data-action="nav-archive" title="三维档案大厅 (#/archive)">3D ARCHIVE</button>
     <button data-action="search"><span class="nav-glyph">⌕</span> ARCHIVE INDEX <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
@@ -95,7 +122,7 @@ $("#stage").innerHTML = `
   <svg id="inspection-marks" viewBox="0 0 1920 1080" aria-hidden="true"><path id="inspection-lines"/><g id="inspection-corners"></g><circle id="inspection-point" r="1.8"/></svg>
   <div id="inspection-text" aria-hidden="true">CONFIDENTIALITY:<strong>GENERAL BUSINESS USE</strong></div>
   <section id="archive-ui" class="archive-ui" aria-label="档案选择">
-    <div class="archive-callout"><div class="eyebrow">INTERNAL DATABASE <span>／</span> <span id="archive-category">机构档案</span></div><button class="file-title" data-action="open">FILE NUMBER: <span id="selected-id">X-<span id="selected-code">001</span></span><span class="file-open">↗</span></button><div class="callout-rule"><i></i></div><div class="file-summary"><span id="selected-title">莱茵生命</span><span id="selected-clearance">BUSINESS AREA</span></div><button class="read-file" data-action="open">ACCESS FILE <span>→</span></button></div>
+    <div class="archive-callout"><div class="eyebrow">INTERNAL DATABASE <span>／</span> <span id="archive-category">机构档案</span></div><button class="file-title" data-action="open">FILE NUMBER: <span id="selected-id">X-<span id="selected-code">001</span></span><span class="file-open">↗</span></button><div class="callout-rule"><i></i></div><div class="file-summary"><span id="selected-title">莱茵生命</span><span id="selected-clearance">BUSINESS AREA</span></div><div class="callout-actions-row"><button class="read-file" data-action="open">ACCESS FILE <span>→</span></button><button class="read-file read-file-2d" data-action="open-current-reader">2D FULLTEXT <span>↗</span></button></div></div>
     <div id="hover-label" class="hover-label" hidden>X-<span id="hover-code">001</span> / <span id="hover-title"></span></div>
     <div class="archive-counter"><span class="tiny-label">ARCHIVE / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
     <div class="archive-navigation"><button data-action="prev" aria-label="上一个档案">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一个档案">↓</button></div>
@@ -108,7 +135,7 @@ $("#stage").innerHTML = `
     <article id="detail-content" class="detail-content"></article>
   </section>
   <div class="powered">POWERED BY <b>RHINE LAB</b><i></i></div>
-  <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ""}</span><span>JOYCE MOORE <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
+  <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ""}</span><span>ATLAS // PERSONAL KNOWLEDGE TERMINAL <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
   <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
   <div id="modal-root"></div><div id="toast" class="toast" role="status"></div>
   <div id="loading" class="loading"><div class="loading-mark">${logo}</div><span>CONNECTING TO INTERNAL DATABASE</span><i></i></div>
@@ -121,7 +148,7 @@ $("#boot-background").insertAdjacentHTML(
 const bootSequence = new BootSequence($("#stage"));
 $("#viewport").insertAdjacentHTML(
   "beforeend",
-  '<button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>',
+  '<section id="atlas-surface" class="atlas-surface" aria-label="ATLAS 二维知识终端" hidden></section><button class="mobile-entry" data-action="skip">进入档案 <span>→</span></button>',
 );
 
 type Mode = "boot" | "archive" | "detail";
@@ -134,6 +161,17 @@ let modal: "search" | "saved" | "settings" | null = null,
   searchQuery = "",
   filter = "全部档案";
 let activeTab = "overview";
+let atlasView: RouteView = "archive";
+let activeReaderSlug = records[0]?.slug ?? "tools/aegisub";
+let activeReaderAnchor: string | undefined;
+const libraryState: LibraryState = {
+  category: "all",
+  type: "all",
+  status: "all",
+  query: "",
+  sortBy: "updated",
+  layout: "grid",
+};
 const reviewParams = new URLSearchParams(location.search);
 let frozenTime =
   reviewParams.get("freeze") === "1"
@@ -474,12 +512,206 @@ window.visualViewport?.addEventListener("resize", fit);
 window.visualViewport?.addEventListener("scroll", fit);
 matchMedia("(pointer: coarse)").addEventListener("change", fit);
 fit();
-$("#file-ticks").innerHTML = columnFiles(fileLocation(selected).lane)
-  .map((index) => `<button data-select="${index}"></button>`)
-  .join("");
+const maxTickSlots = Math.max(
+  8,
+  ...archiveColumns.map((_, lane) => Math.min(16, columnFiles(lane).length)),
+);
+$("#file-ticks").innerHTML = Array.from(
+  { length: maxTickSlots },
+  (_, slot) => `<button data-select="${slot}"></button>`,
+).join("");
 const fileTicks = [
   ...$("#file-ticks").querySelectorAll<HTMLButtonElement>("button"),
 ];
+
+function isEntrySaved(idOrCode: string): boolean {
+  const entry =
+    knowledgeRepository.byId(idOrCode) ?? knowledgeRepository.bySlug(idOrCode);
+  if (entry) {
+    return saved.has(entry.id) || saved.has(entry.globalCode);
+  }
+  return saved.has(idOrCode);
+}
+
+function renderAtlasTopbarMarkup(): string {
+  const hasWebGL = Boolean(scene);
+  return `
+    <header class="atlas-topbar" aria-label="ATLAS 终端顶部导航">
+      <a href="#/home" class="atlas-topbar-brand">
+        <strong>ATLAS // TERMINAL</strong>
+        <span>PERSONAL KNOWLEDGE OS · POWERED BY RHINE LAB</span>
+      </a>
+      <nav class="atlas-topbar-nav" aria-label="视图模式切换">
+        <a href="#/home" class="atlas-topbar-link ${atlasView === "home" ? "active" : ""}">◈ 遥测中枢 <kbd>H</kbd></a>
+        <a href="#/library" class="atlas-topbar-link ${atlasView === "library" || atlasView === "reader" ? "active" : ""}">⊞ 2D 知识索引 <kbd>L</kbd></a>
+        ${
+          hasWebGL
+            ? `<a href="#/archive" class="atlas-topbar-link ${atlasView === "archive" ? "active" : ""}">❖ 3D 档案大厅</a>`
+            : ""
+        }
+        <button type="button" class="atlas-topbar-link" data-action="search">⌕ 全局检索 <kbd>/</kbd></button>
+        <button type="button" class="atlas-topbar-link" data-action="saved">★ 收藏 (${String(saved.size).padStart(2, "0")})</button>
+        <button type="button" class="atlas-topbar-link" data-action="toggle-theme-quick" title="切换明暗配色">${prefs.colorTheme === "dark" ? "☀ 亮色" : "☾ 暗色"}</button>
+        <button type="button" class="atlas-topbar-link" data-action="settings">◷ 设置</button>
+      </nav>
+    </header>
+  `;
+}
+
+function syncNavButtons() {
+  document
+    .querySelectorAll<HTMLElement>(".system-nav .nav-mode-btn")
+    .forEach((btn) => {
+      const act = btn.dataset.action;
+      const isAct =
+        (act === "nav-home" && atlasView === "home") ||
+        (act === "nav-library" &&
+          (atlasView === "library" || atlasView === "reader")) ||
+        (act === "nav-archive" && atlasView === "archive");
+      btn.classList.toggle("active", isAct);
+    });
+}
+
+function renderAtlasSurface(preserveLibraryInputFocus = false) {
+  const surface = $("#atlas-surface");
+  const is2D =
+    atlasView === "home" || atlasView === "library" || atlasView === "reader";
+  syncNavButtons();
+
+  if (!is2D || mode === "boot") {
+    surface.hidden = true;
+    surface.inert = true;
+    delete $("#stage").dataset.atlasOverlay;
+    return;
+  }
+
+  let selStart: number | null = null;
+  let selEnd: number | null = null;
+  if (preserveLibraryInputFocus) {
+    const activeInput = document.querySelector<HTMLInputElement>(
+      "#atlas-library-search",
+    );
+    if (activeInput && document.activeElement === activeInput) {
+      selStart = activeInput.selectionStart;
+      selEnd = activeInput.selectionEnd;
+    }
+  }
+
+  const hasWebGL = Boolean(scene);
+  const bodyHtml =
+    atlasView === "home"
+      ? renderTelemetryHomeMarkup(hasWebGL)
+      : atlasView === "library"
+        ? renderLibraryViewMarkup(libraryState, saved, hasWebGL)
+        : renderReaderViewMarkup(activeReaderSlug, saved, hasWebGL);
+
+  surface.innerHTML = `${renderAtlasTopbarMarkup()}<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
+  surface.hidden = false;
+  surface.inert = Boolean(modal);
+  $("#stage").dataset.atlasOverlay = "true";
+
+  if (preserveLibraryInputFocus && atlasView === "library") {
+    const nextInput = document.querySelector<HTMLInputElement>(
+      "#atlas-library-search",
+    );
+    if (nextInput) {
+      nextInput.focus({ preventScroll: true });
+      if (selStart !== null && selEnd !== null) {
+        try {
+          nextInput.setSelectionRange(selStart, selEnd);
+        } catch {}
+      }
+    }
+  }
+
+  if (atlasView === "reader" && activeReaderAnchor) {
+    const targetId = activeReaderAnchor;
+    requestAnimationFrame(() => {
+      const heading = document.getElementById(targetId);
+      heading?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}
+
+function navigateAtlas(hash: string) {
+  if (location.hash === hash) {
+    syncHashRoute();
+  } else {
+    location.hash = hash;
+  }
+}
+
+function syncHashRoute() {
+  const parsed = parseHashRoute(location.hash);
+  if (!parsed) {
+    if (!scene && ready) {
+      atlasView = "home";
+      if (mode === "boot") setMode("archive");
+      renderAtlasSurface();
+      return;
+    }
+    atlasView = "archive";
+    renderAtlasSurface();
+    return;
+  }
+
+  if (ready && mode === "boot") {
+    setMode("archive");
+  }
+
+  if (parsed.view === "home") {
+    atlasView = "home";
+    renderAtlasSurface();
+    return;
+  }
+
+  if (parsed.view === "library") {
+    atlasView = "library";
+    libraryState.category = parsed.category || "all";
+    if (parsed.query !== undefined) {
+      libraryState.query = parsed.query;
+    }
+    renderAtlasSurface();
+    return;
+  }
+
+  if (parsed.view === "reader" && parsed.slug) {
+    atlasView = "reader";
+    activeReaderSlug = parsed.slug;
+    activeReaderAnchor = parsed.anchor;
+    const entry = knowledgeRepository.bySlug(parsed.slug);
+    if (entry) {
+      const recIndex = records.findIndex((r) => r.entryId === entry.id);
+      if (recIndex >= 0 && recIndex !== selected) {
+        selected = recIndex;
+        columnMemory[fileLocation(selected).lane] = selected;
+        scene?.select(selected);
+        updateSelection();
+      }
+    }
+    renderAtlasSurface();
+    return;
+  }
+
+  if (parsed.view === "archive") {
+    if (!scene && ready) {
+      atlasView = "home";
+      renderAtlasSurface();
+      return;
+    }
+    atlasView = "archive";
+    if (parsed.category) {
+      const lane = portals.findIndex(
+        (p) => p.id === parsed.category || p.title === parsed.category,
+      );
+      if (lane >= 0) {
+        select(columnMemory[lane]);
+      }
+    }
+    renderAtlasSurface();
+  }
+}
+window.addEventListener("hashchange", () => syncHashRoute());
 
 function setMode(next: Mode) {
   if (workbench?.enabled && next === "detail") next = "archive";
@@ -547,6 +779,7 @@ function setMode(next: Mode) {
       $("#detail-content").inert = false;
     }
   }
+  renderAtlasSurface();
 }
 function select(index: number, navigation?: ArchiveNavigation) {
   selected = (index + records.length) % records.length;
@@ -584,7 +817,7 @@ function updateSelection(navigation?: ArchiveNavigation) {
     animated: motionActive("rollingText") && mode === "archive",
   });
   clearanceTitle.update({
-    text: r.clearance,
+    text: `${r.visualCode} · ${statusMeta(r.status).label}`,
     animated: motionActive("rollingText") && mode === "archive",
   });
   categoryTitle.update({
@@ -603,7 +836,7 @@ function updateSelection(navigation?: ArchiveNavigation) {
     direction,
   });
   fileCounter.update({
-    value: files.indexOf(selected) + 1,
+    value: Math.max(1, files.indexOf(selected) + 1),
     animated: motionActive("rollingNumbers") && mode === "archive",
     direction:
       navigation && "axis" in navigation && navigation.axis === "row"
@@ -625,12 +858,28 @@ function updateSelection(navigation?: ArchiveNavigation) {
   });
   $<HTMLButtonElement>('[data-action="column-prev"]').disabled = false;
   $<HTMLButtonElement>('[data-action="column-next"]').disabled = false;
+  const visibleFiles =
+    files.length <= fileTicks.length
+      ? files
+      : files.slice(0, fileTicks.length);
   fileTicks.forEach((button, slot) => {
-    const index = files[slot],
-      record = records[index];
+    const index = visibleFiles[slot];
+    if (index === undefined) {
+      button.hidden = true;
+      button.classList.remove("selected");
+      button.setAttribute("aria-pressed", "false");
+      delete button.dataset.status;
+      return;
+    }
+    const record = records[index];
+    button.hidden = false;
     button.dataset.select = String(index);
-    button.setAttribute("aria-label", `选择档案 ${record.id} ${record.title}`);
-    button.title = `${record.id} · ${record.title}`;
+    button.dataset.status = record.status;
+    button.setAttribute(
+      "aria-label",
+      `选择档案 ${record.id} ${record.title}`,
+    );
+    button.title = `${record.visualCode} (${record.id}) · ${record.title} [${statusMeta(record.status).label}]`;
     button.classList.toggle("selected", index === selected);
     button.setAttribute("aria-pressed", String(index === selected));
   });
@@ -641,6 +890,10 @@ function replayBoot(forcePreview = false) {
   closeModal(() => replayBootAfterModal(forcePreview));
 }
 function replayBootAfterModal(forcePreview: boolean) {
+  atlasView = "archive";
+  if (location.hash && location.hash !== "#/archive") {
+    history.replaceState(null, "", location.pathname + location.search);
+  }
   bootStart = performance.now() / 1000 - 1.76;
   frozenTime = null;
   lastStep = "";
@@ -654,51 +907,79 @@ function replayBootAfterModal(forcePreview: boolean) {
 function openFile() {
   if (!ready) return;
   closeModal(() => {
+    atlasView = "archive";
     setMode("detail");
     audio.play("open");
   });
 }
-function toggleSaved() {
-  const id = records[selected].id;
-  if (saved.has(id)) saved.delete(id);
-  else saved.add(id);
+function toggleSavedById(targetId?: string) {
+  const entry = targetId
+    ? (knowledgeRepository.byId(targetId) ?? knowledgeRepository.bySlug(targetId))
+    : undefined;
+  const primaryId = entry ? entry.globalCode : records[selected].id;
+  const altId = entry ? entry.id : records[selected].entryId;
+  const wasSaved = saved.has(primaryId) || saved.has(altId);
+  if (wasSaved) {
+    saved.delete(primaryId);
+    saved.delete(altId);
+  } else {
+    saved.add(primaryId);
+  }
   try {
     localStorage.setItem("rhine-saved", JSON.stringify([...saved]));
   } catch {}
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
-  const button = $<HTMLButtonElement>('[data-action="bookmark"]');
-  const added = saved.has(id);
-  button.firstChild!.textContent = added
-    ? "− REMOVE FROM SAVED"
-    : "＋ SAVE ARCHIVE";
-  button.querySelector("span")!.textContent = added ? "已收藏" : "收藏档案";
-  button.setAttribute("aria-pressed", String(added));
-  bookmarkFeedback?.cancel();
-  if (motionActive("surfaceTransitions"))
-    bookmarkFeedback = button.animate(
-      [{ backgroundColor: "#67634c" }, { backgroundColor: "#252820" }],
-      { duration: 220, easing: "ease-out" },
-    );
+  const button = document.querySelector<HTMLButtonElement>(
+    '[data-action="bookmark"]',
+  );
+  const currentRecord = records[selected];
+  const currentSaved =
+    saved.has(currentRecord.id) || saved.has(currentRecord.entryId);
+  if (button) {
+    button.firstChild!.textContent = currentSaved
+      ? "− REMOVE FROM SAVED"
+      : "＋ SAVE ARCHIVE";
+    button.querySelector("span")!.textContent = currentSaved
+      ? "已收藏"
+      : "收藏档案";
+    button.setAttribute("aria-pressed", String(currentSaved));
+    bookmarkFeedback?.cancel();
+    if (motionActive("surfaceTransitions"))
+      bookmarkFeedback = button.animate(
+        [{ backgroundColor: "#67634c" }, { backgroundColor: "#252820" }],
+        { duration: 220, easing: "ease-out" },
+      );
+  }
+  if (atlasView !== "archive") {
+    renderAtlasSurface(true);
+  }
   audio.play("confirm");
-  notify(saved.has(id) ? "档案已加入收藏" : "已取消收藏");
+  notify(!wasSaved ? "档案已加入收藏" : "已取消收藏");
+}
+function toggleSaved() {
+  toggleSavedById();
 }
 function renderDetail() {
   tabTransition.cancel();
   const r = records[selected];
-  $("#object-id").textContent = "NO." + String(selected + 1).padStart(3, "0");
+  const sMeta = statusMeta(r.status);
+  const tMeta = typeMeta(r.type);
+  const isSaved = isEntrySaved(r.id);
+  $("#object-id").textContent =
+    r.visualCode || "NO." + String(selected + 1).padStart(3, "0");
   $("#detail-content").innerHTML = `
-  <div class="detail-kicker"><span>FILE ${r.id}</span><span>${escapeHtml(r.clearance)}</span></div>
+  <div class="detail-kicker"><span>FILE ${r.id} · ${escapeHtml(r.visualCode)}</span><span>${escapeHtml(r.clearance)}</span></div>
   <h2>${escapeHtml(r.en)}</h2><div class="detail-title-cn">${escapeHtml(r.title)}<span>${escapeHtml(r.category)}</span></div>
   <div class="detail-rule"></div>
-  <dl class="metadata"><div><dt>DEPARTMENT / 科室</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 编目范围</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>RELATED / 相关人物</dt><dd>${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 状态</dt><dd><i></i>${r.clearance === "RESTRICTED" ? "目录访问" : "已归档 · 可读取"}</dd></div></dl>
-  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>研究记录</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>访问日志</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
+  <dl class="metadata"><div><dt>DEPARTMENT / 所属领域</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 适用与更新</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>TYPE / 词条类型</dt><dd>${escapeHtml(tMeta.label)} · ${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 掌握状态</dt><dd><i data-status="${escapeHtml(r.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}</dd></div></dl>
+  <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述与速查</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>核心要点</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>访问日志</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
-  <div class="detail-actions"><button class="solid-button" data-action="bookmark">${saved.has(r.id) ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE"}<span>${saved.has(r.id) ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/RHINE-LAB-${r.id}.txt`)}" download="RHINE-LAB-${r.id}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
-  <div class="detail-footnote"><a href="${escapeHtml(r.source)}" target="_blank" rel="noopener">设定参考 ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
+  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ FULL ARTICLE ↗<span>二维阅读器展开全文</span></button><button class="solid-button" data-action="bookmark">${isSaved ? "− REMOVE FROM SAVED" : "＋ SAVE ARCHIVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
+  <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">二维阅读模式 (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute(
     "aria-pressed",
-    String(saved.has(r.id)),
+    String(isSaved),
   );
   documentDecryption.reset(
     $("#detail-content"),
@@ -709,7 +990,11 @@ function renderDetail() {
   setTab(activeTab, false);
 }
 function overview() {
-  return `<div class="panel-label">ABSTRACT / 摘要</div><p>${escapeHtml(records[selected].abstract)}</p>`;
+  const r = records[selected];
+  const quickstartBox = r.quickstartHtml
+    ? `<div class="detail-snippet-box">${hydrateEntryHtmlImages(r.quickstartHtml)}</div>`
+    : "";
+  return `<div class="panel-label">ABSTRACT / 摘要</div><p>${escapeHtml(r.abstract)}</p>${quickstartBox}`;
 }
 function setTab(tab: string, sound = true) {
   if (sound && tab === activeTab) return;
@@ -737,11 +1022,11 @@ function setTab(tab: string, sound = true) {
             .slice(0, 4)
             .map(
               (entry) =>
-                `<div class="log-row"><span>${entry.time}</span><span>JOYCE MOORE</span><b>READ AUTHORIZED</b></div>`,
+                `<div class="log-row"><span>${entry.time}</span><span>ATLAS USER</span><b>READ AUTHORIZED</b></div>`,
             )
             .join(
               "",
-            )}<p class="log-note">本次会话已通过身份验证。档案内容以当前终端可访问范围展示。</p>`;
+            )}<p class="log-note">源文件：${escapeHtml(r.relPath)} · 标签：${escapeHtml(r.tags.join(" / "))}</p>`;
   $("#tab-panel").scrollTop = 0;
   documentDecryption.refresh();
   if (sound) {
@@ -767,6 +1052,7 @@ function openModal(kind: NonNullable<typeof modal>) {
       )
       .map((node) => ({ node, inert: node.inert }));
     modalSiblings.forEach(({ node }) => (node.inert = true));
+    $("#atlas-surface").inert = true;
   }
   modalClosing = false;
   modal = kind;
@@ -792,6 +1078,7 @@ function closeModal(afterClose?: () => void) {
     modalSiblings = [];
     $("#archive-ui").inert = mode !== "archive" || Boolean(workbench?.enabled);
     $("#detail-ui").inert = mode !== "detail";
+    $("#atlas-surface").inert = $("#atlas-surface").hidden;
     previousFocus?.focus({ preventScroll: true });
     afterClose?.();
   });
@@ -799,8 +1086,9 @@ function closeModal(afterClose?: () => void) {
 function renderModal() {
   if (!modal) return;
   modalTransition?.dispose();
+  const filterCategories = [...categories, "闪念草稿箱"];
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>RHINE LAB / ${modal === "settings" ? "SYSTEM PREFERENCES" : "ARCHIVE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "内部档案检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入档案编号、名称或科室" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${categories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案</span><span>DEPARTMENT / 科室</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>INTERNAL DATABASE <i>●</i> CONNECTED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>ATLAS // ${modal === "settings" ? "SYSTEM PREFERENCES" : "KNOWLEDGE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "全文与命令加权检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入标题、编号 (X-001 / T-001)、标签或正文命令…" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${filterCategories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案与摘要</span><span>PORTAL / 领域</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>ATLAS KNOWLEDGE BASE <i>●</i> ${records.length} ARCHIVED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -823,26 +1111,31 @@ function renderModal() {
     });
 }
 function renderResults() {
-  const results = records
-    .map((r, i) => ({ r, i }))
-    .filter(
-      ({ r }) =>
-        (modal !== "saved" || saved.has(r.id)) &&
-        (filter === "全部档案" || r.category === filter) &&
-        `${r.id} ${r.title} ${r.en} ${r.department} ${r.lead}`
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()),
-    );
-  $("#search-results").innerHTML = results.length
-    ? results
-        .map(
-          ({ r, i }) =>
-            `<button class="result-row" data-result="${i}"><span class="result-name"><b>${r.id}</b><span>${escapeHtml(r.title)}<small>${escapeHtml(r.en)}</small></span>${saved.has(r.id) ? "<i>＋</i>" : ""}</span><span>${escapeHtml(r.department)}</span><span>${r.clearance === "RESTRICTED" ? "CATALOG ONLY" : "AUTHORIZED"} <i>↗</i></span></button>`,
-        )
+  const catFilter = filter === "闪念草稿箱" ? "inbox" : filter;
+  const rawResults = searchKnowledge(searchQuery, {
+    category: catFilter,
+    includeDrafts: true,
+  });
+  const filtered = rawResults.filter(({ item }) => {
+    if (modal === "saved") {
+      return isEntrySaved(item.id) || (item.globalCode ? isEntrySaved(item.globalCode) : false);
+    }
+    return true;
+  });
+
+  $("#search-results").innerHTML = filtered.length
+    ? filtered
+        .map(({ item, snippet }) => {
+          const recIdx = records.findIndex((r) => r.entryId === item.id);
+          const displayId = item.globalCode ?? item.visualCode;
+          const isSaved = isEntrySaved(item.id);
+          const sMeta = statusMeta(item.status);
+          return `<button class="result-row" data-result="${recIdx >= 0 ? recIdx : 0}" data-result-slug="${escapeHtml(item.slug)}" data-result-in-3d="${recIdx >= 0}"><span class="result-name"><b>${escapeHtml(displayId)}</b><span>${escapeHtml(item.title)}<small>${escapeHtml(item.visualCode)} · ${escapeHtml(sMeta.label)} · ${escapeHtml(snippet)}</small></span>${isSaved ? "<i>＋</i>" : ""}</span><span>${escapeHtml(item.categoryTitle)}</span><span>${atlasView === "archive" && recIdx >= 0 ? "3D / 2D" : "READ 2D"} <i>↗</i></span></button>`;
+        })
         .join("")
-    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "读取档案时，选择 SAVE ARCHIVE 将其保存在此处。" : "尝试其他名称、档案编号，或切换科室分类。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
+    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "读取档案时，选择 SAVE ARCHIVE 或 ☆ 收藏 将其保存在此处。" : "尝试其他名称、档案编号，或切换知识领域分类。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
   $("#result-count").textContent =
-    `${String(results.length).padStart(2, "0")} RECORDS FOUND`;
+    `${String(filtered.length).padStart(2, "0")} RECORDS FOUND`;
 }
 function updateQualitySummary() {
   const summary = document.querySelector("#quality-summary");
@@ -863,7 +1156,7 @@ function motionPreferenceNoteMarkup() {
   return `<div id="motion-preference-note" class="motion-preference-note"><p>${motionSummary(prefs.motion)}</p><span>预设：${preset === "full" ? "完整动画" : preset === "reduced" ? "减少动画" : "自定义"} · 选择会保存在本站</span>${allEnabled ? "" : '<button data-action="enable-motion">启用完整动画并重播 ↻</button>'}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">JOYCE MOORE <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}</div>${motionPreferenceNoteMarkup()}${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? "<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览档案。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>" : "<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>ESC</kbd> 返回</p>"}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ""}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ANALYSIS OS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">ATLAS USER <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}</div>${motionPreferenceNoteMarkup()}${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? "<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览档案。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>" : "<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>H</kbd> 遥测 <kbd>L</kbd> 二维索引 <kbd>ESC</kbd> 返回</p>"}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ""}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ATLAS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -890,9 +1183,28 @@ document.addEventListener("input", (e) => {
     searchQuery = (e.target as HTMLInputElement).value;
     renderResults();
   }
+  if ((e.target as HTMLElement).id === "atlas-library-search") {
+    libraryState.query = (e.target as HTMLInputElement).value;
+    renderAtlasSurface(true);
+  }
 });
 document.addEventListener("change", (e) => {
-  const el = e.target as HTMLInputElement;
+  const el = e.target as HTMLInputElement | HTMLSelectElement;
+  if (el.id === "atlas-library-type") {
+    libraryState.type = el.value as EntryType | "all";
+    renderAtlasSurface();
+    return;
+  }
+  if (el.id === "atlas-library-status") {
+    libraryState.status = el.value as EntryStatus | "all";
+    renderAtlasSurface();
+    return;
+  }
+  if (el.id === "atlas-library-sort") {
+    libraryState.sortBy = el.value as "updated" | "title" | "status";
+    renderAtlasSurface();
+    return;
+  }
   if (el.id === "quality-preset" && Object.hasOwn(qualityPresets, el.value)) {
     prefs.rendering = { ...qualityPresets[el.value as QualityPreset] };
     savePrefs();
@@ -904,7 +1216,7 @@ document.addEventListener("change", (e) => {
     });
     savePrefs();
   }
-  if (el.dataset.pref) {
+  if (el instanceof HTMLInputElement && el.dataset.pref) {
     const key = el.dataset.pref;
     if (
       key === "sound" ||
@@ -917,7 +1229,7 @@ document.addEventListener("change", (e) => {
     else savePrefs();
     audio.play("confirm");
   }
-  if (el.dataset.motion) {
+  if (el instanceof HTMLInputElement && el.dataset.motion) {
     const key = el.dataset.motion as MotionKey;
     prefs.motion[key] = el.checked;
     prefs.motionPreset = motionPresetFor(prefs.motion);
@@ -960,7 +1272,116 @@ document.addEventListener("click", (e) => {
     prefs.colorTheme =
       themeButton.dataset.colorTheme === "dark" ? "dark" : "light";
     savePrefs();
+    renderAtlasSurface(true);
     return;
+  }
+  const copyBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-copy-code]",
+  );
+  if (copyBtn) {
+    const rawCode = copyBtn.dataset.copyCode ?? "";
+    void navigator.clipboard?.writeText(rawCode).catch(() => {});
+    const originalText = copyBtn.textContent;
+    copyBtn.textContent = "✓ 已复制";
+    copyBtn.classList.add("copied");
+    setTimeout(() => {
+      copyBtn.textContent = originalText;
+      copyBtn.classList.remove("copied");
+    }, 1600);
+    audio.play("confirm");
+    notify("代码已复制到剪贴板");
+    return;
+  }
+  const tocBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-scroll-heading]",
+  );
+  if (tocBtn) {
+    const headingId = tocBtn.dataset.scrollHeading;
+    if (headingId) {
+      const target = document.getElementById(headingId);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .querySelectorAll(".reader-toc-link")
+        .forEach((b) => b.classList.toggle("active", b === tocBtn));
+    }
+    return;
+  }
+  const catTab = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-library-category]",
+  );
+  if (catTab) {
+    const nextCat = catTab.dataset.libraryCategory ?? "all";
+    libraryState.category = nextCat;
+    const targetHash = buildLibraryHash(nextCat);
+    if (location.hash !== targetHash) {
+      history.replaceState(null, "", targetHash);
+    }
+    renderAtlasSurface();
+    audio.play("ui-tick");
+    return;
+  }
+  const layoutBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-library-layout]",
+  );
+  if (layoutBtn) {
+    const nextLayout = layoutBtn.dataset.libraryLayout;
+    if (nextLayout === "grid" || nextLayout === "list") {
+      libraryState.layout = nextLayout;
+      renderAtlasSurface();
+      audio.play("ui-tick");
+    }
+    return;
+  }
+  const atlasActionBtn = (e.target as Element).closest<HTMLElement>(
+    "[data-atlas-action]",
+  );
+  if (atlasActionBtn) {
+    const act = atlasActionBtn.dataset.atlasAction;
+    if (act === "enter-archive") {
+      navigateAtlas("#/archive");
+      audio.play("confirm");
+      return;
+    }
+    if (act === "open-3d-portal") {
+      const portalId = atlasActionBtn.dataset.portal ?? "";
+      const lane = portals.findIndex((p) => p.id === portalId);
+      navigateAtlas("#/archive");
+      if (lane >= 0) select(columnMemory[lane]);
+      audio.play("column");
+      return;
+    }
+    if (act === "locate-3d") {
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      const recIdx = records.findIndex(
+        (r) => r.entryId === entryId || r.id === entryId,
+      );
+      navigateAtlas("#/archive");
+      if (recIdx >= 0) {
+        select(recIdx);
+        openFile();
+      }
+      return;
+    }
+    if (act === "toggle-save") {
+      toggleSavedById(atlasActionBtn.dataset.entryId);
+      return;
+    }
+    if (act === "reset-library-filters") {
+      libraryState.category = "all";
+      libraryState.type = "all";
+      libraryState.status = "all";
+      libraryState.query = "";
+      navigateAtlas("#/library");
+      return;
+    }
+    if (act === "quick-new-guide") {
+      document
+        .querySelector(".atlas-workflow-cards")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      notify("终端执行 npm run new \"标题\" 或在 content/ 下直接新建 .md 即可！");
+      audio.play("confirm");
+      return;
+    }
   }
   if (!started) return;
   if (modalClosing) return;
@@ -989,9 +1410,18 @@ document.addEventListener("click", (e) => {
   }
   if (el.dataset.result) {
     const index = Number(el.dataset.result);
+    const slug = el.dataset.resultSlug;
+    const in3d = el.dataset.resultIn3d === "true";
     closeModal(() => {
-      select(index);
-      openFile();
+      if (atlasView === "archive" && in3d && scene) {
+        select(index);
+        openFile();
+      } else if (slug) {
+        navigateAtlas(buildEntryHash(slug));
+      } else {
+        select(index);
+        openFile();
+      }
     });
     return;
   }
@@ -1013,6 +1443,39 @@ document.addEventListener("click", (e) => {
     return;
   }
   const action = el.dataset.action;
+  if (action === "nav-home") {
+    navigateAtlas("#/home");
+    audio.play("ui-tick");
+    return;
+  }
+  if (action === "nav-library") {
+    navigateAtlas("#/library");
+    audio.play("ui-tick");
+    return;
+  }
+  if (action === "nav-archive") {
+    navigateAtlas("#/archive");
+    audio.play("ui-tick");
+    return;
+  }
+  if (action === "open-current-reader") {
+    navigateAtlas(buildEntryHash(records[selected].slug));
+    audio.play("open");
+    return;
+  }
+  if (action === "open-reader") {
+    const slug = el.dataset.entrySlug || records[selected].slug;
+    navigateAtlas(buildEntryHash(slug));
+    audio.play("open");
+    return;
+  }
+  if (action === "toggle-theme-quick") {
+    prefs.colorTheme = prefs.colorTheme === "dark" ? "light" : "dark";
+    savePrefs();
+    renderAtlasSurface(true);
+    audio.play("confirm");
+    return;
+  }
   if (action === "toggle-three") {
     void toggleThree();
     return;
@@ -1020,6 +1483,7 @@ document.addEventListener("click", (e) => {
   if (action === "sound-preview") audio.play("confirm");
   if (action === "skip") {
     setMode("archive");
+    syncHashRoute();
     audio.play("confirm");
   }
   if (action === "prev") stepFile(-1);
@@ -1089,6 +1553,12 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (!started) return;
   if (viewer?.isOpen) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+    e.preventDefault();
+    if (mode === "boot" && ready) setMode("archive");
+    openModal("search");
+    return;
+  }
   if (playground?.active && !modal) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -1111,10 +1581,16 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     return;
   }
-  const typing = e.target instanceof HTMLInputElement;
+  const typing =
+    e.target instanceof HTMLInputElement ||
+    e.target instanceof HTMLSelectElement ||
+    e.target instanceof HTMLTextAreaElement;
   if (e.key === "Escape") {
     if (modal) closeModal();
-    else if (mode === "detail" || (mode === "boot" && ready)) {
+    else if (atlasView === "reader") {
+      navigateAtlas("#/library");
+      audio.play("back");
+    } else if (mode === "detail" || (mode === "boot" && ready)) {
       const sound = mode === "detail" ? "back" : "ui-tick";
       setMode("archive");
       audio.play(sound);
@@ -1161,7 +1637,21 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (mode === "boot") setMode("archive");
     openModal("search");
+    return;
   }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "h") {
+    e.preventDefault();
+    if (mode === "boot") setMode("archive");
+    navigateAtlas("#/home");
+    return;
+  }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "l") {
+    e.preventDefault();
+    if (mode === "boot") setMode("archive");
+    navigateAtlas("#/library");
+    return;
+  }
+  if (atlasView !== "archive") return;
   if (e.key === "Home" && isGamepadEvent(e) && mode === "archive" && !modal) {
     e.preventDefault();
     openModal("saved");
@@ -1295,13 +1785,17 @@ function frame(ms: number) {
     motionIsReduced(),
     motionActive("pointerParallax"),
   );
-  // The calibrated 2D opening fully covers the scene until array entry.
-  if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9))
+  // Pause 3D WebGL rendering when a 2D ATLAS view is active (0% GPU usage during long reading).
+  if (
+    (atlasView === "archive" || mode === "boot") &&
+    !viewer?.isOpen &&
+    (!cinema || cinema.time >= 21.9)
+  )
     scene?.update(time, cinema);
   viewer?.update(time);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();
   playground?.position();
-  if (scene && mode === "detail") {
+  if (scene && mode === "detail" && atlasView === "archive") {
     documentDecryption.update(
       time,
       scene.decryptionFrame,
@@ -1326,7 +1820,7 @@ function frame(ms: number) {
     String(mode === "boot" ? 0 : (scene?.detailVisibility ?? 0)),
   );
   const currentScene = scene;
-  if (currentScene)
+  if (currentScene && (atlasView === "archive" || mode === "boot"))
     inspectionOverlay.render(
       currentScene.decryptionFrame,
       (x, y) => currentScene.projectCard(x, y),
@@ -1478,21 +1972,34 @@ async function toggleThree() {
 async function start() {
   try {
     if (isWallpaper) await window.rhineWallpaperPropertiesReady;
+    const disableWebGL = reviewParams.get("webgl") === "0";
     if (
-      !isWallpaper ||
-      wallpaperHost()?.properties.load3donstartup?.value !== false
+      !disableWebGL &&
+      (!isWallpaper ||
+        wallpaperHost()?.properties.load3donstartup?.value !== false)
     ) {
-      scene = new ArchiveScene($("#three-scene"));
-      scene.setTheme(prefs.colorTheme === "dark", true);
-      scene.setArchiveCoverage(
-        wallpaperHost()?.properties.archivecoverage?.value === "extra",
-      );
+      try {
+        scene = new ArchiveScene($("#three-scene"));
+        scene.setTheme(prefs.colorTheme === "dark", true);
+        scene.setArchiveCoverage(
+          wallpaperHost()?.properties.archivecoverage?.value === "extra",
+        );
+        await scene.load();
+      } catch (webglError) {
+        console.warn(
+          "WebGL unavailable, falling back to 2D ATLAS knowledge views:",
+          webglError,
+        );
+        scene?.dispose();
+        scene = undefined;
+        threeState = "off";
+        syncThreeButton();
+      }
     } else {
       threeState = "off";
       syncThreeButton();
     }
     await Promise.all([
-      scene?.load(),
       loadBootWebfonts(),
       // With unicode-range faces, preload the opening's actual characters,
       // not every font shard. Other archive text loads on demand.
@@ -1517,7 +2024,7 @@ async function start() {
     savePrefs();
     ready = true;
     select(0);
-    if (entry) entry.ready();
+    if (entry && !parseHashRoute(location.hash) && scene) entry.ready();
     else {
       if (isWallpaper) {
         // CEF allows automatic audio; never block the visual on audio policy or decoding.
@@ -1526,12 +2033,12 @@ async function start() {
           new Promise((resolve) => setTimeout(resolve, 3000)),
         ]);
       }
-      completeStartup(false);
+      completeStartup(Boolean(parseHashRoute(location.hash)) || !scene);
     }
   } catch (error) {
     console.error(error);
     $("#loading").innerHTML =
-      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>三维档案资源未能载入。请确认浏览器已启用硬件加速，然后重新连接。</p><button onclick="location.reload()">RECONNECT →</button></div>';
+      '<div class="error-state"><strong>CONNECTION INTERRUPTED</strong><p>终端资源未能载入，请刷新重试。</p><button onclick="location.reload()">RECONNECT →</button></div>';
   }
 }
 function completeStartup(silent: boolean) {
@@ -1544,13 +2051,15 @@ function completeStartup(silent: boolean) {
   }
   audio.releaseEntry();
   audio.restartBoot();
-  const fade = motionActive("boot") ? 600 : 0;
+  const hasDirectRoute = Boolean(parseHashRoute(location.hash)) || !scene;
+  const fade = motionActive("boot") && !hasDirectRoute ? 600 : 0;
   bootStart =
     performance.now() / 1000 -
     (reviewParams.has("time") ? Number(reviewParams.get("time")) : 1.76);
   if (!reviewParams.has("time")) bootStart += fade / 1000;
   setMode("boot");
   if (
+    hasDirectRoute ||
     reviewParams.get("scene") === "archive" ||
     (!motionActive("boot") && !reviewParams.has("time"))
   )
@@ -1558,6 +2067,7 @@ function completeStartup(silent: boolean) {
   if (reviewParams.get("scene") === "detail") setMode("detail");
   if (isWallpaper && wallpaperHost()?.properties.boot?.value === false)
     setMode("archive");
+  syncHashRoute();
   $("#stage").inert = false;
   $(".mobile-entry").inert = false;
   loading.classList.add("loaded");
@@ -1567,7 +2077,7 @@ function completeStartup(silent: boolean) {
       loading.contains(document.activeElement) ||
       document.activeElement === document.body;
     loading.remove();
-    if (entry && restoreFocus) {
+    if (entry && restoreFocus && atlasView === "archive") {
       const skip = $("#skip");
       const target =
         mode === "boot"
@@ -1635,7 +2145,10 @@ if (isWallpaper) {
       .querySelectorAll<HTMLInputElement>("[data-pref]")
       .forEach((input) => {
         const key = input.dataset.pref as
-          "sound" | "music" | "quality" | "superPerformance";
+          | "sound"
+          | "music"
+          | "quality"
+          | "superPerformance";
         if (key in prefs) input.checked = prefs[key];
       });
     document
@@ -1727,7 +2240,7 @@ if (isWallpaper) {
 void start();
 enableGamepad();
 const ARCHIVE_HINT: Record<"keyboard" | "gamepad", string> = {
-  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取`,
+  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取 <span>／</span> <kbd>H</kbd> 遥测 <kbd>L</kbd> 二维索引`,
   gamepad: `<kbd>LS</kbd> <kbd>DP</kbd> 切换列 / 前后档案 <span>／</span> <kbd>A</kbd> 读取`,
 };
 onInputDevice((device) => {
@@ -1758,14 +2271,20 @@ Object.assign(window, {
       bootStart = performance.now() / 1000 - t;
       lastStep = "";
     },
-    archive: () => setMode("archive"),
+    archive: () => {
+      atlasView = "archive";
+      setMode("archive");
+    },
     detail: () => openFile(),
     select: (i: number) => select(i),
+    navigate: (hash: string) => navigateAtlas(hash),
     stats: () => ({
       ...scene?.getStats(),
       threeState,
       fps: Math.round(fps),
       mode,
+      atlasView,
+      activeReaderSlug,
       ready,
       startup: started ? "started" : (entry?.phase ?? "loading"),
       motion: { reduced: motionIsReduced(), preset: prefs.motionPreset },
@@ -1776,6 +2295,8 @@ Object.assign(window, {
             : 6.76
           : null,
       selected: records[selected].id,
+      selectedVisualCode: records[selected].visualCode,
+      totalEntries: records.length,
       saved: [...saved],
       audio: audio.stats(),
       wallpaper: isWallpaper ? wallpaperHost() : null,

@@ -1,0 +1,316 @@
+[
+  {
+    "id": "tool-aegisub",
+    "slug": "tools/aegisub",
+    "visualCode": "T-001",
+    "globalCode": "X-001",
+    "title": "Aegisub 字幕时间轴与样式基础",
+    "category": "tools",
+    "categoryTitle": "软件与工具",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "Aegisub",
+      "字幕",
+      "时间轴",
+      "视频制作"
+    ],
+    "summary": "利用音频频谱模式与 G/S/D 快捷键在 Aegisub 中 30 秒内完成精准打轴与整体时间平移。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 音频频谱精准打轴 2. 批量平移错位字幕（Shift Times） 验证结果 常见问题与修复",
+    "body": "Aegisub 字幕时间轴与样式基础\n\n快速复习\n\n- 开启频谱视图：点击音频波形栏底部的「频谱模式（Spectrum mode）」按钮，人声起止边界比普通波形图清晰数倍。\n- 高频打轴四键流：\n  - 鼠标左键（或 A）：设定当前行起点时间\n  - 鼠标右键（或 F）：设定当前行终点时间\n  - S（或 Space）：播放当前选中时间段音频\n  - G（或 Enter）：提交当前行修改并自动跳到下一行\n- 整体平移时间轴：菜单栏 计时（Timing） → 平移时间（Shift Times）（快捷键 Ctrl + I）。\n\n适用场景\n\n为课程录像、实验操作演示视频、双语科普视频制作高精度 .ass 或 .srt 字幕，或修复外部下载字幕整体快慢偏移的问题。\n\n前置准备\n\n1. 准备待打轴视频文件（推荐 .mp4 H.264 编码）与纯文本台词稿（每行一句）。\n2. 打开 Aegisub，依次执行：\n   - 文件 → 打开字幕（或直接粘贴纯文本）\n   - 视频 → 打开视频（音频会自动关联载入）\n\n操作步骤\n\n1. 音频频谱精准打轴\n\n在音频区域开启 频谱模式（Spectrum） + 自动滚动音频视图，观察高亮亮斑对应的人声元音起点：\n\nAegisub 音频频谱时间轴校准示意\n\n``text\n打轴标准循环：\n选中首行 → 左键点亮斑前 50ms → 右键点句尾后 150ms → 按 S 试听确认 → 按 G 提交并进入下一行\n`\n\n2. 批量平移错位字幕（Shift Times）\n\n当视频片头增减了时长导致后续所有字幕整体慢了 1.5 秒 时：\n\n1. 按 Ctrl + I 打开 平移时间（Shift Times）；\n2. 时间填写 0:00:01.50，方向选择 向前（Forward，延后出现） 或 向后（Backward，提前出现）；\n3. 影响行选择 所有行（All rows） 或 选中行及后续行（Selection onward）；\n4. 时间字段勾选 起始和结束时间（Start and End times），点击确定。\n\n验证结果\n\n- 播放视频预览窗口，字幕切入时间位于人声发声前 0.05s ~ 0.10s，无闪帧（相邻两句间隔小于 0.2s 时可使用 计时 → 连结字幕 自动对齐）。\n- 导出 .srt（文件 → 导出字幕 → UTF-8）在播放器中无乱码。\n\n常见问题与修复\n\n- 问题：压制或高分屏预览时 .ass 字幕字号异常巨大或位置偏离。  \n  原因：脚本分辨率（PlayResX / PlayResY）未与视频分辨率对齐（默认常为 384×288）。  \n  修复：点击菜单 文件 → 属性，点击「从视频获取分辨率（如 1920 × 1080）」，再在样式管理器中统一设定字号（1080p 下正文推荐 52–60`）。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "tool-obsidian",
+    "slug": "tools/obsidian",
+    "visualCode": "T-002",
+    "globalCode": "X-002",
+    "title": "Obsidian 本地知识库与 ATLAS 协同工作流",
+    "category": "tools",
+    "categoryTitle": "软件与工具",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "Obsidian",
+      "Markdown",
+      "知识管理",
+      "Git"
+    ],
+    "summary": "将 ATLAS 的 content/ 目录作为 Obsidian 仓库直接打开，实现同级截图粘贴与无感 Git 归档。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 关键设置对齐（一次性配置） 2. 日常随手记与正式归档流 验证结果",
+    "body": "Obsidian 本地知识库与 ATLAS 协同工作流\n\n快速复习\n\n1. 打开 Obsidian → 打开本地仓库（Open folder as vault） → 直接选择本项目下的 e:\\ATLAS\\content 目录。\n2. 在 Obsidian 设置 → 文件与链接 中，将 附件默认存放路径 设为 当前文件所在目录下的子文件夹，子文件夹名称填 assets，并开启 使用相对路径。\n3. 如此配置后，在 Obsidian 里直接 Ctrl + V 粘贴截图会自动存入 ./assets/，与 ATLAS 构建流水线 100% 兼容！\n\n适用场景\n\n日常记笔记不想启动终端或浏览器，希望享受 Obsidian 的极速本地双链编辑体验，同时让写下的笔记自动成为 ATLAS 3D 终端与线上网站的知识条目。\n\n前置准备\n\n- 已安装 Obsidian 桌面端\n- 本机已拉取 ATLAS 仓库\n\n操作步骤\n\n1. 关键设置对齐（一次性配置）\n\n在 Obsidian 设置中调整以下三项，确保生成的 Markdown 可移植且通过 ATLAS 构建校验：\n\n| 设置位置 | 推荐配置值 | 作用 |\n| --- | --- | --- |\n| 文件与链接 → 新建笔记的默认位置 | in the folder specified below → inbox | 随手按 Ctrl+N 新建的闪念自动进入 inbox/ 草稿箱 |\n| 文件与链接 → 新建链接的格式 | 基于文件路径的相对路径 | 确保普通 Markdown 工具也能解析链接 |\n| 文件与链接 → 新附件的默认位置 | 当前文件所在文件夹下指定的子文件夹 → assets | 完美匹配 ATLAS 的就近图片（Co-location）打包规则 |\n\n2. 日常随手记与正式归档流\n\n1. 随手记：按 Ctrl + N 在 inbox/ 中记录几行实验观察或排错命令，无需填写 YAML Front Matter。\n2. 归档入列：整理完毕后，将文件拖拽移入 tools/、computing/、research/、academics/ 或 life/ 之一。\n3. 构建与同步：运行 npm run build:content（或配合 Obsidian Git 插件自动提交），新档案即刻在三维档案大厅点亮。\n\n验证结果\n\n- 在 Obsidian 中粘贴一张图片并在本地预览正常；运行 npm run check:content 校验通过，浏览器阅读器中图片正常加载且无 404。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "tool-ppt-master",
+    "slug": "tools/ppt-master",
+    "visualCode": "T-003",
+    "globalCode": "X-003",
+    "title": "PPT-Master 演示文稿工作流指南",
+    "category": "tools",
+    "categoryTitle": "软件与工具",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "PPT",
+      "演示文稿",
+      "自动化",
+      "排版"
+    ],
+    "summary": "结构化大纲拆解、母版规范设定与 PPT-Master 辅助生成及视觉验收标准流程。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 大纲转页面骨架 2. 版心与三级视觉层次设定 3. 批量检查与导出 验证结果 常见问题与修复",
+    "body": "PPT-Master 演示文稿工作流指南\n\n快速复习\n\n1. 先写 Markdown 结构化大纲，确定「每页核心结论（Action Title）+ 3 个以内支撑点」，禁止边想内容边调色块。\n2. 统一母版与网格：16:9 画布（33.867 cm × 19.05 cm），正文中文使用高可读无衬线体（如 MiSans / 微软雅黑），数字与英文代码使用等宽或几何无衬线体。\n3. 单页信息密度上限：字号不小于 14pt，对比色不超过「主底色 + 正文色 + 1 个强调色（如琥珀橙 #ED821B）」。\n4. 导出前必做三查：字体嵌入检查、100% 缩放边缘裁切检查、PDF 静态备份导出。\n\n适用场景\n\n适用于学术组会汇报、课题答辩、项目路演与课程讲义制作。解决“直接打开空白 PPT 无从下手、前后页排版风格割裂、换电脑字体丢失”三大痛点。\n\n前置准备\n\n- 一份已梳理清晰的 Markdown 提纲（参考 Markdown 基本语法）：\n  - # 对应封面标题\n  - ## 对应章节过渡页\n  - ### 对应单页核心结论（一句话标题）\n- 预设色板与单位标志（SVG 矢量格式优先，避免低分辨率带白底 PNG）。\n\n操作步骤\n\n1. 大纲转页面骨架\n\n将提纲按页拆分，确保每一页标题直接表达结论而非仅写名词：\n\n| 常见弱标题（避免） | 结论型标题（推荐） |\n| --- | --- |\n| 实验结果分析 | 化合物 A 在 10 μM 浓度下显著抑制细胞迁移（抑制率 68%） |\n| 静态资源路径问题 | 统一使用 BASE_URL 解析器可彻底消除子路径 404 |\n\n2. 版心与三级视觉层次设定\n\n``text\n+-------------------------------------------------------------------+\n| [分类眉题 / Eyebrow 12pt]                         [页码 / 章节标识] |\n| [单页核心结论标题 / Action Title 24-28pt Bold]                     |\n| ----------------------------------------------------------------- |\n|                                                                   |\n|   +---------------------------+   +---------------------------+   |\n|   | 左侧数据图表 / 流程图     |   | 右侧关键结论与证据要点    |   |\n|   | (占版心 55%~60% 面积)     |   | (不超过 3 条，行距 1.3x)  |   |\n|   +---------------------------+   +---------------------------+   |\n|                                                                   |\n| [底部资料来源 / 备注说明 10-11pt 弱化灰]                          |\n+-------------------------------------------------------------------+\n`\n\n3. 批量检查与导出\n\n- [x] 检查所有图表坐标轴文字是否清晰可读\n- [x] 在「文件 → 选项 → 保存」中勾选 将字体嵌入文件（仅嵌入演示文稿中使用的字符）\n- [x] 同时导出 .pptx 与 .pdf 双版本备存\n\n验证结果\n\n- 在无预装第三方字体的设备上打开 .pptx`，标题与正文字重不发生回退变形。\n- 任意抽取一页，观众可在 5 秒内 读出该页核心结论。\n\n常见问题与修复\n\n- 问题：嵌入字体后保存报错或体积暴增至上百 MB。  \n  原因：使用了不支持子集嵌入的完整 CJK 字体包或 OTF 变体。  \n  修复：改用标准 TTF 格式字重，或将封面特殊艺术字转为 SVG 矢量形状后再保存。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "concept-markdown-basics",
+    "slug": "computing/markdown-basics",
+    "visualCode": "C-001",
+    "globalCode": "X-004",
+    "title": "Markdown 核心语法与技术写作规范",
+    "category": "computing",
+    "categoryTitle": "编程与 AI",
+    "type": "concept",
+    "status": "proficient",
+    "tags": [
+      "Markdown",
+      "GFM",
+      "数学公式",
+      "技术写作"
+    ],
+    "summary": "掌握 GitHub Flavored Markdown（GFM）标题层级、代码块、表格、任务列表与 LaTeX 公式语法。",
+    "headings": "快速复习 核心定义 常用语法示例 1. 围栏代码块与终端命令 2. 结构化对比表格 3. LaTeX 数学与生化公式 易错点与规范约束",
+    "body": "Markdown 核心语法与技术写作规范\n\n快速复习\n\n- 标题：# H1（每篇仅一个主标题）、## H2（大章节，自动进入右侧 TOC 目录）、### H3（子步骤）。\n- 代码块：使用三个反引号加语言标识（如  `bash 、 `python 、 `r ），避免使用缩进式代码块。\n- 数学公式：行内公式使用单美元符号 E = mc^2，独立公式块使用双美元符号 ...。\n- 表格与清单：使用 | 列1 | 列2 | 绘制表格，使用 - [x] 与 - [ ] 记录可勾选的实验/部署核查项。\n\n核心定义\n\nMarkdown 是一种轻量级纯文本标记语言。它允许作者使用易读易写的纯文本格式编写文档，随后在构建期确定性地转换为结构化 HTML 页面。在 ATLAS 中，Markdown 是所有知识条目的唯一权威信源（Single Source of Truth）。\n\n常用语法示例\n\n1. 围栏代码块与终端命令\n\n``bash\n校验内容完整性并构建静态索引\nnpm run check:content\nnpm run build:content\n`\n\n2. 结构化对比表格\n\n| 语法元素 | 写法示例 | 典型用途 |\n| --- | --- | --- |\n| 行内代码 |  import.meta.env.BASE_URL  | 变量名、文件路径、快捷键、命令参数 |\n| 引用提示 | > 注意：操作前先备份 | 关键前提、安全警告与重点结论 |\n| 任务清单 | - [x] 已验证步骤 | 实验 SOP 核对单、发布前检查表 |\n\n3. LaTeX 数学与生化公式\n\n行内公式示例：米氏常数 K_m 表示酶促反应速率达到最大反应速率 V_{\\max} 一半时的底物浓度。\n\n独立公式块示例：\n\n\\text{pH} = \\text{p}K_a + \\log_{10}\\left(\\frac{[\\text{A}^-]}{[\\text{HA}]}\\right)\n\n易错点与规范约束\n\n1. 禁止依赖未闭合的原始 HTML 标签：为保障公开站点安全并支持多端迁移，正文内不写 <script> 或裸 <iframe>`。\n2. 中英文混排留白：建议在中文与英文单词、数字之间保持清晰可读性；代码块必须标注语言名称以启用语法高亮与一键复制。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "skill-git-workflow",
+    "slug": "computing/git-workflow",
+    "visualCode": "C-002",
+    "globalCode": "X-005",
+    "title": "Git 日常提交、救命回滚与分支速查卡",
+    "category": "computing",
+    "categoryTitle": "编程与 AI",
+    "type": "snippet",
+    "status": "proficient",
+    "tags": [
+      "Git",
+      "速查卡",
+      "版本控制",
+      "命令行"
+    ],
+    "summary": "高频使用的 Git 暂存、修改上次提交、撤销误操作与安全管理远程地址的 6 条核心命令。",
+    "headings": "快速复习 状态与回退对照表",
+    "body": "Git 日常提交、救命回滚与分支速查卡\n\n快速复习\n\n``bash\n1. 新建并切换到功能分支\ngit switch -c feat/new-knowledge\n\n2. 漏改了小地方，合并进上一次 commit（不产生多余提交记录）\ngit add . && git commit --amend --no-edit\n\n3. 撤销上一次 commit，但保留写好的代码在工作区（最常用救命命令）\ngit reset --soft HEAD~1\n\n4. 临时手头有急事，把未写完的改动存进栈里 / 恢复出来\ngit stash push -m \"wip: 整理实验笔记\"\ngit stash pop\n\n5. 彻底禁止向某个上游远端（upstream）误 push\ngit remote set-url --push upstream DISABLED\n\n6. 误删分支或误 reset 后找回历史哈希\ngit reflog -n 10\n`\n\n状态与回退对照表\n\n| 场景 | 推荐命令 | 是否保留工作区修改 |\n| --- | --- | --- |\n| 刚 git add 错了文件想撤回暂存 | git restore --staged <file> | 保留 |\n| 想放弃单个文件的未暂存修改 | git restore <file> | 丢弃该文件修改 |\n| 刚 commit 完发现提交早了 | git reset --soft HEAD~1 | 保留 |\n| 已推送到远程分支需要公开回滚 | git revert <commit-sha>` | 生成新反向提交 |",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "skill-github-pages",
+    "slug": "computing/github-pages",
+    "visualCode": "C-003",
+    "globalCode": "X-006",
+    "title": "GitHub Actions 自动化构建与 GitHub Pages 部署",
+    "category": "computing",
+    "categoryTitle": "编程与 AI",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "GitHub Pages",
+      "GitHub Actions",
+      "CI/CD",
+      "Vite"
+    ],
+    "summary": "配置 GitHub Actions 工作流实现推送 main 分支自动校验、构建 Vite 静态站点并发布至 GitHub Pages。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 配置仓库 Pages 构建源 2. 编写 .github/workflows/deploy.yml 验证结果 常见问题与修复",
+    "body": "GitHub Actions 自动化构建与 GitHub Pages 部署\n\n快速复习\n\n1. 仓库网页端进入 Settings → Pages → Build and deployment，将 Source 改为 GitHub Actions。\n2. 在 vite.config.ts 中确保子路径基址支持环境变量（如 process.env.ATLAS_BASE || '/'），当部署在 https://<user>.github.io/<repo>/ 时设为 /<repo>/。\n3. 工作流文件置于 .github/workflows/deploy.yml，为部署作业声明最小权限：pages: write 与 id-token: write。\n\n适用场景\n\n将基于 Vite + TypeScript 的静态知识库（如 ATLAS）托管在 GitHub Pages，实现“本地提交 Markdown → 远端自动运行内容校验与构建 → 自动更新线上站点”，且校验失败时自动阻断异常发布。\n\n前置准备\n\n- 已创建 GitHub 公开仓库（如 Personal-Atlas）\n- 本地 npm run check:content 与 npm run build 均能正常通过\n\n操作步骤\n\n1. 配置仓库 Pages 构建源\n\n打开 GitHub 仓库页面：\n1. 点击顶部 Settings；\n2. 左侧导航栏选择 Pages；\n3. 在 Build and deployment → Source 下拉框中选择 GitHub Actions。\n\n2. 编写 .github/workflows/deploy.yml\n\n``yaml\nname: Deploy ATLAS to GitHub Pages\n\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: \"pages\"\n  cancel-in-progress: true\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 22\n          cache: npm\n      - name: Install dependencies\n        run: npm ci\n      - name: Validate & Build Content\n        run: |\n          npm run check:content\n          npm run build\n        env:\n          ATLAS_BASE: /{{ github.event.repository.name }}/\n      - name: Upload Pages artifact\n        if: github.event_name != 'pull_request'\n        uses: actions/upload-pages-artifact@v3\n        with:\n          path: ./dist\n\n  deploy:\n    needs: build\n    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'\n    runs-on: ubuntu-latest\n    environment:\n      name: github-pages\n      url: {{ steps.deployment.outputs.page_url }}\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4\n`\n\n验证结果\n\n- ",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "skill-r-dataframe",
+    "slug": "computing/r-dataframe",
+    "visualCode": "C-004",
+    "globalCode": "X-007",
+    "title": "R 语言数据框（tidyverse / dplyr）高频清洗速查",
+    "category": "computing",
+    "categoryTitle": "编程与 AI",
+    "type": "snippet",
+    "status": "learning",
+    "tags": [
+      "R语言",
+      "tidyverse",
+      "dplyr",
+      "数据清洗",
+      "生信"
+    ],
+    "summary": "使用 dplyr 管道操作符筛选样本行、挑选基因列、分组汇总均值标准差及长宽表转换。",
+    "headings": "快速复习 宽表与长表互转（画 ggplot2 必用） 验证与排查小贴士",
+    "body": "R 语言数据框（tidyverse / dplyr）高频清洗速查\n\n快速复习\n\n``r\nlibrary(tidyverse)\n\n核心五动词流水线：筛选行 -> 新增列 -> 分组汇总 -> 排序\nsummary_df <- raw_df |>\n  filter(!is.na(expression), padj < 0.05) |>\n  mutate(log2_fc = log2(treated / control)) |>\n  group_by(cell_line, treatment) |>\n  summarise(\n    mean_fc = mean(log2_fc, na.rm = TRUE),\n    sd_fc   = sd(log2_fc, na.rm = TRUE),\n    n       = n(),\n    .groups = \"drop\"\n  ) |>\n  arrange(desc(abs(mean_fc)))\n`\n\n宽表与长表互转（画 ggplot2 必用）\n\n`r\n宽表转长表（把多个样本列收拢为 sample 与 value 两列）\nlong_df <- wide_df |>\n  pivot_longer(\n    cols = starts_with(\"Rep_\"),\n    names_to = \"replicate\",\n    values_to = \"intensity\"\n  )\n\n长表转回宽表\nwide_again <- long_df |>\n  pivot_wider(names_from = replicate, values_from = intensity)\n`\n\n验证与排查小贴士\n\n- 每次 left_join(a, b, by = \"gene_id\") 前，先用 count(b, gene_id) |> filter(n > 1)` 检查右表是否有重复键，防止行数意外翻倍！",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "troubleshooting-vite-assets",
+    "slug": "computing/vite-assets-404",
+    "visualCode": "C-005",
+    "globalCode": "X-008",
+    "title": "Vite 部署 GitHub Pages 静态资源與模型 404 排查",
+    "category": "computing",
+    "categoryTitle": "编程与 AI",
+    "type": "troubleshooting",
+    "status": "proficient",
+    "tags": [
+      "Vite",
+      "GitHub Pages",
+      "404",
+      "静态资源",
+      "Three.js"
+    ],
+    "summary": "定位并修复 GitHub Pages 仓库子路径（/RepoName/）下硬编码根路径导致的 GLB 模型、图片与 Service Worker 404 错误。",
+    "headings": "快速复习 问题症状与环境 原因分析 修复步骤 1. 让 vite.config.ts 支持可配置基址 2. 统一使用 assetUrl 解析器 3. 本地模拟子路径回归验证 修复验证",
+    "body": "Vite 部署 GitHub Pages 静态资源与模型 404 排查\n\n快速复习\n\n1. 症状：本地 npm run dev 一切正常，部署到 https://<user>.github.io/<repo>/ 后页面空白，或 Three.js 的 .glb 模型、音频、图片报 404 Not Found。\n2. 根因：GitHub Pages 项目站点部署在子路径 /<repo>/ 下，而代码中使用了以 / 开头的绝对根路径（如 fetch('/assets/model.glb')），浏览器会错误请求 https://<user>.github.io/assets/model.glb。\n3. 三步根治：\n   - vite.config.ts 配置正确的 base（如 /Personal-Atlas/）；\n   - 所有运行期动态资源统一经过 assetUrl(path) 拼接 import.meta.env.BASE_URL；\n   - index.html 中的静态引用使用相对路径 ./favicon.svg 或由 Vite 自动转换。\n\n问题症状与环境\n\n- 环境：Vite + TypeScript + Three.js 静态站点，托管于 GitHub Pages 非根域名目录。\n- 报错信息：\n  ``text\n  GET https://xuxinxi14.github.io/assets/archive-cassette.glb 404 (Not Found)\n  Failed to register a ServiceWorker: A bad HTTP response code (404) was received when fetching the script.\n  `\n\n原因分析\n\n1. vite.config.ts 中 base 默认是 '/'，构建产物 dist/index.html 引用的 JS/CSS 全部从域名根目录 /assets/... 查找。\n2. 即使修改了 vite.config.ts 的 base，TypeScript 代码中传给 GLTFLoader.load('/assets/xxx.glb') 或 new Audio('/audio/xxx.ogg') 的字符串字面量不会被 Vite 自动重写。\n\n修复步骤\n\n1. 让 vite.config.ts 支持可配置基址\n\n`ts\n// vite.config.ts\nconst rawBase = process.env.ATLAS_BASE || \"/\";\nconst normalizedBase = rawBase.endsWith(\"/\") ? rawBase : {rawBase}/;\n\nexport default defineConfig({\n  base: normalizedBase,\n});\n`\n\n2. 统一使用 assetUrl 解析器\n\n`ts\n// src/asset-url.ts\nexport const assetUrl = (path: string) => {\n  const clean = path.replace(/^\\.?\\//, \"\");\n  return {import.meta.env.BASE_URL}{clean};\n};\n`\n\n3. 本地模拟子路径回归验证\n\n无需每次推上 GitHub 才能发现问题，直接在本地使用环境变量构建并预览：\n\n`bash\nWindows PowerShell 本地模拟子路径构建\nenv:ATLAS_BASE=\"/Personal-Atlas/\"; npm run build; npx vite preview --base /Personal-Atlas/\n`\n\n修复验证\n\n- 打开浏览器开发者工具 Network 面板，勾选 Disable cache 并刷新页面；\n- 确认所有 .js、.css、.woff2、.glb、entries-manifest 请求的状态码均为 200`，且 URL 均带有正确的基址前缀。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "skill-cell-observation",
+    "slug": "research/cell-observation",
+    "visualCode": "R-001",
+    "globalCode": "X-009",
+    "title": "贴壁细胞日常形态观察与污染排查入门",
+    "category": "research",
+    "categoryTitle": "科研与实验",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "细胞培养",
+      "显微镜观察",
+      "无菌操作",
+      "实验SOP"
+    ],
+    "summary": "倒置相差显微镜下判断细胞汇合度、边缘折光性，以及细菌、真菌、支原体污染的早期鉴别。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 传代时机与汇合度评估 2. 三大常见污染快速鉴别表 验证结果",
+    "body": "贴壁细胞日常形态观察与污染排查入门\n\n快速复习\n\n1. 先肉眼看培养液颜色与透明度：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。\n2. 低倍镜（4× / 10×）看整体分布与汇合度（Confluency）：当汇合度达 80%～85%（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。\n3. 高倍镜（20×）看状态细节：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。\n\n适用场景\n\n每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。\n\n前置准备\n\n- 75% 医用酒精喷壶、无尘擦镜纸\n- 倒置相差显微镜（确认聚光镜与相差环已对中）\n\n操作步骤\n\n1. 传代时机与汇合度评估\n\n- < 30%：稀疏生长期，换液不传代；\n- 70% ~ 85%：最佳传代与实验铺板窗口；\n- > 95%：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。\n\n2. 三大常见污染快速鉴别表\n\n| 污染类型 | 培养液外观 | 镜下典型特征 | 应急处置 |\n| --- | --- | --- | --- |\n| 细菌污染 | 12–24h 内迅速变黄、浑浊 | 细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动 | 勿开盖！直接加含氯消毒液浸泡后密封丢弃 |\n| 霉菌/酵母污染 | 初期清亮，后期出现白色/淡黄色漂浮团块 | 可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串 | 立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘 |\n| 支原体污染 | 培养液清亮，pH 变化慢，极易漏诊 | 细胞生长变慢、形态拉长或碎裂，背景有细砂状附着 | 进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理 |\n\n验证结果\n\n- 每次观察后在实验记录本登记：细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代），确保前后批次实验可追溯。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "skill-molecular-docking",
+    "slug": "research/molecular-docking",
+    "visualCode": "R-002",
+    "globalCode": "X-010",
+    "title": "AutoDock Vina 分子对接标准流程概览",
+    "category": "research",
+    "categoryTitle": "科研与实验",
+    "type": "skill",
+    "status": "review",
+    "tags": [
+      "分子对接",
+      "AutoDock Vina",
+      "PyMOL",
+      "结构生物学"
+    ],
+    "summary": "受体蛋白去水加氢、配体小分子 3D 构象能量最小化、Grid Box 活性口袋设置与结合能结果判读。",
+    "headings": "快速复习 适用场景 前置准备 操作步骤 1. 编写 Vina 对接配置文件 config.txt 2. 运行对接与重对接验证（Redocking） 验证结果 常见问题与修复",
+    "body": "AutoDock Vina 分子对接标准流程概览\n\n快速复习\n\n1. 受体准备（Receptor）：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 .pdbqt。\n2. 配体准备（Ligand）：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 .pdbqt。\n3. 对接盒子（Grid Box）：以原结晶配体质心或预测口袋为中心，边长通常设为 20 Å × 20 Å × 20 Å（确保包裹整个活性位点且不过大）。\n4. 判读经验阈值：Vina 结合自由能 \\Delta G \\le -7.0\\text{ kcal/mol} 通常指示较强结合潜力，但必须结合 氢键距离（< 3.5 Å） 与疏水相互作用构象合理性综合判断。\n\n适用场景\n\n靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。\n\n前置准备\n\n- 已安装 AutoDock Vina、AutoDockTools (MGLTools) 或 Meeko、OpenBabel、PyMOL\n- 靶标蛋白晶体结构（优先选择分辨率 < 2.5\\text{ \\AA} 且含共晶配体的 PDB 条目）\n\n操作步骤\n\n1. 编写 Vina 对接配置文件 config.txt\n\n``ini\nreceptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\n`\n\n2. 运行对接与重对接验证（Redocking）\n\n`bash\n运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\n`\n\n> 金标准控制（Redocking）：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 \\text{RMSD}。当 \\text{RMSD} < 2.0\\text{ \\AA} 时，说明当前参数与盒子设置可靠。\n\n验证结果\n\n- docked_poses.pdbqt 生成多个打分构象，Mode 1 结合能最低；\n- 在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 \\pi-\\pi 堆积，且无明显空间位阻碰撞（Clash）。\n\n常见问题与修复\n\n- 问题：对接打分全部为正值（如 +15.2 kcal/mol）。  \n  原因：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。  \n  修复：在 PyMOL 中选中原配体执行 get_extent ligand` 重新核对中心坐标 (x, y, z)。",
+    "updated": "2026-03-15"
+  },
+  {
+    "id": "academics-biostatistics-tests",
+    "slug": "academics/biostatistics-tests",
+    "visualCode": "A-001",
+    "globalCode": "X-011",
+    "title": "生物统计常用假设检验方法选择速查卡",
+    "category": "academics",
+    "categoryTitle": "学科知识",
+    "type": "snippet",
+    "status": "todo",
+    "tags": [
+      "生物统计",
+      "假设检验",
+      "t检验",
+      "ANOVA",
+      "速查卡"
+    ],
+    "summary": "根据样本组数、正态性与方差齐性快速决定使用 Student's t-test、Welch's t-test、Mann-Whitney U 还是 ANOVA。",
+    "headings": "快速复习 待补充核对项（TODO）",
+    "body": "生物统计常用假设检验方法选择速查卡\n\n快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| 两组独立样本 | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| 两组配对样本 | Paired t-test | — | Wilcoxon 符号秩检验 |\n| 三组及以上独立样本 | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| 分类变量频数表 | 卡方检验（\\chi^2，n \\ge 40 且期望频数 \\ge 5） | — | Fisher 精确检验（小样本首选） |\n\n待补充核对项（TODO）\n\n- [ ] 补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段\n- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "concept-enzyme-kinetics",
+    "slug": "academics/enzyme-kinetics",
+    "visualCode": "A-002",
+    "globalCode": "X-012",
+    "title": "米氏方程（Michaelis-Menten）与酶抑制类型判读",
+    "category": "academics",
+    "categoryTitle": "学科知识",
+    "type": "concept",
+    "status": "proficient",
+    "tags": [
+      "生物化学",
+      "酶工程",
+      "动力学",
+      "数学公式"
+    ],
+    "summary": "理解米氏常数 Km 与最大反应速率 Vmax 的物理意义，掌握竞争性、非竞争性与反竞争性抑制的动力学特征。",
+    "headings": "快速复习 核心定义与稳态推导 Lineweaver-Burk 双倒数方程 易错点与实验建议",
+    "body": "米氏方程（Michaelis-Menten）与酶抑制类型判读\n\n快速复习\n\n- 米氏方程标准形式：\n  v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\n- K_m 的核心意义：当反应初速度 v_0 = \\frac{1}{2} V_{\\max} 时的底物浓度 [S]（单位与浓度相同，如 \\text{mmol/L}）。K_m 越小，表示酶对底物的表观亲和力越高。\n- 三大可逆抑制速记：\n  - 竞争性抑制：抢活性中心 → V_{\\max} 不变，表观 K_m 增大；\n  - 非竞争性抑制：绑别构位点降活性 → V_{\\max} 降低，表观 K_m 不变；\n  - 反竞争性抑制：只绑 ES 复合物 → V_{\\max} 与 K_m 同比例降低。\n\n核心定义与稳态推导\n\n在酶促反应体系中，酶 E 与底物 S 可逆结合生成中间复合物 ES，随后生成产物 P：\n\nE + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P\n\n在稳态近似（\\frac{d[ES]}{dt} = 0）条件下，定义米氏常数 K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}，且最大反应速率 V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}。\n\nLineweaver-Burk 双倒数方程\n\n对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：\n\n\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}\n\n| 抑制类型 | 结合对象 | 表观 V_{\\max} | 表观 K_m | 双倒数图交点位置 |\n| --- | --- | --- | --- | --- |\n| 竞争性抑制 | 游离酶 E | 不变 | 增大 (1 + [I]/K_i) | 交于纵轴（y 轴截距不变） |\n| 非竞争性抑制 | E 与 ES 均結合 | 减小 | 不变 | 交于横轴（x 轴截距不变） |\n| 反竞争性抑制 | 仅结合 ES 复合物 | 减小 | 减小 | 多条平行线（斜率 K_m/V_{\\max} 不变） |\n\n易错点与实验建议\n\n1. K_m 与酶浓度无关：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 V_{\\max} 与体系中加入的酶总浓度 [E]_t 成正比。\n2. 拟合软件推荐：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用非线性回归（Nonlinear regression）拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "life-feynman-teaching",
+    "slug": "life/feynman-teaching",
+    "visualCode": "L-001",
+    "globalCode": "X-013",
+    "title": "费曼技巧与实验室新人带教四步法",
+    "category": "life",
+    "categoryTitle": "创作与生活",
+    "type": "skill",
+    "status": "proficient",
+    "tags": [
+      "教学技巧",
+      "费曼学习法",
+      "实验带教",
+      "知识内化"
+    ],
+    "summary": "通过“界定目标—无术语复述—示范纠偏—独立复现”四步法高效带教师弟师妹并检验自身知识盲区。",
+    "headings": "快速复习 操作步骤 1. 拆解操作颗粒度 2. 让学习者用自己的话复述 验证结果",
+    "body": "费曼技巧与实验室新人带教四步法\n\n快速复习\n\n1. 先讲“为什么要做这一步（Why & 失败后果）”，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。\n2. 三遍带教节奏：\n   - 第一遍：我做你看，我讲关键控制点；\n   - 第二遍：你做我看，操作前先口述下一步；\n   - 第三遍：你独立做，对照 ATLAS 档案清单自检结果。\n3. 卡壳即知识盲区：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 inbox/ 查文献补齐。\n\n操作步骤\n\n1. 拆解操作颗粒度\n\n将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。\n\n2. 让学习者用自己的话复述\n\n不要问“听懂了吗？”（回答永远是“懂了”），而是问：\n- “如果这一步离心转速设高了一倍，沉淀会出什么问题？”\n- “你现在复述一下接下来 5 分钟的三个动作顺序。”\n\n验证结果\n\n- 被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "life-video-export-presets",
+    "slug": "life/video-export-presets",
+    "visualCode": "L-002",
+    "globalCode": "X-014",
+    "title": "视频导出与压制常用 H.264 / AAC 参数速查",
+    "category": "life",
+    "categoryTitle": "创作与生活",
+    "type": "snippet",
+    "status": "proficient",
+    "tags": [
+      "创作与生活",
+      "snippet"
+    ],
+    "summary": "日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：",
+    "headings": "快速复习 关键参数备忘",
+    "body": "视频导出与压制常用 H.264 / AAC 参数速查\n\n快速复习\n\n日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：\n\n``bash\n1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\n`\n\n关键参数备忘\n\n- -pix_fmt yuv420p：必加，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。\n- -movflags +faststart：将 moov atom` 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。",
+    "updated": "2026-10-16"
+  },
+  {
+    "id": "inbox-docker-port-conflict",
+    "slug": "inbox/docker-port-conflict",
+    "visualCode": "D-001",
+    "globalCode": "X-015",
+    "title": "Windows 端口被占用（EADDRINUSE）快速定位与释放",
+    "category": "inbox",
+    "categoryTitle": "闪念草稿箱",
+    "type": "snippet",
+    "status": "draft",
+    "tags": [
+      "闪念草稿箱",
+      "snippet"
+    ],
+    "summary": "刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：",
+    "headings": "",
+    "body": "Windows 端口被占用（EADDRINUSE）快速定位与释放\n\n刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：\n\n``powershell\n查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n根据 PID 结束进程\nStop-Process -Id <PID> -Force\n``",
+    "updated": "2026-10-16"
+  }
+]

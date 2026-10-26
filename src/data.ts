@@ -79,6 +79,12 @@ export const records: ArchiveRecord[] = knowledgeRepository
 export const categories = ["全部档案", ...portalTitles];
 export const archiveColumns = portalTitles;
 
+export function refreshArchiveRecords(): ArchiveRecord[] {
+  const updated = knowledgeRepository.all(false).map(toArchiveRecord);
+  records.splice(0, records.length, ...updated);
+  return records;
+}
+
 export function columnFiles(lane: number, customRecords = records, customColumns = archiveColumns) {
   if (customColumns.length === 0) return [];
   const normLane = ((lane % customColumns.length) + customColumns.length) % customColumns.length;

@@ -5,6 +5,11 @@ import test from "node:test";
 import { renderTelemetryHomeMarkup } from "../../src/app/telemetry-view.ts";
 import { renderLibraryViewMarkup } from "../../src/library/library-view.ts";
 import { renderReaderViewMarkup } from "../../src/reader/reader-view.ts";
+import {
+  renderStudioViewMarkup,
+  createDefaultStudioDraft,
+} from "../../src/studio/studio-view.ts";
+import { parseHashRoute, buildStudioHash } from "../../src/app/router.ts";
 import { knowledgeRepository } from "../../src/knowledge/repository.ts";
 import { records, columnFiles } from "../../src/data.ts";
 
@@ -94,7 +99,19 @@ test("MVP E2E: telemetry home, 2D library, and 3-column reader render valid HTML
     "Zero-Front-Matter entry displays AUTO-INFERRED badge",
   );
 
-  // 4. Verify 3D columns and dist/ artifacts
+  // 4. Verify WebUI Archive Studio (#/studio) and studio routes
+  const studioRouteNew = parseHashRoute("#/studio");
+  assert.equal(studioRouteNew?.view, "studio", "#/studio parses to studio view");
+  const studioRouteEdit = parseHashRoute(buildStudioHash("skills/ppt-master"));
+  assert.equal(studioRouteEdit?.view, "studio", "#/studio/<slug> parses to studio view");
+  assert.equal(studioRouteEdit?.slug, "skills/ppt-master", "#/studio/<slug> extracts slug");
+
+  const studioHtml = renderStudioViewMarkup(createDefaultStudioDraft("skills"));
+  assert.ok(studioHtml.includes("ARCHIVE STUDIO"), "Studio header renders");
+  assert.ok(studioHtml.includes("PASTE AI NOTE"), "AI Note importer button renders");
+  assert.ok(studioHtml.includes("SAVE TO DISK"), "Save to disk button renders");
+
+  // 5. Verify 3D columns and dist/ artifacts
   assert.equal(
     records.length,
     knowledgeRepository.all(false).length,

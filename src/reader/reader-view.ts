@@ -6,7 +6,11 @@ import {
   typeMeta,
 } from "../knowledge/repository.ts";
 import type { KnowledgeEntry } from "../knowledge/types.ts";
-import { buildEntryHash, buildLibraryHash } from "../app/router.ts";
+import {
+  buildEntryHash,
+  buildLibraryHash,
+  buildStudioHash,
+} from "../app/router.ts";
 
 const GITHUB_REPO_EDIT_BASE =
   "https://github.com/xuxinxi14/Personal-Atlas/edit/main/";
@@ -201,6 +205,7 @@ export function renderReaderViewMarkup(
       <aside class="atlas-reader-sidebar-left" data-stagger="0" aria-label="知识目录树">
         <div class="reader-sidebar-head">
           <a href="${buildLibraryHash(entry.category)}" class="reader-back-link">← <span>DIRECTORY // 返回索引</span></a>
+          <a href="${buildStudioHash()}" class="reader-studio-new-link" title="在 WebUI 编撰台新建笔记">+ NEW ✎</a>
         </div>
         <div class="reader-tree-scroll">
           ${sidebarTreeHtml}
@@ -246,6 +251,9 @@ export function renderReaderViewMarkup(
               </div>
 
               <div class="reader-toolbar" role="toolbar" aria-label="档案操作">
+                <a href="${buildStudioHash(entry.slug)}" class="specimen-act primary-act" title="直接在 WebUI 内置档案编撰台中编辑此笔记">
+                  ✎ EDIT IN STUDIO · 编辑档案
+                </a>
                 ${
                   hasWebGL && entry.category !== "inbox"
                     ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}">3D 定位 ↗</button>`
@@ -256,12 +264,6 @@ export function renderReaderViewMarkup(
                 </button>
                 <a href="${escapeHtml(assetUrl(`archives/ATLAS-${entry.id}.txt`))}" download="ATLAS-${escapeHtml(entry.id)}.txt" class="specimen-act">
                   EXPORT TXT ↓
-                </a>
-                <a href="${escapeHtml(vscodeUri)}" class="specimen-act" title="在本地 VS Code 中直接打开此 Markdown 文件">
-                  VS CODE ✎
-                </a>
-                <a href="${escapeHtml(githubEditUrl)}" target="_blank" rel="noopener noreferrer" class="specimen-act" title="在 GitHub 网页端编辑此 Markdown 文件">
-                  GITHUB ↗
                 </a>
               </div>
             </div>

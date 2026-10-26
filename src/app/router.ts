@@ -1,4 +1,10 @@
-export type RouteView = "boot" | "home" | "archive" | "library" | "reader";
+export type RouteView =
+  | "boot"
+  | "home"
+  | "archive"
+  | "library"
+  | "reader"
+  | "studio";
 
 export interface ParsedRoute {
   view: RouteView;
@@ -33,6 +39,14 @@ export function parseHashRoute(rawHash: string): ParsedRoute | null {
       query: params.get("q") ?? undefined,
     };
   }
+  if (cleanPath === "studio" || cleanPath.startsWith("studio/")) {
+    const rest = cleanPath.slice("studio".length).replace(/^\/+/, "");
+    return {
+      view: "studio",
+      slug: rest ? decodeURIComponent(rest) : undefined,
+      category: params.get("category") ?? undefined,
+    };
+  }
   if (cleanPath.startsWith("entry/")) {
     const rest = cleanPath.slice("entry/".length);
     const [slugPart, anchor] = rest.split("#");
@@ -53,4 +67,9 @@ export function buildLibraryHash(category = "all"): string {
   return category && category !== "all"
     ? `#/library/${encodeURIComponent(category)}`
     : "#/library";
+}
+
+export function buildStudioHash(slug?: string): string {
+  if (!slug) return "#/studio";
+  return `#/studio/${slug.replace(/^\/+|\/+$/g, "")}`;
 }

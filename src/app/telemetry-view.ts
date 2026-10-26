@@ -232,15 +232,18 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
           <section class="rhine-protocol-section" data-stagger="3" aria-label="零阻力归档协议">
             <div class="rhine-subhead">
               <span>02 // AUTHORING PROTOCOL · 零阻力记录协议</span>
-              <small>LOCAL MARKDOWN</small>
+              <small>WEB STUDIO + AI</small>
             </div>
             <ol class="rhine-protocol-list">
-              <li><span>01</span><div><strong>Obsidian / VS Code 直写</strong> — 在 <code>content/</code> 任一目录新建 <code>.md</code>，免填 Front Matter 自动推导分类与日期。</div></li>
-              <li><span>02</span><div><strong>CLI 一键生成模板</strong> — 终端运行 <code>npm run new "标题"</code> 秒级创建含速查区文档，截图直贴同级 <code>./assets/</code>。</div></li>
+              <li><span>01</span><div><strong>WebUI 内置编撰台 [N]</strong> — 无需打开外部软件，直接在浏览器可视化创建、编辑笔记与粘贴截图，实时写入 <code>content/</code>。</div></li>
+              <li><span>02</span><div><strong>AI 对话一键导入</strong> — 在编撰台点击「复制 AI 提示词」发给任意 AI，将生成的 Markdown 一键解析并归档入库。</div></li>
             </ol>
             <div class="rhine-primary-actions">
-              <a href="#/library" class="solid-button">
-                OPEN 2D LIBRARY ↗<span>二维知识索引 (${telemetry.totalEntries})</span>
+              <a href="#/studio" class="solid-button">
+                ARCHIVE STUDIO ✎<span>新建或编辑笔记 [N]</span>
+              </a>
+              <a href="#/library" class="solid-button secondary-solid">
+                2D LIBRARY ↗<span>二维知识索引 (${telemetry.totalEntries})</span>
               </a>
               ${
                 hasWebGL

@@ -32,7 +32,11 @@ export interface SearchFilterOptions {
   includeDrafts?: boolean;
 }
 
-const indexItems = searchIndexData as SearchIndexItem[];
+const indexItems: SearchIndexItem[] = [...(searchIndexData as SearchIndexItem[])];
+
+export function hotReloadSearchIndex(newItems: SearchIndexItem[]) {
+  indexItems.splice(0, indexItems.length, ...newItems);
+}
 
 export function normalizeSearchText(input: string): string {
   let out = "";

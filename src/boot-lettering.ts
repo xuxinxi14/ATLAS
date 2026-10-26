@@ -7,7 +7,7 @@ const letterings = new Set<BootLettering>();
 
 /** Only a locally installed, licensed kit enables native webfont rendering. */
 export async function loadBootWebfonts() {
-  if (!__RHINE_NOVECENTO__) return false;
+  if (typeof __RHINE_NOVECENTO__ === "undefined" || !__RHINE_NOVECENTO__) return false;
   const faces = ["Normal", "DemiBold", "Bold"].map(weight => new FontFace(
     `Rhine Novecento ${weight}`,
     `url("${assetUrl(`fonts/novecento/webFonts/NovecentoSansWide${weight}/font.woff2`)}") format("woff2")`,

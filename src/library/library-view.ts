@@ -9,7 +9,7 @@ import type {
   EntryType,
   KnowledgeEntry,
 } from "../knowledge/types.ts";
-import { buildEntryHash } from "../app/router.ts";
+import { buildEntryHash, buildStudioHash } from "../app/router.ts";
 import { normalizeSearchText } from "../search/search-engine.ts";
 
 export interface LibraryState {
@@ -180,6 +180,7 @@ export function renderLibraryViewMarkup(
                           ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 阵列中抽取">3D ↗</button>`
                           : ""
                       }
+                      <a href="${buildStudioHash(entry.slug)}" class="specimen-act" title="在内置编撰台中编辑">✎ 编辑</a>
                       <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
                       <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
                     </span>
@@ -234,6 +235,7 @@ export function renderLibraryViewMarkup(
                           ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 档案阵列中抽取该卡">3D 定位 ↗</button>`
                           : ""
                       }
+                      <a href="${buildStudioHash(entry.slug)}" class="specimen-act" title="在内置编撰台中编辑">✎ 编辑</a>
                       <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
                       <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
                     </div>
@@ -279,6 +281,9 @@ export function renderLibraryViewMarkup(
                 />
                 <span class="key">FILTER</span>
               </div>
+              <a href="${buildStudioHash()}" class="solid-button library-new-btn">
+                + NEW ARCHIVE ✎<span>在 WebUI 新建笔记 [N]</span>
+              </a>
             </div>
           </div>
         </header>

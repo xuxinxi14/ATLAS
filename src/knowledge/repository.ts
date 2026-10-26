@@ -9,19 +9,42 @@ import type {
   TelemetryData,
 } from "./types";
 
-const portalsList = manifestData.portals as PortalDefinition[];
-const allEntries = manifestData.entries as KnowledgeEntry[];
+let portalsList = manifestData.portals as PortalDefinition[];
+let currentTelemetry = telemetryData as unknown as TelemetryData;
+const allEntries = [...(manifestData.entries as KnowledgeEntry[])];
 const publishedEntries = allEntries.filter((e) => e.category !== "inbox");
 
 const idMap = new Map<EntryId, KnowledgeEntry>();
 const slugMap = new Map<string, KnowledgeEntry>();
 
-for (const entry of allEntries) {
-  idMap.set(entry.id, entry);
-  slugMap.set(entry.slug.replace(/^\/+|\/+$/g, ""), entry);
-  for (const alias of entry.aliases) {
-    slugMap.set(alias.replace(/^\/+|\/+$/g, ""), entry);
+function rebuildRepositoryMaps() {
+  idMap.clear();
+  slugMap.clear();
+  for (const entry of allEntries) {
+    idMap.set(entry.id, entry);
+    slugMap.set(entry.slug.replace(/^\/+|\/+$/g, ""), entry);
+    for (const alias of entry.aliases ?? []) {
+      slugMap.set(alias.replace(/^\/+|\/+$/g, ""), entry);
+    }
   }
+}
+
+rebuildRepositoryMaps();
+
+export function hotReloadRepositoryData(
+  newManifest: { portals?: PortalDefinition[]; entries: KnowledgeEntry[] },
+  newTelemetry?: TelemetryData,
+) {
+  if (newManifest.portals) {
+    portalsList = newManifest.portals;
+  }
+  allEntries.splice(0, allEntries.length, ...newManifest.entries);
+  const pub = allEntries.filter((e) => e.category !== "inbox");
+  publishedEntries.splice(0, publishedEntries.length, ...pub);
+  if (newTelemetry) {
+    currentTelemetry = newTelemetry;
+  }
+  rebuildRepositoryMaps();
 }
 
 export const knowledgeRepository = {
@@ -48,7 +71,7 @@ export const knowledgeRepository = {
     return portalsList;
   },
   telemetry(): TelemetryData {
-    return telemetryData as unknown as TelemetryData;
+    return currentTelemetry;
   },
 };
 

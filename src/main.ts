@@ -37,9 +37,11 @@ import {
   archiveColumns,
   columnFiles,
   fileLocation,
+  refreshArchiveRecords,
 } from "./data";
 import {
   knowledgeRepository,
+  hotReloadRepositoryData,
   statusMeta,
   typeMeta,
 } from "./knowledge/repository";
@@ -48,9 +50,13 @@ import {
   parseHashRoute,
   buildEntryHash,
   buildLibraryHash,
+  buildStudioHash,
   type RouteView,
 } from "./app/router";
-import { searchKnowledge } from "./search/search-engine";
+import {
+  searchKnowledge,
+  hotReloadSearchIndex,
+} from "./search/search-engine";
 import { renderTelemetryHomeMarkup } from "./app/telemetry-view";
 import {
   renderLibraryViewMarkup,
@@ -60,6 +66,12 @@ import {
   renderReaderViewMarkup,
   hydrateEntryHtmlImages,
 } from "./reader/reader-view";
+import {
+  renderStudioViewMarkup,
+  createDefaultStudioDraft,
+  ATLAS_AI_ARCHIVE_PROMPT,
+  type StudioDraftState,
+} from "./studio/studio-view";
 import { TerminalAudio } from "./audio";
 import { audioSettingsMarkup } from "./audio-settings";
 import {
@@ -107,6 +119,7 @@ $("#stage").innerHTML = `
     <button class="nav-mode-btn" data-action="nav-home" title="遥测中枢概览 (#/home)">TELEMETRY <span class="key">H</span></button>
     <button class="nav-mode-btn" data-action="nav-library" title="二维知识索引目录 (#/library)">2D LIBRARY <span class="key">L</span></button>
     <button class="nav-mode-btn active" data-action="nav-archive" title="三维档案大厅 (#/archive)">3D ARCHIVE</button>
+    <button class="nav-mode-btn" data-action="nav-studio" title="内置档案编撰台 (#/studio)">✎ STUDIO <span class="key">N</span></button>
     <button data-action="search"><span class="nav-glyph">⌕</span> ARCHIVE INDEX <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
@@ -136,6 +149,20 @@ $("#stage").innerHTML = `
     <article id="detail-content" class="detail-content"></article>
   </section>
   <section id="atlas-surface" class="atlas-surface" aria-label="ATLAS 二维知识终端" hidden></section>
+  <div id="spatial-transit-hud" class="spatial-transit-hud" aria-hidden="true">
+    <div class="transit-shutter-top"></div>
+    <div class="transit-shutter-bottom"></div>
+    <div class="transit-scanline"></div>
+    <div class="transit-reticle tl"></div>
+    <div class="transit-reticle tr"></div>
+    <div class="transit-reticle bl"></div>
+    <div class="transit-reticle br"></div>
+    <div class="transit-telemetry-bar">
+      <span class="transit-tag">◈ OPTICAL LINK // SECTOR TRANSIT</span>
+      <strong id="transit-route-label">01 // 3D ARCHIVE HALL → 02 // 2D LIBRARY</strong>
+      <span id="transit-coord-label">LANE 01 · SPECIMEN X-001 · LOCKED</span>
+    </div>
+  </div>
   <div class="powered">POWERED BY <b>RHINE LAB</b><i></i></div>
   <footer class="system-footer"><span><i class="status-light"></i> SESSION AUTHORIZED${isWallpaper ? '<button type="button" class="three-toggle" data-action="toggle-three" aria-pressed="true" title="卸载三维模型，保留 2D 界面">3D 开启</button>' : ""}</span><span>ATLAS // PERSONAL KNOWLEDGE TERMINAL <i>／</i> <span id="clock">00:00:00</span></span><button data-action="replay" title="重播启动流程">REINITIALIZE ↗</button></footer>
   <div id="pwa-update-notice" class="pwa-update-notice" role="status" hidden><span>新版本已就绪</span><button data-pwa-action="update">更新并重启 ↻</button></div>
@@ -174,6 +201,9 @@ const libraryState: LibraryState = {
   sortBy: "updated",
   layout: "grid",
 };
+const studioState: StudioDraftState = createDefaultStudioDraft("tools");
+let studioPreviewTimer: ReturnType<typeof setTimeout> | undefined;
+let transitTimer: ReturnType<typeof setTimeout> | undefined;
 const reviewParams = new URLSearchParams(location.search);
 let frozenTime =
   reviewParams.get("freeze") === "1"
@@ -539,6 +569,55 @@ function isEntrySaved(idOrCode: string): boolean {
 let renderedAtlasView: RouteView = "archive";
 let atlasExitAnimation: Animation | undefined;
 
+const VIEW_SPATIAL_META: Record<
+  RouteView,
+  { depth: number; x: number; code: string; label: string }
+> = {
+  boot: { depth: 0, x: 0, code: "00", label: "SYSTEM BOOT // 启动序列" },
+  home: { depth: 1, x: -1, code: "01", label: "TELEMETRY MATRIX // 遥测中枢" },
+  archive: { depth: 2, x: 0, code: "02", label: "3D ARCHIVE HALL // 三维档案大厅" },
+  library: { depth: 3, x: 1, code: "03", label: "2D DIRECTORY // 二维知识索引" },
+  reader: { depth: 4, x: 2, code: "04", label: "SPECIMEN DOSSIER // 档案正文" },
+  studio: { depth: 5, x: 3, code: "05", label: "ARCHIVE STUDIO // 档案编撰台" },
+};
+
+function currentSpatialCoordText(): string {
+  const rec = records[selected];
+  if (!rec) return "SECTOR 01 · READY";
+  const { lane } = fileLocation(selected);
+  return `LANE 0${lane + 1} (${rec.category}) · ${rec.visualCode} (${rec.id}) · ${rec.title.slice(0, 18)}`;
+}
+
+function triggerSpatialTransit(
+  fromView: RouteView,
+  toView: RouteView,
+  coordOverride?: string,
+) {
+  if (!motionActive("surfaceTransitions") || mode === "boot") return;
+  const hud = document.querySelector<HTMLElement>("#spatial-transit-hud");
+  if (!hud) return;
+  const fromMeta = VIEW_SPATIAL_META[fromView] ?? VIEW_SPATIAL_META.archive;
+  const toMeta = VIEW_SPATIAL_META[toView] ?? VIEW_SPATIAL_META.archive;
+
+  const routeEl = hud.querySelector<HTMLElement>("#transit-route-label");
+  const coordEl = hud.querySelector<HTMLElement>("#transit-coord-label");
+  if (routeEl) {
+    routeEl.textContent = `${fromMeta.code} // ${fromMeta.label.split(" // ")[0]}  →  ${toMeta.code} // ${toMeta.label}`;
+  }
+  if (coordEl) {
+    coordEl.textContent = coordOverride ?? currentSpatialCoordText();
+  }
+
+  clearTimeout(transitTimer);
+  hud.classList.remove("active");
+  // Force reflow so rapid consecutive transitions restart cleanly
+  void hud.offsetWidth;
+  hud.classList.add("active");
+  transitTimer = setTimeout(() => {
+    hud.classList.remove("active");
+  }, 520);
+}
+
 function syncNavButtons(animated = true) {
   let activeBtn: HTMLElement | null = null;
   document
@@ -549,7 +628,8 @@ function syncNavButtons(animated = true) {
         (act === "nav-home" && atlasView === "home") ||
         (act === "nav-library" &&
           (atlasView === "library" || atlasView === "reader")) ||
-        (act === "nav-archive" && atlasView === "archive");
+        (act === "nav-archive" && atlasView === "archive") ||
+        (act === "nav-studio" && atlasView === "studio");
       btn.classList.toggle("active", isAct);
       btn.setAttribute("aria-pressed", String(isAct));
       if (isAct) activeBtn = btn;
@@ -563,19 +643,52 @@ function syncNavButtons(animated = true) {
   }
 }
 
+function renderSpatialLinkBarMarkup(): string {
+  const rec = records[selected];
+  if (!rec) return "";
+  const { lane } = fileLocation(selected);
+  const cameraModeLabel =
+    atlasView === "reader" || (atlasView === "studio" && !studioState.isNew)
+      ? "CASSETTE INSPECT // 档案盒已升起检视"
+      : "ARRAY ORBIT // 阵列轨道已对齐";
+  return `
+    <div class="atlas-spatial-bar" role="region" aria-label="三维档案馆空间联动状态">
+      <div class="spatial-bar-left">
+        <span class="spatial-pulse"></span>
+        <span class="spatial-kicker">3D SPATIAL LOCK // ${cameraModeLabel}</span>
+        <strong>COLUMN 0${lane + 1} · ${escapeHtml(rec.category)} · ${escapeHtml(rec.visualCode)} (${escapeHtml(rec.id)})</strong>
+        <span class="spatial-title">${escapeHtml(rec.title)}</span>
+      </div>
+      <div class="spatial-bar-actions">
+        <button type="button" class="spatial-jump-btn" data-atlas-action="inspect-current-3d" title="收起二维终端，直接检视当前已锁定的三维档案盒">
+          INSPECT 3D MODEL ↗ <span>切回三维现场</span>
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderAtlasSurface(preserveLibraryInputFocus = false) {
   const surface = $("#atlas-surface");
   const is2D =
-    atlasView === "home" || atlasView === "library" || atlasView === "reader";
+    atlasView === "home" ||
+    atlasView === "library" ||
+    atlasView === "reader" ||
+    atlasView === "studio";
   syncNavButtons();
 
   if (!is2D || mode === "boot") {
+    const prevView = renderedAtlasView;
     delete $("#stage").dataset.atlasOverlay;
     $("#stage").dataset.atlasView = "archive";
     $("#archive-ui").inert =
       mode !== "archive" || Boolean(modal) || Boolean(workbench?.enabled);
     $("#detail-ui").inert = mode !== "detail" || Boolean(modal);
     renderedAtlasView = "archive";
+
+    if (prevView !== "archive" && mode !== "boot") {
+      triggerSpatialTransit(prevView, "archive");
+    }
 
     if (!surface.hidden) {
       surface.inert = true;
@@ -587,12 +700,21 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         const currentOpacity = getComputedStyle(surface).opacity || "1";
         const anim = surface.animate(
           [
-            { opacity: currentOpacity, translate: "0 0" },
-            { opacity: 0, translate: "0 10px" },
+            {
+              opacity: currentOpacity,
+              transform: "perspective(1400px) translate3d(0, 0, 0) scale(1)",
+              filter: "blur(0px)",
+            },
+            {
+              opacity: 0,
+              transform:
+                "perspective(1400px) translate3d(0, 18px, 55px) scale(1.03)",
+              filter: "blur(6px)",
+            },
           ],
           {
-            duration: 210,
-            easing: "cubic-bezier(0.4, 0, 1, 1)",
+            duration: 320,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
             fill: "forwards",
           },
         );
@@ -608,18 +730,24 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   }
 
   const wasHidden = surface.hidden || Boolean(atlasExitAnimation);
+  const previousView = renderedAtlasView;
   atlasExitAnimation?.cancel();
   atlasExitAnimation = undefined;
 
   let selStart: number | null = null;
   let selEnd: number | null = null;
+  let activeInputId = "";
   if (preserveLibraryInputFocus) {
-    const activeInput = document.querySelector<HTMLInputElement>(
-      "#atlas-library-search",
-    );
-    if (activeInput && document.activeElement === activeInput) {
-      selStart = activeInput.selectionStart;
-      selEnd = activeInput.selectionEnd;
+    const activeEl = document.activeElement as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | null;
+    if (activeEl && activeEl.id) {
+      activeInputId = activeEl.id;
+      try {
+        selStart = activeEl.selectionStart;
+        selEnd = activeEl.selectionEnd;
+      } catch {}
     }
   }
 
@@ -629,9 +757,11 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       ? renderTelemetryHomeMarkup(hasWebGL)
       : atlasView === "library"
         ? renderLibraryViewMarkup(libraryState, saved, hasWebGL)
-        : renderReaderViewMarkup(activeReaderSlug, saved, hasWebGL);
+        : atlasView === "studio"
+          ? renderStudioViewMarkup(studioState)
+          : renderReaderViewMarkup(activeReaderSlug, saved, hasWebGL);
 
-  surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
+  surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>${renderSpatialLinkBarMarkup()}`;
   surface.hidden = false;
   surface.inert = Boolean(modal);
   $("#stage").dataset.atlasOverlay = "true";
@@ -639,7 +769,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   $("#archive-ui").inert = true;
   $("#detail-ui").inert = true;
 
-  const viewChanged = renderedAtlasView !== atlasView || wasHidden;
+  const viewChanged = previousView !== atlasView || wasHidden;
   renderedAtlasView = atlasView;
 
   if (
@@ -647,21 +777,50 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     !preserveLibraryInputFocus &&
     motionActive("surfaceTransitions")
   ) {
+    triggerSpatialTransit(previousView, atlasView);
+
+    const prevMeta =
+      VIEW_SPATIAL_META[previousView] ?? VIEW_SPATIAL_META.archive;
+    const nextMeta = VIEW_SPATIAL_META[atlasView] ?? VIEW_SPATIAL_META.library;
+    const dir = nextMeta.depth >= prevMeta.depth ? 1 : -1;
+
     if (wasHidden) {
-      surface.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 240,
-        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-      });
+      surface.animate(
+        [
+          {
+            opacity: 0,
+            transform: `perspective(1400px) translate3d(${dir * 26}px, 14px, ${-55 * dir}px) scale(${dir > 0 ? 0.968 : 1.028})`,
+            filter: "blur(6px)",
+          },
+          {
+            opacity: 1,
+            transform: "perspective(1400px) translate3d(0, 0, 0) scale(1)",
+            filter: "blur(0px)",
+          },
+        ],
+        {
+          duration: 380,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+        },
+      );
     } else {
       const bodyEl = surface.querySelector<HTMLElement>("#atlas-surface-body");
       bodyEl?.animate(
         [
-          { opacity: 0.18, translate: "0 8px" },
-          { opacity: 1, translate: "0 0" },
+          {
+            opacity: 0,
+            transform: `perspective(1400px) translate3d(${dir * 38}px, 10px, ${-48 * dir}px) scale(${dir > 0 ? 0.975 : 1.022})`,
+            filter: "blur(4px)",
+          },
+          {
+            opacity: 1,
+            transform: "perspective(1400px) translate3d(0, 0, 0) scale(1)",
+            filter: "blur(0px)",
+          },
         ],
         {
-          duration: 240,
-          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          duration: 360,
+          easing: "cubic-bezier(0.16, 1, 0.3, 1)",
         },
       );
     }
@@ -672,13 +831,13 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         const idx = Number(el.dataset.stagger ?? 0);
         el.animate(
           [
-            { opacity: 0, translate: "0 12px" },
+            { opacity: 0, translate: `${dir * 14}px 14px` },
             { opacity: 1, translate: "0 0" },
           ],
           {
-            duration: 380,
-            delay: 30 + idx * 55,
-            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            duration: 420,
+            delay: 40 + idx * 60,
+            easing: "cubic-bezier(0.16, 1, 0.3, 1)",
             fill: "backwards",
           },
         );
@@ -690,8 +849,8 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         rule.animate(
           [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
           {
-            duration: 520,
-            delay: 45 + idx * 65,
+            duration: 540,
+            delay: 50 + idx * 65,
             easing: "cubic-bezier(0.22, 1, 0.36, 1)",
             fill: "backwards",
           },
@@ -699,10 +858,11 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       });
   }
 
-  if (preserveLibraryInputFocus && atlasView === "library") {
-    const nextInput = document.querySelector<HTMLInputElement>(
-      "#atlas-library-search",
-    );
+  if (preserveLibraryInputFocus && activeInputId) {
+    const nextInput = document.getElementById(activeInputId) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | null;
     if (nextInput) {
       nextInput.focus({ preventScroll: true });
       if (selStart !== null && selEnd !== null) {
@@ -719,6 +879,57 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       const heading = document.getElementById(targetId);
       heading?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  }
+}
+
+function sync3DCameraWith2DView() {
+  if (!scene || !ready || mode === "boot") return;
+  if (atlasView === "home") {
+    scene.setMode("archive");
+  } else if (atlasView === "library") {
+    scene.setMode("archive");
+    if (libraryState.category && libraryState.category !== "all") {
+      const lane = portals.findIndex(
+        (p) =>
+          p.id === libraryState.category || p.title === libraryState.category,
+      );
+      if (lane >= 0 && columnMemory[lane] !== undefined) {
+        const targetIdx = columnMemory[lane];
+        if (targetIdx !== selected) {
+          selected = targetIdx;
+          scene.select(selected, { axis: "lane", direction: 1 });
+          updateSelection();
+        }
+      }
+    }
+  } else if (atlasView === "reader") {
+    const entry = knowledgeRepository.bySlug(activeReaderSlug);
+    if (entry) {
+      const recIndex = records.findIndex((r) => r.entryId === entry.id);
+      if (recIndex >= 0) {
+        selected = recIndex;
+        columnMemory[fileLocation(selected).lane] = selected;
+        scene.select(selected);
+        updateSelection();
+      }
+    }
+    scene.setMode("detail");
+  } else if (atlasView === "studio") {
+    if (!studioState.isNew && studioState.originalSlug) {
+      const entry = knowledgeRepository.bySlug(studioState.originalSlug);
+      if (entry) {
+        const recIndex = records.findIndex((r) => r.entryId === entry.id);
+        if (recIndex >= 0) {
+          selected = recIndex;
+          columnMemory[fileLocation(selected).lane] = selected;
+          scene.select(selected);
+          updateSelection();
+        }
+      }
+      scene.setMode("detail");
+    } else {
+      scene.setMode("archive");
+    }
   }
 }
 
@@ -740,6 +951,9 @@ function syncHashRoute() {
       return;
     }
     atlasView = "archive";
+    if (ready && mode !== "boot") {
+      scene?.setMode(mode === "detail" ? "detail" : "archive");
+    }
     renderAtlasSurface();
     return;
   }
@@ -750,6 +964,7 @@ function syncHashRoute() {
 
   if (parsed.view === "home") {
     atlasView = "home";
+    sync3DCameraWith2DView();
     renderAtlasSurface();
     return;
   }
@@ -760,6 +975,26 @@ function syncHashRoute() {
     if (parsed.query !== undefined) {
       libraryState.query = parsed.query;
     }
+    sync3DCameraWith2DView();
+    renderAtlasSurface();
+    return;
+  }
+
+  if (parsed.view === "studio") {
+    atlasView = "studio";
+    const targetSlug = parsed.slug || "";
+    if (targetSlug && targetSlug !== studioState.originalSlug) {
+      void loadStudioEntryFromDisk(targetSlug);
+    } else if (!targetSlug && !studioState.isNew) {
+      Object.assign(
+        studioState,
+        createDefaultStudioDraft(parsed.category || "tools"),
+      );
+      void scheduleStudioLivePreview(true);
+    } else if (!studioState.previewHtml) {
+      void scheduleStudioLivePreview(true);
+    }
+    sync3DCameraWith2DView();
     renderAtlasSurface();
     return;
   }
@@ -768,16 +1003,7 @@ function syncHashRoute() {
     atlasView = "reader";
     activeReaderSlug = parsed.slug;
     activeReaderAnchor = parsed.anchor;
-    const entry = knowledgeRepository.bySlug(parsed.slug);
-    if (entry) {
-      const recIndex = records.findIndex((r) => r.entryId === entry.id);
-      if (recIndex >= 0 && recIndex !== selected) {
-        selected = recIndex;
-        columnMemory[fileLocation(selected).lane] = selected;
-        scene?.select(selected);
-        updateSelection();
-      }
-    }
+    sync3DCameraWith2DView();
     renderAtlasSurface();
     return;
   }
@@ -797,10 +1023,469 @@ function syncHashRoute() {
         select(columnMemory[lane]);
       }
     }
+    scene?.setMode(mode === "detail" ? "detail" : "archive");
     renderAtlasSurface();
   }
 }
 window.addEventListener("hashchange", () => syncHashRoute());
+
+function applyHotSnapshot(
+  snapshot: {
+    manifest?: any;
+    telemetry?: any;
+    searchIndex?: any;
+  },
+  silent = false,
+) {
+  if (!snapshot?.manifest) return;
+  hotReloadRepositoryData(snapshot.manifest, snapshot.telemetry);
+  if (Array.isArray(snapshot.searchIndex)) {
+    hotReloadSearchIndex(snapshot.searchIndex);
+  }
+  refreshArchiveRecords();
+  if (selected >= records.length) {
+    selected = Math.max(0, records.length - 1);
+  }
+  archiveColumns.forEach((_, lane) => {
+    const files = columnFiles(lane);
+    if (files.length > 0 && !files.includes(columnMemory[lane])) {
+      columnMemory[lane] = files[0];
+    }
+  });
+  updateSelection();
+  if (mode === "detail") {
+    renderDetail();
+  }
+  if (atlasView !== "archive") {
+    renderAtlasSurface(true);
+  }
+  if (!silent) {
+    notify("◈ 知识库档案已实时热更新");
+  }
+}
+
+async function scheduleStudioLivePreview(immediate = false) {
+  clearTimeout(studioPreviewTimer);
+  const runPreview = async () => {
+    try {
+      const res = await fetch("/__atlas_api/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: studioState.body }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.ok) return;
+      studioState.previewHtml = hydrateEntryHtmlImages(data.html || "");
+      studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
+        data.quickstartHtml || "",
+      );
+      const bodyContainer = document.querySelector<HTMLElement>(
+        "#studio-preview-body",
+      );
+      if (bodyContainer) {
+        bodyContainer.innerHTML =
+          studioState.previewHtml ||
+          '<p class="studio-preview-placeholder">暂无正文内容</p>';
+      }
+      const qsBox = document.querySelector<HTMLElement>(
+        "#studio-preview-quickstart",
+      );
+      const qsBody = document.querySelector<HTMLElement>(
+        "#studio-preview-quickstart-body",
+      );
+      if (qsBox && qsBody) {
+        qsBox.hidden = !studioState.previewQuickstartHtml;
+        qsBody.innerHTML = studioState.previewQuickstartHtml;
+      }
+    } catch {
+      // Fallback client-side minimal preview when running in static mode
+      studioState.localDiskAvailable = false;
+      const bodyContainer = document.querySelector<HTMLElement>(
+        "#studio-preview-body",
+      );
+      if (bodyContainer) {
+        bodyContainer.innerHTML = `<pre style="white-space:pre-wrap;font-family:inherit">${escapeHtml(studioState.body)}</pre>`;
+      }
+    }
+  };
+  if (immediate) {
+    await runPreview();
+  } else {
+    studioPreviewTimer = setTimeout(() => void runPreview(), 140);
+  }
+}
+
+async function loadStudioEntryFromDisk(slugOrId: string) {
+  const clean = slugOrId.replace(/^\/+|\/+$/g, "");
+  const fallbackEntry =
+    knowledgeRepository.bySlug(clean) ?? knowledgeRepository.byId(clean);
+
+  try {
+    const res = await fetch(
+      `/__atlas_api/entry?slug=${encodeURIComponent(clean)}`,
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.exists) {
+        const fm = data.frontMatter || {};
+        const entry = data.entry || fallbackEntry;
+        const resolvedSlug = String(fm.slug || entry?.slug || clean);
+        const slugParts = resolvedSlug.split("/");
+        studioState.originalSlug = resolvedSlug;
+        studioState.isNew = false;
+        studioState.title = String(fm.title || entry?.title || "");
+        studioState.category = String(
+          fm.category || entry?.category || slugParts[0] || "tools",
+        );
+        studioState.fileSlug =
+          slugParts.slice(1).join("/") || resolvedSlug;
+        studioState.subcategory = String(
+          fm.subcategory || entry?.subcategory || "general",
+        );
+        studioState.type = (fm.type || entry?.type || "skill") as EntryType;
+        studioState.status = (fm.status ||
+          entry?.status ||
+          "learning") as EntryStatus;
+        studioState.tags = Array.isArray(fm.tags)
+          ? fm.tags.join(", ")
+          : Array.isArray(entry?.tags)
+            ? entry.tags.join(", ")
+            : "";
+        studioState.summary = String(fm.summary || entry?.summary || "");
+        studioState.version_scope = String(
+          fm.version_scope || entry?.version_scope || "通用版本",
+        );
+        studioState.source_urls = Array.isArray(fm.source_urls)
+          ? fm.source_urls.join(", ")
+          : "";
+        studioState.created = String(
+          fm.created ||
+            entry?.created ||
+            new Date().toISOString().slice(0, 10),
+        );
+        studioState.body = String(data.body || "")
+          .replace(/^#\s+.+\n+/, "")
+          .trim();
+        studioState.localDiskAvailable = true;
+        await scheduleStudioLivePreview(true);
+        sync3DCameraWith2DView();
+        renderAtlasSurface();
+        return;
+      }
+    }
+  } catch {
+    studioState.localDiskAvailable = false;
+  }
+
+  if (fallbackEntry) {
+    studioState.originalSlug = fallbackEntry.slug;
+    studioState.isNew = false;
+    studioState.title = fallbackEntry.title;
+    studioState.category = fallbackEntry.category;
+    studioState.fileSlug =
+      fallbackEntry.slug.split("/").slice(1).join("/") || fallbackEntry.id;
+    studioState.subcategory = fallbackEntry.subcategory;
+    studioState.type = fallbackEntry.type;
+    studioState.status = fallbackEntry.status;
+    studioState.tags = fallbackEntry.tags.join(", ");
+    studioState.summary = fallbackEntry.summary;
+    studioState.version_scope = fallbackEntry.version_scope;
+    studioState.source_urls = fallbackEntry.source_urls.join(", ");
+    studioState.created = fallbackEntry.created;
+    studioState.body = fallbackEntry.plainText;
+    studioState.previewHtml = hydrateEntryHtmlImages(fallbackEntry.html);
+    studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
+      fallbackEntry.quickstartHtml,
+    );
+    sync3DCameraWith2DView();
+    renderAtlasSurface();
+  }
+}
+
+function syncStudioCardPreviewDom() {
+  const titleEl = document.querySelector<HTMLElement>("#studio-preview-title");
+  if (titleEl) {
+    titleEl.textContent = studioState.title.trim() || "未命名知识档案";
+  }
+  const summaryEl = document.querySelector<HTMLElement>(
+    "#studio-preview-summary",
+  );
+  if (summaryEl) {
+    summaryEl.textContent =
+      studioState.summary.trim() ||
+      "在左侧填写一句话摘要后，将在此处及 3D 详情面板『01 // 概述与摘要』中同步展示。";
+  }
+  const tagsEl = document.querySelector<HTMLElement>("#studio-preview-tags");
+  if (tagsEl) {
+    const tags = studioState.tags
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+    tagsEl.innerHTML =
+      tags.length > 0
+        ? tags.map((t) => `<span>#${escapeHtml(t)}</span>`).join("")
+        : `<span>#${escapeHtml(studioState.category)}</span>`;
+  }
+  const pathEl = document.querySelector<HTMLElement>("#studio-target-path");
+  if (pathEl) {
+    const stem =
+      studioState.fileSlug.trim() ||
+      studioState.title
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fa5_-]+/g, "-")
+        .replace(/^-+|-+$/g, "") ||
+      "new-specimen";
+    pathEl.textContent = `content/${studioState.category}/${stem}.md`;
+  }
+}
+
+async function saveStudioDraftToDisk() {
+  if (studioState.saving) return;
+  const title = studioState.title.trim();
+  if (!title) {
+    notify("请先填写档案中文标题（SPECIMEN TITLE）");
+    document.querySelector<HTMLInputElement>("#studio-input-title")?.focus();
+    return;
+  }
+
+  studioState.saving = true;
+  renderAtlasSurface(true);
+
+  try {
+    const res = await fetch("/__atlas_api/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        originalSlug: studioState.isNew ? "" : studioState.originalSlug,
+        title,
+        category: studioState.category,
+        fileSlug: studioState.fileSlug.trim(),
+        subcategory: studioState.subcategory,
+        type: studioState.type,
+        status: studioState.status,
+        tags: studioState.tags,
+        summary: studioState.summary.trim(),
+        version_scope: studioState.version_scope.trim(),
+        source_urls: studioState.source_urls,
+        created: studioState.created,
+        body: studioState.body,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "保存失败");
+    }
+
+    studioState.saving = false;
+    studioState.isNew = false;
+    studioState.originalSlug = data.slug;
+    studioState.fileSlug = String(data.slug).split("/").slice(1).join("/");
+    studioState.lastSavedAt = new Date().toLocaleTimeString("en-GB");
+
+    if (data.snapshot) {
+      applyHotSnapshot(data.snapshot, true);
+    }
+
+    const nextHash = buildStudioHash(data.slug);
+    if (location.hash !== nextHash) {
+      history.replaceState(null, "", nextHash);
+    }
+    sync3DCameraWith2DView();
+    renderAtlasSurface(true);
+    audio.play("confirm");
+    notify(`✓ 已写入本地磁盘：${data.relPath}`);
+  } catch (err) {
+    studioState.saving = false;
+    renderAtlasSurface(true);
+    notify(
+      `保存失败：${err instanceof Error ? err.message : "请确认使用本地 npm run dev 启动"}`,
+    );
+  }
+}
+
+async function deleteStudioEntryFromDisk() {
+  if (studioState.isNew || !studioState.originalSlug) return;
+  const confirmed = window.confirm(
+    `确定要从本地 content/ 目录永久删除档案「${studioState.title || studioState.originalSlug}」吗？`,
+  );
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch("/__atlas_api/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug: studioState.originalSlug }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "删除失败");
+    }
+    if (data.snapshot) {
+      applyHotSnapshot(data.snapshot, true);
+    }
+    Object.assign(studioState, createDefaultStudioDraft("tools"));
+    await scheduleStudioLivePreview(true);
+    history.replaceState(null, "", "#/studio");
+    renderAtlasSurface();
+    audio.play("back");
+    notify("档案已从本地知识库中删除");
+  } catch (err) {
+    notify(`删除失败：${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+async function parseAiMarkdownIntoStudio() {
+  const rawInput = document.querySelector<HTMLTextAreaElement>(
+    "#studio-ai-raw-input",
+  );
+  const rawVal = rawInput?.value.trim() || "";
+  if (!rawVal) {
+    notify("请先在输入框中粘贴 AI 生成的 Markdown 文本");
+    rawInput?.focus();
+    return;
+  }
+
+  // Strip outer ```markdown ... ``` wrapper if the user copied the outer fence too
+  const unwrapped = rawVal
+    .replace(/^```(?:markdown|md)?\s*\n/i, "")
+    .replace(/\n```\s*$/, "");
+
+  try {
+    const res = await fetch("/__atlas_api/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rawMarkdown: unwrapped }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error("解析失败");
+
+    const fm = data.frontMatter || {};
+    const bodyText = String(data.body || "");
+    const h1Match = bodyText.match(/^#\s+(.+)$/m);
+    const inferredTitle = h1Match ? h1Match[1].trim() : "";
+
+    if (fm.title || inferredTitle) {
+      studioState.title = String(fm.title || inferredTitle).trim();
+    }
+    if (fm.category) {
+      studioState.category = String(fm.category).trim();
+    }
+    if (fm.slug) {
+      const parts = String(fm.slug).trim().split("/");
+      if (parts.length >= 2) {
+        studioState.category = parts[0];
+        studioState.fileSlug = parts.slice(1).join("/");
+      } else {
+        studioState.fileSlug = parts[0];
+      }
+    }
+    if (fm.subcategory) {
+      studioState.subcategory = String(fm.subcategory).trim();
+    }
+    if (fm.type) {
+      studioState.type = String(fm.type).trim() as EntryType;
+    }
+    if (fm.status) {
+      studioState.status = String(fm.status).trim() as EntryStatus;
+    }
+    if (Array.isArray(fm.tags)) {
+      studioState.tags = fm.tags.join(", ");
+    }
+    if (fm.summary) {
+      studioState.summary = String(fm.summary).trim();
+    }
+    if (fm.version_scope) {
+      studioState.version_scope = String(fm.version_scope).trim();
+    }
+    if (Array.isArray(fm.source_urls)) {
+      studioState.source_urls = fm.source_urls.join(", ");
+    }
+
+    studioState.body = bodyText.replace(/^#\s+.+\n+/, "").trim();
+    studioState.previewHtml = hydrateEntryHtmlImages(data.html || "");
+    studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
+      data.quickstartHtml || "",
+    );
+    studioState.aiPasteOpen = false;
+    renderAtlasSurface();
+    audio.play("confirm");
+    notify("⚡ AI 笔记已自动拆解填入！检查无误后点击 SAVE TO DISK 即可归档");
+  } catch (err) {
+    notify(`解析失败：${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+function insertStudioSnippet(kind: string) {
+  const textarea = document.querySelector<HTMLTextAreaElement>(
+    "#studio-input-body",
+  );
+  if (!textarea) return;
+  const snippets: Record<string, string> = {
+    quickstart: `\n## 快速复习\n\n- **核心结论**：一句话总结最关键的操作或判断标准。\n\n~~~powershell\n# 核心可执行命令\n~~~\n`,
+    code: `\n~~~powershell\n# 在此输入命令或代码\n~~~\n`,
+    tip: `\n> [!TIP]\n> 在此记录实用技巧或快捷操作建议。\n`,
+    warning: `\n> [!WARNING]\n> 在此记录常见报错原因与避坑注意事项。\n`,
+    checklist: `\n## 验证清单\n\n- [x] 验证步骤一\n- [ ] 验证步骤二\n`,
+    math: `\n$$\n\\text{Rate} = \\frac{V_{\\max} [S]}{K_m + [S]}\n$$\n`,
+    table: `\n| 参数 / 选项 | 作用说明 | 推荐值 |\n|---|---|---|\n| \`--flag\` | 示例参数说明 | 默认开启 |\n`,
+  };
+  const snippet = snippets[kind];
+  if (!snippet) return;
+
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
+  textarea.value =
+    textarea.value.slice(0, start) + snippet + textarea.value.slice(end);
+  studioState.body = textarea.value;
+  textarea.focus();
+  const nextCursor = start + snippet.length;
+  textarea.setSelectionRange(nextCursor, nextCursor);
+  void scheduleStudioLivePreview();
+  audio.play("ui-tick");
+}
+
+async function uploadStudioImageFile(file: File) {
+  const reader = new FileReader();
+  const base64Data = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    const res = await fetch("/__atlas_api/upload-asset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        category: studioState.category,
+        fileName: file.name || "screenshot.png",
+        base64Data,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "上传失败");
+
+    const mdImage = `\n![${file.name.replace(/\.[^.]+$/, "") || "截图说明"}](${data.markdownPath})\n`;
+    const textarea = document.querySelector<HTMLTextAreaElement>(
+      "#studio-input-body",
+    );
+    if (textarea) {
+      const pos = textarea.selectionStart ?? textarea.value.length;
+      textarea.value =
+        textarea.value.slice(0, pos) + mdImage + textarea.value.slice(pos);
+      studioState.body = textarea.value;
+    } else {
+      studioState.body += mdImage;
+    }
+    void scheduleStudioLivePreview(true);
+    audio.play("confirm");
+    notify(`图片已存入 content/${studioState.category}/assets/${data.fileName}`);
+  } catch (err) {
+    notify(`图片上传失败：${err instanceof Error ? err.message : String(err)}`);
+  }
+}
 
 function setMode(next: Mode) {
   if (workbench?.enabled && next === "detail") next = "archive";
@@ -1061,7 +1746,7 @@ function renderDetail() {
   <dl class="metadata"><div><dt>DEPARTMENT / 所属领域</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 适用与更新</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>TYPE / 词条类型</dt><dd>${escapeHtml(tMeta.label)} · ${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 掌握状态</dt><dd><i data-status="${escapeHtml(r.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}</dd></div></dl>
   <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述与摘要</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>核心要点</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>归档溯源</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
-  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button><button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
+  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button><button class="solid-button secondary-solid" data-action="edit-studio" data-entry-slug="${escapeHtml(r.slug)}">EDIT FILE ✎<span>编辑档案</span></button><button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
   <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">OPEN IN 2D READER (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute(
@@ -1274,9 +1959,56 @@ document.addEventListener("input", (e) => {
     libraryState.query = (e.target as HTMLInputElement).value;
     renderAtlasSurface(true);
   }
+  const targetId = (e.target as HTMLElement).id;
+  if (targetId === "studio-input-title") {
+    studioState.title = (e.target as HTMLInputElement).value;
+    syncStudioCardPreviewDom();
+  } else if (targetId === "studio-input-slug") {
+    studioState.fileSlug = (e.target as HTMLInputElement).value;
+    syncStudioCardPreviewDom();
+  } else if (targetId === "studio-input-summary") {
+    studioState.summary = (e.target as HTMLInputElement).value;
+    syncStudioCardPreviewDom();
+  } else if (targetId === "studio-input-tags") {
+    studioState.tags = (e.target as HTMLInputElement).value;
+    syncStudioCardPreviewDom();
+  } else if (targetId === "studio-input-version") {
+    studioState.version_scope = (e.target as HTMLInputElement).value;
+  } else if (targetId === "studio-input-body") {
+    studioState.body = (e.target as HTMLTextAreaElement).value;
+    void scheduleStudioLivePreview(false);
+  }
+});
+document.addEventListener("paste", (e) => {
+  if (
+    atlasView !== "studio" ||
+    (e.target as HTMLElement)?.id !== "studio-input-body"
+  ) {
+    return;
+  }
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) {
+        e.preventDefault();
+        void uploadStudioImageFile(file);
+        return;
+      }
+    }
+  }
 });
 document.addEventListener("change", (e) => {
   const el = e.target as HTMLInputElement | HTMLSelectElement;
+  if (el.id === "studio-image-input" && el instanceof HTMLInputElement) {
+    const file = el.files?.[0];
+    if (file) {
+      void uploadStudioImageFile(file);
+      el.value = "";
+    }
+    return;
+  }
   if (el.id === "atlas-library-type") {
     libraryState.type = el.value as EntryType | "all";
     renderAtlasSurface();
@@ -1403,8 +2135,116 @@ document.addEventListener("click", (e) => {
     if (location.hash !== targetHash) {
       history.replaceState(null, "", targetHash);
     }
+    sync3DCameraWith2DView();
+    triggerSpatialTransit("library", "library");
+    renderAtlasSurface(true);
+    audio.play("column");
+    return;
+  }
+  const studioFilterBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-filter]",
+  );
+  if (studioFilterBtn) {
+    studioState.filterCategory = studioFilterBtn.dataset.studioFilter ?? "all";
     renderAtlasSurface(true);
     audio.play("ui-tick");
+    return;
+  }
+  const studioCatBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-set-category]",
+  );
+  if (studioCatBtn) {
+    studioState.category = studioCatBtn.dataset.studioSetCategory ?? "tools";
+    if (studioState.category === "inbox") {
+      studioState.status = "draft";
+    }
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const studioTypeBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-set-type]",
+  );
+  if (studioTypeBtn) {
+    studioState.type = (studioTypeBtn.dataset.studioSetType ??
+      "skill") as EntryType;
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const studioStatusBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-set-status]",
+  );
+  if (studioStatusBtn) {
+    studioState.status = (studioStatusBtn.dataset.studioSetStatus ??
+      "learning") as EntryStatus;
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const studioInsertBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-insert]",
+  );
+  if (studioInsertBtn) {
+    insertStudioSnippet(studioInsertBtn.dataset.studioInsert ?? "");
+    return;
+  }
+  const studioActBtn = (e.target as Element).closest<HTMLElement>(
+    "[data-studio-action]",
+  );
+  if (studioActBtn) {
+    const sAct = studioActBtn.dataset.studioAction;
+    if (sAct === "new-blank") {
+      Object.assign(
+        studioState,
+        createDefaultStudioDraft(
+          studioState.filterCategory !== "all"
+            ? studioState.filterCategory
+            : "tools",
+        ),
+      );
+      void scheduleStudioLivePreview(true);
+      if (location.hash !== "#/studio") {
+        history.replaceState(null, "", "#/studio");
+      }
+      sync3DCameraWith2DView();
+      renderAtlasSurface();
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "copy-ai-prompt") {
+      void navigator.clipboard
+        ?.writeText(ATLAS_AI_ARCHIVE_PROMPT)
+        .catch(() => {});
+      audio.play("confirm");
+      notify("✓ AI 归档提示词已复制！发给任意聊天 AI 即可生成笔记");
+      return;
+    }
+    if (sAct === "toggle-ai-import") {
+      studioState.aiPasteOpen = !studioState.aiPasteOpen;
+      renderAtlasSurface(true);
+      if (studioState.aiPasteOpen) {
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLTextAreaElement>("#studio-ai-raw-input")
+            ?.focus(),
+        );
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "apply-ai-import") {
+      void parseAiMarkdownIntoStudio();
+      return;
+    }
+    if (sAct === "save-entry") {
+      void saveStudioDraftToDisk();
+      return;
+    }
+    if (sAct === "delete-entry") {
+      void deleteStudioEntryFromDisk();
+      return;
+    }
     return;
   }
   const typeChip = (e.target as Element).closest<HTMLButtonElement>(
@@ -1463,6 +2303,11 @@ document.addEventListener("click", (e) => {
       audio.play("confirm");
       return;
     }
+    if (act === "inspect-current-3d") {
+      navigateAtlas("#/archive");
+      openFile();
+      return;
+    }
     if (act === "open-3d-portal") {
       const portalId = atlasActionBtn.dataset.portal ?? "";
       const lane = portals.findIndex((p) => p.id === portalId);
@@ -1496,11 +2341,8 @@ document.addEventListener("click", (e) => {
       return;
     }
     if (act === "quick-new-guide") {
-      document
-        .querySelector(".atlas-workflow-cards")
-        ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      notify("终端执行 npm run new \"标题\" 或在 content/ 下直接新建 .md 即可！");
-      audio.play("confirm");
+      navigateAtlas("#/studio");
+      audio.play("open");
       return;
     }
   }
@@ -1574,6 +2416,11 @@ document.addEventListener("click", (e) => {
     audio.play("ui-tick");
     return;
   }
+  if (action === "nav-studio") {
+    navigateAtlas("#/studio");
+    audio.play("ui-tick");
+    return;
+  }
   if (action === "nav-archive") {
     navigateAtlas("#/archive");
     audio.play("ui-tick");
@@ -1587,6 +2434,12 @@ document.addEventListener("click", (e) => {
   if (action === "open-reader") {
     const slug = el.dataset.entrySlug || records[selected].slug;
     navigateAtlas(buildEntryHash(slug));
+    audio.play("open");
+    return;
+  }
+  if (action === "edit-studio") {
+    const slug = el.dataset.entrySlug || records[selected].slug;
+    navigateAtlas(buildStudioHash(slug));
     audio.play("open");
     return;
   }
@@ -1674,6 +2527,15 @@ document.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (!started) return;
   if (viewer?.isOpen) return;
+  if (
+    atlasView === "studio" &&
+    (e.ctrlKey || e.metaKey) &&
+    e.key.toLowerCase() === "s"
+  ) {
+    e.preventDefault();
+    void saveStudioDraftToDisk();
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
     e.preventDefault();
     if (mode === "boot" && ready) setMode("archive");
@@ -1708,7 +2570,15 @@ document.addEventListener("keydown", (e) => {
     e.target instanceof HTMLTextAreaElement;
   if (e.key === "Escape") {
     if (modal) closeModal();
-    else if (atlasView === "reader") {
+    else if (atlasView === "studio") {
+      if (studioState.aiPasteOpen) {
+        studioState.aiPasteOpen = false;
+        renderAtlasSurface(true);
+      } else {
+        navigateAtlas("#/library");
+        audio.play("back");
+      }
+    } else if (atlasView === "reader") {
       navigateAtlas("#/library");
       audio.play("back");
     } else if (mode === "detail" || (mode === "boot" && ready)) {
@@ -1770,6 +2640,12 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (mode === "boot") setMode("archive");
     navigateAtlas("#/library");
+    return;
+  }
+  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "n") {
+    e.preventDefault();
+    if (mode === "boot") setMode("archive");
+    navigateAtlas("#/studio");
     return;
   }
   if (atlasView !== "archive") return;
@@ -1907,12 +2783,8 @@ function frame(ms: number) {
     motionIsReduced(),
     motionActive("pointerParallax"),
   );
-  // Pause 3D WebGL rendering when a 2D ATLAS view is active (0% GPU usage during long reading).
-  if (
-    (atlasView === "archive" || mode === "boot") &&
-    !viewer?.isOpen &&
-    (!cinema || cinema.time >= 21.9)
-  )
+  // Keep the 3D Archive Hall live behind the frosted terminal glass so camera & cassette transitions remain continuous; ArchiveScene's static-frame cache automatically idles GPU when motion settles.
+  if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9))
     scene?.update(time, cinema);
   viewer?.update(time);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();
@@ -2121,7 +2993,7 @@ async function start() {
       threeState = "off";
       syncThreeButton();
     }
-    await Promise.all([
+    await Promise.allSettled([
       loadBootWebfonts(),
       // With unicode-range faces, preload the opening's actual characters,
       // not every font shard. Other archive text loads on demand.
@@ -2362,7 +3234,7 @@ if (isWallpaper) {
 void start();
 enableGamepad();
 const ARCHIVE_HINT: Record<"keyboard" | "gamepad", string> = {
-  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取 <span>／</span> <kbd>H</kbd> 遥测 <kbd>L</kbd> 二维索引`,
+  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取 <span>／</span> <kbd>H</kbd> 遥测 <kbd>L</kbd> 索引 <kbd>N</kbd> 编撰台`,
   gamepad: `<kbd>LS</kbd> <kbd>DP</kbd> 切换列 / 前后档案 <span>／</span> <kbd>A</kbd> 读取`,
 };
 onInputDevice((device) => {
@@ -2425,4 +3297,9 @@ Object.assign(window, {
     }),
   },
 });
-if (import.meta.hot) import.meta.hot.dispose(() => audio.dispose());
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => audio.dispose());
+  import.meta.hot.on("atlas:content-updated", (snapshot) => {
+    applyHotSnapshot(snapshot, false);
+  });
+}

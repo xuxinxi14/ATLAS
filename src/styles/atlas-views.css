@@ -1483,53 +1483,1133 @@ i[data-status="draft"] {
 }
 
 /* ============================================================================
-   6. View C: 3-COLUMN TECHNICAL DOSSIER READER (#/entry/<slug>)
+   6. View C: OPTICAL READER (#/entry/<slug>) — 3D Cassette Dock & Clean Reader
    ============================================================================ */
 
-.atlas-reader-layout {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 280px;
-  gap: 36px;
-  height: 100%;
-  overflow: hidden;
-  border-top: 1px solid var(--atlas-rule-strong);
-  padding-top: 18px;
+#stage {
+  --optical-dock: 1;
+  --optical-contact: 1;
+  --optical-sweep: 0;
+  --optical-active: 1;
+  --optical-title-reveal: 1;
+  --optical-body-reveal: 1;
 }
 
-.atlas-reader-sidebar-left {
-  border-right: 1px solid var(--atlas-line);
-  padding-right: 20px;
+/* Hide global nav and footer when Optical Reader is active so the stage matches the reference instrument layout */
+#stage[data-atlas-view="reader"] > .system-nav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  translate: 0 -8px;
+}
+
+#stage[data-atlas-view="reader"] > .system-footer {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  translate: 0 8px;
+}
+
+/* Keep #atlas-surface completely transparent in reader mode so the 3D cassette and bokeh array on the left remain crystal clear */
+#stage[data-atlas-view="reader"] > .atlas-surface {
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.optical-reader-stage {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Top-Right Instrument Signature ("ATLAS / OPTICAL READER ━") */
+.optical-stage-signature {
+  position: absolute;
+  top: 48px;
+  right: var(--edge, 59px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2.2px;
+  color: var(--atlas-muted);
+  opacity: var(--optical-dock, 1);
+  transition: opacity 220ms ease;
+}
+
+.optical-stage-signature i {
+  display: block;
+  width: 34px;
+  height: 2px;
+  background: var(--atlas-muted);
+}
+
+.optical-reader-device {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Left Hardware Receiver Spine (Seamless DOM counterpart aligned with 3D OpticalReaderRig spine) */
+.optical-receiver-spine {
+  position: absolute;
+  left: 28.8%;
+  top: 13.8%;
+  bottom: 13.8%;
+  width: 4.1%;
+  min-width: 54px;
+  max-width: 82px;
+  background: linear-gradient(
+    90deg,
+    #dcd7cf 0%,
+    #ebe7e0 38%,
+    #f2efe9 78%,
+    #e2ddd5 100%
+  );
+  border: 1px solid rgba(154, 148, 138, 0.65);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+  box-shadow:
+    -14px 18px 38px rgba(18, 19, 16, 0.12),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.75);
+  opacity: var(--optical-active, 1);
+  transform: translate3d(
+    calc((1 - var(--optical-dock, 1)) * 28px),
+    0,
+    0
+  );
+  transition:
+    left 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 320ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-dark-surface="true"] .optical-receiver-spine {
+  background: linear-gradient(
+    90deg,
+    #1b2428 0%,
+    #253036 45%,
+    #2b373d 80%,
+    #1e282c 100%
+  );
+  border-color: rgba(83, 97, 102, 0.75);
+  box-shadow:
+    -14px 18px 38px rgba(0, 0, 0, 0.36),
+    inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.optical-slot-well {
+  position: absolute;
+  left: 0;
+  top: 7%;
+  bottom: 7%;
+  width: 12px;
+  background: linear-gradient(90deg, #2b2a26 0%, #59554d 65%, rgba(89, 85, 77, 0) 100%);
+  border-radius: 4px 0 0 4px;
+  opacity: 0.82;
+}
+
+.optical-slot-rail {
+  position: absolute;
+  left: 12px;
+  top: 5%;
+  bottom: 5%;
+  width: 1px;
+  background: rgba(120, 115, 106, 0.45);
+}
+
+/* Warm-Amber Contact LEDs on Receiver Spine */
+.optical-contact-led {
+  position: absolute;
+  left: 20px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--atlas-amber);
+  opacity: calc(0.25 + var(--optical-contact, 1) * 0.75);
+  box-shadow:
+    0 0 calc(10px * var(--optical-contact, 1)) var(--atlas-amber),
+    0 0 calc(20px * var(--optical-contact, 1)) rgba(237, 130, 27, 0.55);
+}
+
+.optical-contact-led.top {
+  top: 17%;
+}
+
+.optical-contact-led.mid {
+  top: 52%;
+}
+
+.optical-spine-dots {
+  position: absolute;
+  left: 21px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.optical-spine-dots.top {
+  top: 23%;
+}
+
+.optical-spine-dots.mid {
+  top: 58%;
+}
+
+.optical-spine-dots i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(120, 115, 106, 0.55);
+}
+
+.optical-spine-fastener {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 16px;
+  height: 16px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 1.5px solid rgba(120, 115, 106, 0.65);
+  background: rgba(210, 205, 196, 0.5);
+}
+
+.optical-spine-fastener::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 1px solid rgba(90, 86, 78, 0.55);
+}
+
+/* Right Optical Reading Screen Frame */
+.optical-screen-frame {
+  position: absolute;
+  left: 32.8%;
+  right: 3.8%;
+  top: 14.8%;
+  bottom: 14.8%;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  background: #fbf9f5;
+  color: var(--atlas-ink);
+  border: 1px solid rgba(176, 170, 160, 0.85);
+  border-radius: 4px;
+  box-shadow:
+    0 24px 60px rgba(18, 19, 16, 0.1),
+    0 2px 10px rgba(18, 19, 16, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+  overflow: hidden;
+  opacity: var(--optical-active, 1);
+  transform: translate3d(
+      calc((1 - var(--optical-dock, 1)) * 24px),
+      0,
+      0
+    )
+    scale(calc(0.986 + var(--optical-active, 1) * 0.014));
+  transform-origin: left center;
+  transition:
+    left 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    right 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    bottom 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 360ms ease;
+}
+
+[data-dark-surface="true"] .optical-screen-frame {
+  background: #182125;
+  border-color: rgba(83, 97, 102, 0.85);
+  box-shadow:
+    0 26px 64px rgba(0, 0, 0, 0.42),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* Point 8: 机器退居边缘 (Machine Recedes to Edge on Scroll or Immersive Toggle) */
+.optical-reader-stage[data-receded="true"] .optical-receiver-spine {
+  left: 11.2%;
+  opacity: 0.32;
+  transform: translate3d(-18px, 0, 0) scaleX(0.72);
+}
+
+.optical-reader-stage[data-receded="true"] .optical-screen-frame {
+  left: 13.5%;
+  right: 3.8%;
+  top: 7.2%;
+  bottom: 6.8%;
+  box-shadow:
+    0 14px 36px rgba(18, 19, 16, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+}
+
+/* Single Warm-Amber Activation Trace Line (1460–1860ms) */
+.optical-amber-trace {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 8;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(237, 130, 27, 0.25) 20%,
+    var(--atlas-amber) 50%,
+    rgba(237, 130, 27, 0.25) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 14px rgba(237, 130, 27, 0.65);
+  opacity: calc(var(--optical-sweep, 0) * (1 - var(--optical-sweep, 0)) * 4);
+  transform: translateX(calc((var(--optical-sweep, 0) - 0.5) * 140%));
+}
+
+/* Subtle Corner Reticles inside Screen Frame */
+.optical-corner {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: rgba(154, 148, 138, 0.55);
+  border-style: solid;
+  pointer-events: none;
+  z-index: 5;
+}
+.optical-corner.tl {
+  top: 6px;
+  left: 6px;
+  border-width: 1px 0 0 1px;
+}
+.optical-corner.tr {
+  top: 6px;
+  right: 6px;
+  border-width: 1px 1px 0 0;
+}
+.optical-corner.bl {
+  bottom: 6px;
+  left: 6px;
+  border-width: 0 0 1px 1px;
+}
+.optical-corner.br {
+  bottom: 6px;
+  right: 6px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Point 4: Top Bar with only Return ("← 档案大厅"), Loaded Pill, and "目录 | •••" */
+.optical-screen-topbar {
+  flex-shrink: 0;
+  height: 54px;
+  padding: 0 28px;
+  border-bottom: 1px solid rgba(189, 184, 173, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13.5px;
+  color: var(--atlas-sub);
+  background: rgba(251, 249, 245, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 4;
+}
+
+[data-dark-surface="true"] .optical-screen-topbar {
+  background: rgba(24, 33, 37, 0.92);
+  border-bottom-color: rgba(83, 97, 102, 0.65);
+}
+
+.optical-return-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--atlas-sub);
+  padding: 6px 0;
+  transition: color 160ms ease;
+}
+
+.optical-return-btn:hover {
+  color: var(--atlas-ink);
+}
+
+.optical-return-arrow {
+  font-size: 15px;
+  color: var(--atlas-muted);
+  transition: transform 180ms ease;
+}
+
+.optical-return-btn:hover .optical-return-arrow {
+  transform: translateX(-3px);
+  color: var(--atlas-amber);
+}
+
+/* Compact Loaded Specimen Pill (appears when machine recedes to edge) */
+.optical-loaded-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 12px;
+  border: 1px solid rgba(189, 184, 173, 0.7);
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: var(--atlas-sub);
+  background: rgba(237, 235, 228, 0.65);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 240ms ease,
+    transform 240ms ease;
+}
+
+[data-dark-surface="true"] .optical-loaded-pill {
+  background: rgba(32, 42, 47, 0.75);
+  border-color: rgba(83, 97, 102, 0.75);
+}
+
+.optical-reader-stage[data-receded="true"] .optical-loaded-pill {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.optical-loaded-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--atlas-amber);
+  box-shadow: 0 0 6px var(--atlas-amber);
+}
+
+.optical-loaded-title {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optical-loaded-pill small {
+  font-size: 10px;
+  color: var(--atlas-muted);
+}
+
+.optical-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.optical-top-btn {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--atlas-sub);
+  padding: 5px 6px;
+  transition: color 160ms ease;
+}
+
+.optical-top-btn:hover,
+.optical-top-btn[aria-expanded="true"] {
+  color: var(--atlas-ink);
+}
+
+.optical-top-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(189, 184, 173, 0.8);
+}
+
+.optical-more-btn {
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+/* Main Scrollable Surface inside Optical Screen */
+.optical-screen-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(176, 170, 160, 0.7) transparent;
+}
+
+/* Point 1: Main Reading Column (680–760 CSS px, 18–20px Chinese, 1.75–1.85 line-height) */
+.optical-reading-column {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 42px 36px 68px;
+}
+
+/* Stage 6 Handover Reveal (1720–2020ms Title, 1860–2250ms Summary & Body) */
+.optical-header-reveal {
+  opacity: var(--optical-title-reveal, 1);
+  transform: translateY(calc((1 - var(--optical-title-reveal, 1)) * 8px));
+}
+
+.optical-body-reveal {
+  opacity: var(--optical-body-reveal, 1);
+  transform: translateY(calc((1 - var(--optical-body-reveal, 1)) * 10px));
+}
+
+/* Point 2: Single Reading Order Above the Fold */
+.optical-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  color: var(--atlas-muted);
+}
+
+.optical-meta-code {
+  color: var(--atlas-sub);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+}
+
+.optical-meta-sep {
+  opacity: 0.6;
+}
+
+.optical-article-header h1,
+.optical-article-title {
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.24;
+  letter-spacing: -0.5px;
+  color: var(--atlas-ink);
+  margin: 12px 0 18px;
+}
+
+.optical-article-summary {
+  font-size: 17.5px;
+  line-height: 1.72;
+  color: var(--atlas-sub);
+  margin: 0;
+  font-weight: 400;
+}
+
+.optical-article-rule {
+  height: 1px;
+  background: rgba(189, 184, 173, 0.78);
+  margin: 26px 0 30px;
+}
+
+[data-dark-surface="true"] .optical-article-rule {
+  background: rgba(83, 97, 102, 0.75);
+}
+
+/* Point 6: Quick Review Fold (Only appears once when not duplicated in body) */
+.optical-quickstart-fold {
+  margin: 0 0 28px;
+  border-left: 2px solid var(--atlas-amber);
+  background: rgba(237, 235, 228, 0.45);
+  padding: 10px 18px;
+}
+
+[data-dark-surface="true"] .optical-quickstart-fold {
+  background: rgba(32, 42, 47, 0.5);
+}
+
+.optical-quickstart-fold summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--atlas-ink);
+}
+
+.optical-quickstart-fold summary small {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--atlas-muted);
+  font-weight: 400;
+}
+
+.optical-quickstart-content {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(189, 184, 173, 0.5);
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+/* Point 7: Enhanced Body Typography & Rhythm (18–20px Chinese, 1.75–1.85 line-height) */
+.optical-markdown-body {
+  font-size: 19px;
+  line-height: 1.8;
+  color: var(--atlas-ink);
+}
+
+.optical-markdown-body .atlas-heading {
+  color: var(--atlas-ink);
+  font-weight: 700;
+  line-height: 1.35;
+  scroll-margin-top: 24px;
+}
+
+.optical-markdown-body .atlas-h2 {
+  font-size: 23px;
+  margin: 40px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(189, 184, 173, 0.65);
+}
+
+.optical-markdown-body .atlas-h2:first-child {
+  margin-top: 4px;
+}
+
+.optical-markdown-body .atlas-h3 {
+  font-size: 19.5px;
+  margin: 30px 0 12px;
+}
+
+.optical-markdown-body .atlas-h4 {
+  font-size: 17.5px;
+  margin: 24px 0 10px;
+}
+
+.atlas-heading-anchor {
+  color: var(--atlas-accent);
+  text-decoration: none;
+  margin-right: 8px;
+  opacity: 0.38;
+  font-weight: 400;
+  transition: opacity 160ms ease;
+}
+
+.optical-markdown-body .atlas-heading:hover .atlas-heading-anchor {
+  opacity: 0.9;
+}
+
+.optical-markdown-body p {
+  margin: 0 0 20px;
+  color: var(--atlas-ink);
+}
+
+.optical-markdown-body ul.atlas-list {
+  margin: 0 0 22px;
+  padding-left: 22px;
+  color: var(--atlas-ink);
+}
+
+.optical-markdown-body ul.atlas-list li {
+  margin-bottom: 10px;
+}
+
+/* Numbered Step Rhythm ("01 / 02 / 03" matching reference image) */
+.optical-markdown-body ol.atlas-list {
+  list-style: none;
+  counter-reset: optical-step;
+  margin: 22px 0 26px;
+  padding-left: 0;
+}
+
+.optical-markdown-body ol.atlas-list > li {
+  counter-increment: optical-step;
+  position: relative;
+  padding-left: 44px;
+  margin-bottom: 16px;
+  color: var(--atlas-ink);
+}
+
+.optical-markdown-body ol.atlas-list > li::before {
+  content: counter(optical-step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.6px;
+  color: var(--atlas-muted);
+}
+
+.atlas-task-item {
+  list-style: none;
+  margin-left: -18px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.atlas-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.84em;
+  padding: 2px 6px;
+  background: rgba(231, 227, 217, 0.75);
+  border: 1px solid rgba(189, 184, 173, 0.75);
+  border-radius: 2px;
+}
+
+[data-dark-surface="true"] .atlas-inline-code {
+  background: rgba(42, 54, 59, 0.85);
+  border-color: rgba(83, 97, 102, 0.8);
+}
+
+.atlas-code-block {
+  margin: 24px 0;
+  border: 1px solid var(--atlas-rule-strong);
+  background: #171916;
+  color: #ece9e2;
+  border-radius: 2px;
+}
+
+.atlas-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #222520;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 10.5px;
+  letter-spacing: 1px;
+}
+
+.atlas-code-copy {
+  padding: 2px 9px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ece9e2;
+}
+
+.atlas-code-copy:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+}
+
+.atlas-code-block pre {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.atlas-table-wrap {
+  margin: 24px 0;
+  overflow-x: auto;
+}
+
+.atlas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.atlas-table th,
+.atlas-table td {
+  border-top: 1px solid var(--atlas-line);
+  border-bottom: 1px solid var(--atlas-line);
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.atlas-table th {
+  font-size: 12px;
+  letter-spacing: 0.8px;
+  color: var(--atlas-muted);
+}
+
+.atlas-blockquote {
+  margin: 22px 0;
+  padding: 12px 20px;
+  border-left: 2px solid var(--atlas-accent);
+  background: rgba(237, 235, 228, 0.45);
+}
+
+[data-dark-surface="true"] .atlas-blockquote {
+  background: rgba(32, 42, 47, 0.45);
+}
+
+.atlas-callout {
+  padding: 14px 20px;
+}
+
+.atlas-callout-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  color: var(--atlas-accent);
+  margin-bottom: 6px;
+}
+
+.atlas-callout[data-callout="warning"],
+.atlas-callout[data-callout="caution"],
+.atlas-callout[data-callout="important"] {
+  border-left-color: var(--atlas-review);
+}
+
+.atlas-callout[data-callout="warning"] .atlas-callout-badge,
+.atlas-callout[data-callout="caution"] .atlas-callout-badge,
+.atlas-callout[data-callout="important"] .atlas-callout-badge {
+  color: var(--atlas-review);
+}
+
+.atlas-callout p {
+  margin: 0 !important;
+}
+
+.atlas-figure {
+  margin: 26px 0;
+  border: 1px solid rgba(189, 184, 173, 0.7);
+  background: rgba(237, 235, 228, 0.35);
+  padding: 16px;
+  text-align: center;
+}
+
+.atlas-figure img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.atlas-figure figcaption {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--atlas-muted);
+}
+
+/* Math Formula Styling */
+.atlas-math-inline {
+  font-family: "Cambria Math", "Times New Roman", serif;
+  padding: 0 3px;
+}
+
+.atlas-math-block {
+  margin: 24px 0;
+  padding: 18px 22px;
+  border-top: 1px solid var(--atlas-line);
+  border-bottom: 1px solid var(--atlas-line);
+  background: rgba(237, 235, 228, 0.35);
+  text-align: center;
+  font-family: "Cambria Math", "Times New Roman", serif;
+  font-size: 19px;
+  overflow-x: auto;
+}
+
+.math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  text-align: center;
+  padding: 0 4px;
+}
+.math-num {
+  border-bottom: 1px solid currentColor;
+  padding: 0 3px 1px;
+}
+.math-den {
+  padding: 1px 3px 0;
+}
+.math-roman {
+  font-family: sans-serif;
+  font-size: 0.9em;
+}
+
+/* Point 5: Merged Metadata & Relations in On-Demand Archive Info ("档案信息") */
+.optical-archive-dossier {
+  margin-top: 44px;
+  border-top: 1px solid rgba(189, 184, 173, 0.75);
+  border-bottom: 1px solid rgba(189, 184, 173, 0.75);
+  padding: 14px 0;
+}
+
+.optical-archive-dossier > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--atlas-sub);
+}
+
+.optical-archive-dossier > summary:hover {
+  color: var(--atlas-ink);
+}
+
+.optical-archive-dossier > summary small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--atlas-muted);
+}
+
+.optical-dossier-grid {
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.optical-dossier-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.optical-dossier-meta dt {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--atlas-muted);
+}
+
+.optical-dossier-meta dd {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--atlas-ink);
+}
+
+.optical-dossier-meta a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.atlas-inferred-badge {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--atlas-accent);
+  margin-left: 6px;
+}
+
+.optical-dossier-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.optical-dossier-relations,
+.optical-dossier-sources {
+  padding-top: 12px;
+  border-top: 1px solid rgba(189, 184, 173, 0.45);
+}
+
+.reader-rel-group h4 {
+  font-size: 10.5px;
+  letter-spacing: 1px;
+  color: var(--atlas-muted);
+  margin: 10px 0 8px;
+}
+
+.reader-rel-card {
+  display: block;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(189, 184, 173, 0.55);
+  color: var(--atlas-ink);
+  text-decoration: none;
+  transition: padding-left 180ms ease;
+}
+
+.reader-rel-card:hover {
+  padding-left: 6px;
+  color: var(--atlas-accent);
+}
+
+.reader-rel-card span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  color: var(--atlas-muted);
+}
+
+.reader-rel-card strong {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.reader-rel-card i {
+  font-style: normal;
+  color: var(--atlas-muted);
+}
+
+.reader-side-path {
+  font-size: 12px;
+  margin: 0 0 8px;
+  color: var(--atlas-muted);
+}
+
+.reader-source-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.reader-source-list a {
+  color: var(--atlas-sub);
+}
+
+.reader-side-muted {
+  font-size: 12px;
+  color: var(--atlas-muted);
+  margin: 0;
+}
+
+/* Consecutive Article Switching Footer (0.6–0.9s Short Switch) */
+.optical-article-footer {
+  margin-top: 32px;
+}
+
+.reader-prev-next {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.prev-next-card {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(189, 184, 173, 0.65);
+  color: var(--atlas-ink);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.prev-next-card:hover {
+  color: var(--atlas-accent);
+}
+
+.prev-next-card.next {
+  text-align: right;
+}
+
+.prev-next-card small {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--atlas-muted);
+}
+
+/* Point 3: Slide-Over TOC & Archive Index Drawer (#optical-toc-drawer) */
+.optical-toc-drawer {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  bottom: 40px;
+  width: 320px;
+  max-width: 88%;
+  z-index: 6;
+  background: rgba(251, 249, 245, 0.97);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(176, 170, 160, 0.85);
+  box-shadow: -12px 0 32px rgba(18, 19, 16, 0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.reader-sidebar-head {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--atlas-line);
-  margin-bottom: 12px;
+[data-dark-surface="true"] .optical-toc-drawer {
+  background: rgba(24, 33, 37, 0.97);
+  border-left-color: rgba(83, 97, 102, 0.85);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.35);
 }
 
-.reader-back-link {
-  font-size: 11px;
-  letter-spacing: 1.2px;
-  color: var(--atlas-ink);
-  text-decoration: none;
-  display: inline-flex;
+.optical-toc-drawer[hidden],
+.optical-more-menu[hidden],
+.optical-drawer-pane[hidden] {
+  display: none !important;
+}
+
+.optical-drawer-head {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(189, 184, 173, 0.65);
+}
+
+.optical-drawer-tabs {
+  display: flex;
+  gap: 14px;
+}
+
+.optical-drawer-tab {
+  font-size: 12.5px;
+  color: var(--atlas-muted);
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.optical-drawer-tab.active {
+  color: var(--atlas-ink);
+  font-weight: 600;
+  border-bottom-color: var(--atlas-amber);
+}
+
+.optical-drawer-close {
+  font-size: 18px;
+  color: var(--atlas-muted);
+  padding: 2px 6px;
+}
+
+.optical-drawer-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 24px;
+  scrollbar-width: thin;
+}
+
+.reader-toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reader-toc-link {
+  width: 100%;
+  text-align: left;
+  padding: 5px 0;
+  font-size: 13.5px;
+  color: var(--atlas-sub);
+  display: flex;
+  align-items: baseline;
   gap: 10px;
 }
 
-.reader-back-link:hover {
+.reader-toc-link small {
+  font-size: 10.5px;
   color: var(--atlas-accent);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-.reader-tree-scroll {
-  flex: 1;
-  overflow-y: auto;
-  scrollbar-width: thin;
+.reader-toc-link:hover,
+.reader-toc-link.active {
+  color: var(--atlas-ink);
+  font-weight: 600;
+}
+
+.toc-level-3 .reader-toc-link {
+  padding-left: 18px;
+  font-size: 12.5px;
 }
 
 .reader-tree-group {
@@ -1541,8 +2621,8 @@ i[data-status="draft"] {
   justify-content: space-between;
   align-items: baseline;
   padding: 6px 0;
-  font-size: 11px;
-  letter-spacing: 1px;
+  font-size: 11.5px;
+  letter-spacing: 0.8px;
   color: var(--atlas-muted);
   cursor: pointer;
   list-style: none;
@@ -1573,7 +2653,7 @@ i[data-status="draft"] {
   align-items: center;
   gap: 8px;
   padding: 7px 6px 7px 14px;
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--atlas-sub);
   text-decoration: none;
   transition: color 160ms ease;
@@ -1607,12 +2687,12 @@ i[data-status="draft"] {
 }
 
 .reader-tree-item.active .tree-item-tick {
-  height: 24px;
-  background: var(--atlas-rule-strong);
+  height: 22px;
+  background: var(--atlas-amber);
 }
 
 .tree-item-code {
-  font-size: 10.5px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: var(--atlas-muted);
   flex-shrink: 0;
@@ -1624,451 +2704,112 @@ i[data-status="draft"] {
   white-space: nowrap;
 }
 
-/* Center Column: Technical Dossier */
-.atlas-reader-main {
-  overflow-y: auto;
-  padding: 0 18px 48px 4px;
-  scrollbar-width: thin;
-}
-
-.atlas-article {
-  max-width: 860px;
-  margin: 0 auto;
-}
-
-.reader-article-header h1 {
-  font-size: 32px;
-  line-height: 1.25;
-  margin: 14px 0 10px;
-  letter-spacing: -0.4px;
-}
-
-.reader-article-summary {
-  font-size: 15px;
-  line-height: 1.75;
-  color: var(--atlas-sub);
-  margin: 0;
-}
-
-.reader-metadata {
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px 24px !important;
-  margin: 18px 0 !important;
-}
-
-.reader-metadata a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.reader-tags-bar {
+/* Point 4: More Actions Popover (#optical-more-menu) */
+.optical-more-menu {
+  position: absolute;
+  top: 50px;
+  right: 22px;
+  width: 236px;
+  z-index: 7;
+  background: rgba(251, 249, 245, 0.98);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(176, 170, 160, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 16px 38px rgba(18, 19, 16, 0.14);
+  padding: 6px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0 16px;
-  border-top: 1px solid var(--atlas-line);
-  border-bottom: 1px solid var(--atlas-line);
-  margin-bottom: 26px;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.reader-tags-row,
-.reader-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
+[data-dark-surface="true"] .optical-more-menu {
+  background: rgba(24, 33, 37, 0.98);
+  border-color: rgba(83, 97, 102, 0.9);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.42);
 }
 
-.atlas-inferred-badge {
-  font-weight: 400;
-  color: var(--atlas-accent);
-}
-
-/* Markdown Body Typography */
-.reader-markdown-body {
-  font-size: 15.5px;
-  line-height: 1.85;
-  color: var(--atlas-ink);
-}
-
-.reader-markdown-body .atlas-heading {
-  margin-top: 28px;
-  margin-bottom: 12px;
-  line-height: 1.35;
-  scroll-margin-top: 20px;
-}
-
-.reader-markdown-body .atlas-h2 {
-  font-size: 20px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--atlas-line);
-}
-
-.reader-markdown-body .atlas-h3 {
-  font-size: 16.5px;
-}
-
-.atlas-heading-anchor {
-  color: var(--atlas-accent);
-  text-decoration: none;
-  margin-right: 8px;
-  opacity: 0.5;
-}
-
-.reader-markdown-body p {
-  margin: 0 0 14px;
-  color: var(--atlas-sub);
-}
-
-.reader-markdown-body .atlas-list {
-  margin: 0 0 16px;
-  padding-left: 20px;
-  color: var(--atlas-sub);
-}
-
-.reader-markdown-body .atlas-list li {
-  margin-bottom: 6px;
-}
-
-.atlas-task-item {
-  list-style: none;
-  margin-left: -18px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.atlas-inline-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.88em;
-  padding: 1px 6px;
-  background: var(--atlas-field);
-  border: 1px solid var(--atlas-line);
-}
-
-.atlas-code-block {
-  margin: 18px 0;
-  border: 1px solid var(--atlas-rule-strong);
-  background: #171916;
-  color: #ece9e2;
-}
-
-.atlas-code-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 14px;
-  background: #222520;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  font-size: 10px;
-  letter-spacing: 1px;
-}
-
-.atlas-code-copy {
-  padding: 2px 9px;
-  font-size: 10px;
-  letter-spacing: 0.8px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ece9e2;
-}
-
-.atlas-code-copy:hover {
-  border-color: var(--atlas-amber);
-  color: var(--atlas-amber);
-}
-
-.atlas-code-block pre {
-  margin: 0;
-  padding: 14px 16px;
-  overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.atlas-table-wrap {
-  margin: 18px 0;
-  overflow-x: auto;
-}
-
-.atlas-table {
+.optical-menu-item {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13.5px;
-}
-
-.atlas-table th,
-.atlas-table td {
-  border-top: 1px solid var(--atlas-line);
-  border-bottom: 1px solid var(--atlas-line);
   padding: 9px 12px;
-  text-align: left;
-}
-
-.atlas-table th {
-  font-size: 11px;
-  letter-spacing: 0.8px;
-  color: var(--atlas-muted);
-}
-
-.atlas-blockquote {
-  margin: 16px 0;
-  padding: 10px 16px;
-  border-left: 2px solid var(--atlas-accent);
-  background: var(--atlas-plate);
-}
-
-.atlas-callout {
-  padding: 12px 16px;
-}
-
-.atlas-callout-badge {
-  display: inline-block;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.4px;
-  color: var(--atlas-accent);
-  margin-bottom: 4px;
-}
-
-.atlas-callout[data-callout="warning"],
-.atlas-callout[data-callout="caution"],
-.atlas-callout[data-callout="important"] {
-  border-left-color: var(--atlas-review);
-}
-
-.atlas-callout[data-callout="warning"] .atlas-callout-badge,
-.atlas-callout[data-callout="caution"] .atlas-callout-badge,
-.atlas-callout[data-callout="important"] .atlas-callout-badge {
-  color: var(--atlas-review);
-}
-
-.atlas-callout p {
-  margin: 0 !important;
-}
-
-.atlas-figure {
-  margin: 20px 0;
-  border: 1px solid var(--atlas-line);
-  background: var(--atlas-plate);
-  padding: 14px;
-  text-align: center;
-}
-
-.atlas-figure img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
-
-.atlas-figure figcaption {
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--atlas-muted);
-}
-
-/* Math Formula Styling */
-.atlas-math-inline {
-  font-family: "Cambria Math", "Times New Roman", serif;
-  padding: 0 3px;
-}
-
-.atlas-math-block {
-  margin: 18px 0;
-  padding: 16px 20px;
-  border-top: 1px solid var(--atlas-line);
-  border-bottom: 1px solid var(--atlas-line);
-  background: var(--atlas-plate);
-  text-align: center;
-  font-family: "Cambria Math", "Times New Roman", serif;
-  font-size: 18px;
-  overflow-x: auto;
-}
-
-.math-frac {
-  display: inline-flex;
-  flex-direction: column;
-  vertical-align: middle;
-  text-align: center;
-  padding: 0 4px;
-}
-.math-num {
-  border-bottom: 1px solid currentColor;
-  padding: 0 3px 1px;
-}
-.math-den {
-  padding: 1px 3px 0;
-}
-.math-roman {
-  font-family: sans-serif;
-  font-size: 0.9em;
-}
-
-/* Right Sidebar: TOC & Relations */
-.atlas-reader-sidebar-right {
-  border-left: 1px solid var(--atlas-line);
-  padding-left: 20px;
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.reader-side-section {
-  margin-bottom: 26px;
-}
-
-.reader-side-section h3 {
-  font-size: 10px;
-  letter-spacing: 1.4px;
-  color: var(--atlas-muted);
-  margin: 0 0 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--atlas-line);
-}
-
-.reader-toc-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.reader-toc-link {
-  width: 100%;
-  text-align: left;
-  padding: 4px 0;
-  font-size: 12.5px;
-  color: var(--atlas-sub);
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.reader-toc-link small {
-  font-size: 9.5px;
-  color: var(--atlas-accent);
-  flex-shrink: 0;
-}
-
-.reader-toc-link:hover,
-.reader-toc-link.active {
-  color: var(--atlas-ink);
-  font-weight: 600;
-}
-
-.toc-level-3 .reader-toc-link {
-  padding-left: 18px;
-  font-size: 11.5px;
-}
-
-.reader-rel-group h4 {
-  font-size: 9.5px;
-  letter-spacing: 1px;
-  color: var(--atlas-muted);
-  margin: 12px 0 8px;
-}
-
-.reader-rel-card {
-  display: block;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--atlas-line);
-  color: var(--atlas-ink);
-  text-decoration: none;
-  transition: padding-left 180ms ease;
-}
-
-.reader-rel-card:hover {
-  padding-left: 6px;
-  color: var(--atlas-accent);
-}
-
-.reader-rel-card span {
-  display: block;
-  font-size: 9.5px;
-  letter-spacing: 0.8px;
-  color: var(--atlas-muted);
-}
-
-.reader-rel-card strong {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  font-size: 12.5px;
-  font-weight: 500;
-  margin-top: 3px;
-}
-
-.reader-rel-card i {
-  font-style: normal;
-  color: var(--atlas-muted);
-}
-
-.reader-side-path {
-  font-size: 11px;
-  margin: 0 0 8px;
-  color: var(--atlas-muted);
-}
-
-.reader-source-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  font-size: 11.5px;
-  word-break: break-all;
-}
-
-.reader-source-list a {
-  color: var(--atlas-sub);
-}
-
-.reader-side-muted {
-  font-size: 11.5px;
-  color: var(--atlas-muted);
-  margin: 0;
-}
-
-.reader-article-footer {
-  margin-top: 38px;
-  padding-top: 18px;
-  border-top: 1px solid var(--atlas-rule-strong);
-}
-
-.reader-prev-next {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-}
-
-.prev-next-card {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--atlas-line);
+  font-size: 13px;
   color: var(--atlas-ink);
   text-decoration: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  border-radius: 2px;
+  transition: background 140ms ease, color 140ms ease;
 }
 
-.prev-next-card:hover {
+.optical-menu-item:hover {
+  background: rgba(226, 220, 207, 0.65);
   color: var(--atlas-accent);
 }
 
-.prev-next-card.next {
-  text-align: right;
+[data-dark-surface="true"] .optical-menu-item:hover {
+  background: rgba(42, 54, 59, 0.75);
 }
 
-.prev-next-card small {
-  font-size: 9.5px;
+.optical-menu-item kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--atlas-muted);
+  padding: 1px 5px;
+  border: 1px solid rgba(189, 184, 173, 0.65);
+  border-radius: 2px;
+}
+
+/* Bottom Link Status Bar inside Optical Screen ("● LINK ESTABLISHED | ESC 返回 · 目录 · 更多") */
+.optical-screen-footbar {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 28px;
+  border-top: 1px solid rgba(189, 184, 173, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
   letter-spacing: 1px;
   color: var(--atlas-muted);
+  background: rgba(251, 249, 245, 0.94);
+  z-index: 4;
+}
+
+[data-dark-surface="true"] .optical-screen-footbar {
+  background: rgba(24, 33, 37, 0.94);
+  border-top-color: rgba(83, 97, 102, 0.65);
+}
+
+.optical-link-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 500;
+  letter-spacing: 1.4px;
+  color: var(--atlas-sub);
+}
+
+.optical-amber-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--atlas-amber);
+  box-shadow: 0 0 8px rgba(237, 130, 27, 0.7);
+}
+
+.optical-foot-hints {
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  color: var(--atlas-muted);
+}
+
+/* Keep compatibility node out of visual flow */
+.optical-sr-compat {
+  display: none !important;
 }
 
 /* ============================================================================
-   7. Responsive Adaptations for Compact & Portrait Displays
+   7. Responsive Adaptations for Compact & Portrait Displays (Point 9: 窄屏重新排布)
    ============================================================================ */
 
 :is([data-layout="compact"], [data-layout="portrait"]) .atlas-surface {
@@ -2095,15 +2836,39 @@ i[data-status="draft"] {
   gap: 16px;
 }
 
-:is([data-layout="compact"], [data-layout="portrait"]) .atlas-reader-layout {
-  grid-template-columns: 1fr;
+/* Point 9: Narrow screen rearrangement for Optical Reader */
+#stage:is([data-layout="compact"], [data-layout="portrait"])[data-atlas-view="reader"] > .brand {
+  transform: scale(0.46);
+  transform-origin: top left;
 }
 
-:is([data-layout="compact"], [data-layout="portrait"]) :is(.atlas-reader-sidebar-left, .atlas-reader-sidebar-right) {
-  display: none;
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-stage-signature,
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-receiver-spine,
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-foot-hints {
+  display: none !important;
 }
 
-:is([data-layout="compact"], [data-layout="portrait"]) .reader-metadata {
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-screen-frame,
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-reader-stage[data-receded="true"] .optical-screen-frame {
+  left: 16px;
+  right: 16px;
+  top: 66px;
+  bottom: 16px;
+}
+
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-reading-column {
+  padding: 26px 20px 48px;
+}
+
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-article-title {
+  font-size: 26px;
+}
+
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-markdown-body {
+  font-size: 17.5px;
+}
+
+:is([data-layout="compact"], [data-layout="portrait"]) .optical-dossier-meta {
   grid-template-columns: 1fr 1fr;
 }
 

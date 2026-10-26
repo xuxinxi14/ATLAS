@@ -65,6 +65,7 @@ import {
 import {
   renderReaderViewMarkup,
   hydrateEntryHtmlImages,
+  prefetchEntryAssets,
 } from "./reader/reader-view";
 import {
   renderStudioViewMarkup,
@@ -643,12 +644,50 @@ function syncNavButtons(animated = true) {
   }
 }
 
+let previousReaderSlug = "";
+let manualReaderRecede: boolean | null = null;
+
+function syncOpticalReaderDom() {
+  const stage = $("#stage");
+  if (!scene || !motionActive("surfaceTransitions")) {
+    stage.style.setProperty("--optical-dock", "1");
+    stage.style.setProperty("--optical-contact", "1");
+    stage.style.setProperty("--optical-sweep", "0");
+    stage.style.setProperty("--optical-active", "1");
+    stage.style.setProperty("--optical-title-reveal", "1");
+    stage.style.setProperty("--optical-body-reveal", "1");
+    return;
+  }
+  const f = scene.opticalReaderFrame;
+  stage.style.setProperty("--optical-dock", f.rigDock.toFixed(4));
+  stage.style.setProperty("--optical-contact", f.contactGlow.toFixed(4));
+  stage.style.setProperty("--optical-sweep", f.amberSweep.toFixed(4));
+  stage.style.setProperty("--optical-active", f.screenActive.toFixed(4));
+  stage.style.setProperty("--optical-title-reveal", f.titleReveal.toFixed(4));
+  stage.style.setProperty("--optical-body-reveal", f.bodyReveal.toFixed(4));
+}
+
+function exitOpticalReader() {
+  manualReaderRecede = null;
+  previousReaderSlug = "";
+  scene?.setReaderReceded(false);
+  scene?.setReaderMode(false);
+  if (mode === "detail") {
+    setMode("archive");
+  } else {
+    scene?.setMode("archive");
+  }
+  navigateAtlas("#/archive");
+  audio.play("back");
+}
+
 function renderSpatialLinkBarMarkup(): string {
+  if (atlasView === "reader") return "";
   const rec = records[selected];
   if (!rec) return "";
   const { lane } = fileLocation(selected);
   const cameraModeLabel =
-    atlasView === "reader" || (atlasView === "studio" && !studioState.isNew)
+    atlasView === "studio" && !studioState.isNew
       ? "CASSETTE INSPECT // 档案盒已升起检视"
       : "ARRAY ORBIT // 阵列轨道已对齐";
   return `
@@ -686,7 +725,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     $("#detail-ui").inert = mode !== "detail" || Boolean(modal);
     renderedAtlasView = "archive";
 
-    if (prevView !== "archive" && mode !== "boot") {
+    if (prevView !== "archive" && prevView !== "reader" && mode !== "boot") {
       triggerSpatialTransit(prevView, "archive");
     }
 
@@ -696,6 +735,19 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         atlasExitAnimation?.cancel();
         atlasExitAnimation = undefined;
         surface.hidden = true;
+      } else if (prevView === "reader") {
+        atlasExitAnimation?.cancel();
+        const anim = surface.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 240,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "forwards",
+        });
+        atlasExitAnimation = anim;
+        anim.onfinish = () => {
+          surface.hidden = true;
+          anim.cancel();
+          atlasExitAnimation = undefined;
+        };
       } else if (!atlasExitAnimation) {
         const currentOpacity = getComputedStyle(surface).opacity || "1";
         const anim = surface.animate(
@@ -772,12 +824,47 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   const viewChanged = previousView !== atlasView || wasHidden;
   renderedAtlasView = atlasView;
 
-  if (
+  if (atlasView === "reader") {
+    syncOpticalReaderDom();
+    const readerScroll = surface.querySelector<HTMLElement>(
+      "#atlas-reader-scroll",
+    );
+    const readerStage = surface.querySelector<HTMLElement>(
+      "#optical-reader-stage",
+    );
+    const recedeBtn = surface.querySelector<HTMLElement>(
+      '[data-optical-action="toggle-recede"]',
+    );
+    if (readerStage && manualReaderRecede !== null) {
+      readerStage.dataset.receded = String(manualReaderRecede);
+      recedeBtn?.setAttribute("aria-pressed", String(manualReaderRecede));
+    }
+    readerScroll?.addEventListener(
+      "scroll",
+      () => {
+        if (!readerStage || manualReaderRecede !== null) return;
+        const shouldRecede = readerScroll.scrollTop > 48;
+        const shouldRestore = readerScroll.scrollTop <= 14;
+        if (shouldRecede && readerStage.dataset.receded !== "true") {
+          readerStage.dataset.receded = "true";
+          recedeBtn?.setAttribute("aria-pressed", "true");
+          scene?.setReaderReceded(true);
+        } else if (shouldRestore && readerStage.dataset.receded === "true") {
+          readerStage.dataset.receded = "false";
+          recedeBtn?.setAttribute("aria-pressed", "false");
+          scene?.setReaderReceded(false);
+        }
+      },
+      { passive: true },
+    );
+  } else if (
     viewChanged &&
     !preserveLibraryInputFocus &&
     motionActive("surfaceTransitions")
   ) {
-    triggerSpatialTransit(previousView, atlasView);
+    if (previousView !== "reader") {
+      triggerSpatialTransit(previousView, atlasView);
+    }
 
     const prevMeta =
       VIEW_SPATIAL_META[previousView] ?? VIEW_SPATIAL_META.archive;
@@ -885,8 +972,10 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
 function sync3DCameraWith2DView() {
   if (!scene || !ready || mode === "boot") return;
   if (atlasView === "home") {
+    scene.setReaderMode(false);
     scene.setMode("archive");
   } else if (atlasView === "library") {
+    scene.setReaderMode(false);
     scene.setMode("archive");
     if (libraryState.category && libraryState.category !== "all") {
       const lane = portals.findIndex(
@@ -903,18 +992,29 @@ function sync3DCameraWith2DView() {
       }
     }
   } else if (atlasView === "reader") {
+    void prefetchEntryAssets(activeReaderSlug);
+    const isShortSwitch =
+      renderedAtlasView === "reader" &&
+      previousReaderSlug !== "" &&
+      previousReaderSlug !== activeReaderSlug;
+    previousReaderSlug = activeReaderSlug;
+    if (!isShortSwitch) {
+      manualReaderRecede = null;
+      scene.setReaderReceded(false);
+    }
     const entry = knowledgeRepository.bySlug(activeReaderSlug);
     if (entry) {
       const recIndex = records.findIndex((r) => r.entryId === entry.id);
-      if (recIndex >= 0) {
+      if (recIndex >= 0 && recIndex !== selected) {
         selected = recIndex;
         columnMemory[fileLocation(selected).lane] = selected;
         scene.select(selected);
         updateSelection();
       }
     }
-    scene.setMode("detail");
+    scene.setReaderMode(true, { shortSwitch: isShortSwitch });
   } else if (atlasView === "studio") {
+    scene.setReaderMode(false);
     if (!studioState.isNew && studioState.originalSlug) {
       const entry = knowledgeRepository.bySlug(studioState.originalSlug);
       if (entry) {
@@ -951,7 +1051,9 @@ function syncHashRoute() {
       return;
     }
     atlasView = "archive";
+    previousReaderSlug = "";
     if (ready && mode !== "boot") {
+      scene?.setReaderMode(false);
       scene?.setMode(mode === "detail" ? "detail" : "archive");
     }
     renderAtlasSurface();
@@ -964,6 +1066,7 @@ function syncHashRoute() {
 
   if (parsed.view === "home") {
     atlasView = "home";
+    previousReaderSlug = "";
     sync3DCameraWith2DView();
     renderAtlasSurface();
     return;
@@ -971,6 +1074,7 @@ function syncHashRoute() {
 
   if (parsed.view === "library") {
     atlasView = "library";
+    previousReaderSlug = "";
     libraryState.category = parsed.category || "all";
     if (parsed.query !== undefined) {
       libraryState.query = parsed.query;
@@ -982,6 +1086,7 @@ function syncHashRoute() {
 
   if (parsed.view === "studio") {
     atlasView = "studio";
+    previousReaderSlug = "";
     const targetSlug = parsed.slug || "";
     if (targetSlug && targetSlug !== studioState.originalSlug) {
       void loadStudioEntryFromDisk(targetSlug);
@@ -1003,6 +1108,7 @@ function syncHashRoute() {
     atlasView = "reader";
     activeReaderSlug = parsed.slug;
     activeReaderAnchor = parsed.anchor;
+    void prefetchEntryAssets(activeReaderSlug);
     sync3DCameraWith2DView();
     renderAtlasSurface();
     return;
@@ -1015,6 +1121,7 @@ function syncHashRoute() {
       return;
     }
     atlasView = "archive";
+    previousReaderSlug = "";
     if (parsed.category) {
       const lane = portals.findIndex(
         (p) => p.id === parsed.category || p.title === parsed.category,
@@ -1023,6 +1130,7 @@ function syncHashRoute() {
         select(columnMemory[lane]);
       }
     }
+    scene?.setReaderMode(false);
     scene?.setMode(mode === "detail" ? "detail" : "archive");
     renderAtlasSurface();
   }
@@ -2122,8 +2230,134 @@ document.addEventListener("click", (e) => {
       document
         .querySelectorAll(".reader-toc-link")
         .forEach((b) => b.classList.toggle("active", b === tocBtn));
+      const tocDrawer = document.getElementById("optical-toc-drawer");
+      const tocTrigger = document.querySelector<HTMLElement>(
+        '[data-optical-toggle="toc"]',
+      );
+      if (tocDrawer && !tocDrawer.hidden) {
+        tocDrawer.hidden = true;
+        tocTrigger?.setAttribute("aria-expanded", "false");
+      }
+      audio.play("ui-tick");
     }
     return;
+  }
+  const opticalToggleBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-optical-toggle]",
+  );
+  if (opticalToggleBtn) {
+    const kind = opticalToggleBtn.dataset.opticalToggle;
+    const tocDrawer = document.getElementById("optical-toc-drawer");
+    const moreMenu = document.getElementById("optical-more-menu");
+    const tocTrigger = document.querySelector<HTMLElement>(
+      '[data-optical-toggle="toc"]',
+    );
+    const moreTrigger = document.querySelector<HTMLElement>(
+      '[data-optical-toggle="more"]',
+    );
+    if (kind === "toc" && tocDrawer) {
+      const nextOpen = tocDrawer.hidden;
+      tocDrawer.hidden = !nextOpen;
+      tocTrigger?.setAttribute("aria-expanded", String(nextOpen));
+      if (nextOpen && moreMenu) {
+        moreMenu.hidden = true;
+        moreTrigger?.setAttribute("aria-expanded", "false");
+      }
+      audio.play("ui-tick");
+    } else if (kind === "more" && moreMenu) {
+      const nextOpen = moreMenu.hidden;
+      moreMenu.hidden = !nextOpen;
+      moreTrigger?.setAttribute("aria-expanded", String(nextOpen));
+      if (nextOpen && tocDrawer) {
+        tocDrawer.hidden = true;
+        tocTrigger?.setAttribute("aria-expanded", "false");
+      }
+      audio.play("ui-tick");
+    }
+    return;
+  }
+  const opticalDrawerTabBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-optical-drawer-tab]",
+  );
+  if (opticalDrawerTabBtn) {
+    const tab = opticalDrawerTabBtn.dataset.opticalDrawerTab;
+    document
+      .querySelectorAll<HTMLElement>("[data-optical-drawer-tab]")
+      .forEach((b) =>
+        b.classList.toggle("active", b === opticalDrawerTabBtn),
+      );
+    const paneToc = document.getElementById("optical-pane-toc");
+    const paneTree = document.getElementById("optical-pane-tree");
+    if (paneToc && paneTree) {
+      paneToc.hidden = tab !== "toc";
+      paneTree.hidden = tab !== "tree";
+    }
+    audio.play("ui-tick");
+    return;
+  }
+  const opticalActionBtn = (e.target as Element).closest<HTMLElement>(
+    "[data-optical-action]",
+  );
+  if (opticalActionBtn) {
+    const oAct = opticalActionBtn.dataset.opticalAction;
+    const moreMenu = document.getElementById("optical-more-menu");
+    const moreTrigger = document.querySelector<HTMLElement>(
+      '[data-optical-toggle="more"]',
+    );
+    if (moreMenu) {
+      moreMenu.hidden = true;
+      moreTrigger?.setAttribute("aria-expanded", "false");
+    }
+    if (oAct === "toggle-dossier") {
+      const dossier = document.getElementById(
+        "optical-archive-dossier",
+      ) as HTMLDetailsElement | null;
+      if (dossier) {
+        dossier.open = !dossier.open;
+        if (dossier.open) {
+          requestAnimationFrame(() =>
+            dossier.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+          );
+        }
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (oAct === "toggle-recede") {
+      const readerStage = document.getElementById("optical-reader-stage");
+      const next = readerStage?.dataset.receded !== "true";
+      manualReaderRecede = next;
+      if (readerStage) {
+        readerStage.dataset.receded = String(next);
+      }
+      opticalActionBtn.setAttribute("aria-pressed", String(next));
+      scene?.setReaderReceded(next);
+      audio.play("ui-tick");
+      return;
+    }
+    return;
+  }
+  if (atlasView === "reader") {
+    const tocDrawer = document.getElementById("optical-toc-drawer");
+    const moreMenu = document.getElementById("optical-more-menu");
+    const clickedInsideDrawer = Boolean(
+      (e.target as Element).closest("#optical-toc-drawer"),
+    );
+    const clickedInsideMore = Boolean(
+      (e.target as Element).closest("#optical-more-menu"),
+    );
+    if (tocDrawer && !tocDrawer.hidden && !clickedInsideDrawer) {
+      tocDrawer.hidden = true;
+      document
+        .querySelector<HTMLElement>('[data-optical-toggle="toc"]')
+        ?.setAttribute("aria-expanded", "false");
+    }
+    if (moreMenu && !moreMenu.hidden && !clickedInsideMore) {
+      moreMenu.hidden = true;
+      document
+        .querySelector<HTMLElement>('[data-optical-toggle="more"]')
+        ?.setAttribute("aria-expanded", "false");
+    }
   }
   const catTab = (e.target as Element).closest<HTMLButtonElement>(
     "[data-library-category]",
@@ -2298,6 +2532,10 @@ document.addEventListener("click", (e) => {
   );
   if (atlasActionBtn) {
     const act = atlasActionBtn.dataset.atlasAction;
+    if (act === "exit-optical-reader") {
+      exitOpticalReader();
+      return;
+    }
     if (act === "enter-archive") {
       navigateAtlas("#/archive");
       audio.play("confirm");
@@ -2427,12 +2665,15 @@ document.addEventListener("click", (e) => {
     return;
   }
   if (action === "open-current-reader") {
-    navigateAtlas(buildEntryHash(records[selected].slug));
+    const slug = records[selected].slug;
+    void prefetchEntryAssets(slug);
+    navigateAtlas(buildEntryHash(slug));
     audio.play("open");
     return;
   }
   if (action === "open-reader") {
     const slug = el.dataset.entrySlug || records[selected].slug;
+    void prefetchEntryAssets(slug);
     navigateAtlas(buildEntryHash(slug));
     audio.play("open");
     return;
@@ -2579,8 +2820,25 @@ document.addEventListener("keydown", (e) => {
         audio.play("back");
       }
     } else if (atlasView === "reader") {
-      navigateAtlas("#/library");
-      audio.play("back");
+      const tocDrawer = document.getElementById("optical-toc-drawer");
+      const moreMenu = document.getElementById("optical-more-menu");
+      if (tocDrawer && !tocDrawer.hidden) {
+        tocDrawer.hidden = true;
+        document
+          .querySelector<HTMLElement>('[data-optical-toggle="toc"]')
+          ?.setAttribute("aria-expanded", "false");
+        audio.play("ui-tick");
+        return;
+      }
+      if (moreMenu && !moreMenu.hidden) {
+        moreMenu.hidden = true;
+        document
+          .querySelector<HTMLElement>('[data-optical-toggle="more"]')
+          ?.setAttribute("aria-expanded", "false");
+        audio.play("ui-tick");
+        return;
+      }
+      exitOpticalReader();
     } else if (mode === "detail" || (mode === "boot" && ready)) {
       const sound = mode === "detail" ? "back" : "ui-tick";
       setMode("archive");
@@ -2612,6 +2870,46 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   if (typing || modal || !ready) return;
+  if (atlasView === "reader" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const lower = e.key.toLowerCase();
+    if (lower === "e") {
+      e.preventDefault();
+      navigateAtlas(buildStudioHash(activeReaderSlug));
+      audio.play("open");
+      return;
+    }
+    if (lower === "s") {
+      e.preventDefault();
+      toggleSavedById(activeReaderSlug);
+      return;
+    }
+    if (lower === "i") {
+      e.preventDefault();
+      const dossier = document.getElementById(
+        "optical-archive-dossier",
+      ) as HTMLDetailsElement | null;
+      if (dossier) {
+        dossier.open = !dossier.open;
+        if (dossier.open) {
+          requestAnimationFrame(() =>
+            dossier.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+          );
+        }
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (lower === "f") {
+      e.preventDefault();
+      const readerStage = document.getElementById("optical-reader-stage");
+      const next = readerStage?.dataset.receded !== "true";
+      manualReaderRecede = next;
+      if (readerStage) readerStage.dataset.receded = String(next);
+      scene?.setReaderReceded(next);
+      audio.play("ui-tick");
+      return;
+    }
+  }
   if (
     (e.target as HTMLElement).dataset.tab &&
     ["ArrowLeft", "ArrowRight"].includes(e.key)
@@ -2786,6 +3084,9 @@ function frame(ms: number) {
   // Keep the 3D Archive Hall live behind the frosted terminal glass so camera & cassette transitions remain continuous; ArchiveScene's static-frame cache automatically idles GPU when motion settles.
   if (!viewer?.isOpen && (!cinema || cinema.time >= 21.9))
     scene?.update(time, cinema);
+  if (atlasView === "reader" || scene?.readerActiveOrTransitioning) {
+    syncOpticalReaderDom();
+  }
   viewer?.update(time);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();
   playground?.position();
@@ -2839,6 +3140,9 @@ function frame(ms: number) {
 }
 function bindScene(scene: ArchiveScene, cell?: { lane: number; row: number }) {
   scene.select(selected, cell ? { cell } : undefined);
+  scene.onReaderActivationSound = () => {
+    audio.play("confirm");
+  };
   scene.onSelect = (i, cell) => {
     if (mode !== "archive" || modal || viewer?.isOpen) return;
     select(i, cell ? { cell } : undefined);

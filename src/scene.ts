@@ -52,6 +52,14 @@ import {
   INSPECTION_LIFT,
   returnStep,
 } from "./motion";
+import {
+  OpticalReaderRig,
+  evaluateOpticalReaderTimeline,
+  OPTICAL_TIMELINE_DURATION,
+  type OpticalReaderTimelineFrame,
+} from "./optical-reader-rig";
+
+const READER_LIFT = 5.35;
 
 const ease = (t: number) => {
   t = THREE.MathUtils.clamp(t, 0, 1);
@@ -247,6 +255,16 @@ export class ArchiveScene {
   private aoKernelSize = 32;
   private displayHeight = 0;
   private layoutKind = "";
+  private readerRig = new OpticalReaderRig();
+  private targetReader = false;
+  private readerSeconds = 0;
+  private readerShortPulse = 0;
+  private readerReceded = 0;
+  private targetReaderReceded = 0;
+  private readerActivationFired = false;
+  private lastReaderFrame: OpticalReaderTimelineFrame =
+    evaluateOpticalReaderTimeline(0);
+  onReaderActivationSound?: () => void;
   onSelect?: (index: number, cell?: ArchiveCell) => void;
   onHover?: (index: number | null) => void;
   onNavigate?: (axis: "row" | "lane", direction: number) => void;
@@ -311,6 +329,7 @@ export class ArchiveScene {
     floor.position.y = -4.63;
     floor.receiveShadow = true;
     this.scene.add(floor);
+    this.scene.add(this.readerRig.group);
     this.camera.position.set(-62.26, 35.98, 43.28);
     this.cameraAim.set(-0.5, 1.1, 0.4);
     this.camera.fov = 6.15;
@@ -575,9 +594,15 @@ export class ArchiveScene {
   setMode(mode: "hidden" | "archive" | "detail") {
     this.cancelPointer();
     this.setHover(null);
+    this.targetReader = false;
+    this.targetReaderReceded = 0;
     if (mode === "detail") this.decryption.enter(this.scanBlend > .9 && this.decryption.clarity > .999);
     else this.decryption.leave();
-    if (mode === "hidden") this.decryption.select();
+    if (mode === "hidden") {
+      this.decryption.select();
+      this.readerSeconds = 0;
+      this.readerShortPulse = 0;
+    }
     if (mode !== "archive") this.pendingPulse = null;
     this.looping = mode !== "hidden";
     if (!this.looping) {
@@ -598,6 +623,65 @@ export class ArchiveScene {
       this.targetRotation = 0;
       if (this.rotation !== 0) this.returnY = this.model.position.y;
     } else this.returnY = null;
+    this.renderState.invalidate();
+  }
+  setReaderMode(
+    active: boolean,
+    options?: { shortSwitch?: boolean; immediate?: boolean },
+  ) {
+    this.cancelPointer();
+    this.setHover(null);
+    this.lastInteraction = this.clock;
+    if (active) {
+      this.looping = true;
+      this.targetReveal = 1;
+      this.targetDetail = 1;
+      this.targetRotation = 0;
+      this.returnY = null;
+      this.decryption.enter(true);
+      const reduced = this.reduced || !this.motion.surfaceTransitions;
+      if (options?.immediate || reduced) {
+        this.targetReader = true;
+        this.readerSeconds = reduced ? 0.18 : OPTICAL_TIMELINE_DURATION;
+        this.readerActivationFired = true;
+      } else if (
+        options?.shortSwitch &&
+        (this.targetReader || this.readerSeconds > 1.1)
+      ) {
+        this.targetReader = true;
+        this.readerSeconds = Math.max(this.readerSeconds, 1.42);
+        this.readerShortPulse = 1;
+        this.readerActivationFired = false;
+      } else {
+        this.targetReader = true;
+        if (this.readerSeconds < 0.1) {
+          this.readerActivationFired = false;
+        }
+      }
+    } else {
+      this.targetReader = false;
+      this.targetReaderReceded = 0;
+      if (options?.immediate) {
+        this.readerSeconds = 0;
+        this.readerShortPulse = 0;
+      }
+    }
+    this.renderState.invalidate();
+  }
+  setReaderReceded(receded: boolean) {
+    const next = receded ? 1 : 0;
+    if (this.targetReaderReceded === next) return;
+    this.targetReaderReceded = next;
+    this.renderState.invalidate();
+  }
+  get opticalReaderFrame(): OpticalReaderTimelineFrame {
+    return this.lastReaderFrame;
+  }
+  get readerActiveOrTransitioning(): boolean {
+    return this.targetReader || this.readerSeconds > 0.002;
+  }
+  getOpticalReaderScreenBounds() {
+    return this.readerRig.projectScreenBounds(this.camera);
   }
   // Legacy review pages use the old whole-scene toggle.
   setReduced(value: boolean) { this.setMotion(value ? reducedMotion() : fullMotion()); }
@@ -1391,40 +1475,89 @@ export class ArchiveScene {
       return value;
     };
     const selectedBase = chosen.y + field(selectedRow, selectedLane);
+    const reducedReader = this.reduced || !this.motion.surfaceTransitions;
+    const maxReaderSec = reducedReader ? 0.18 : OPTICAL_TIMELINE_DURATION;
     if (!cinematic) {
-      if (this.returnY !== null && this.rotation !== 0) {
+      if (this.targetReader) {
+        this.readerSeconds = Math.min(maxReaderSec, this.readerSeconds + dt);
+      } else if (this.readerSeconds > 0) {
+        this.readerSeconds = Math.max(
+          0,
+          this.readerSeconds - dt * (reducedReader ? 12 : 1.35),
+        );
+      }
+      if (this.readerShortPulse > 0) {
+        this.readerShortPulse = Math.max(0, this.readerShortPulse - dt / 0.56);
+      }
+      this.readerReceded = THREE.MathUtils.lerp(
+        this.readerReceded,
+        this.targetReader ? this.targetReaderReceded : 0,
+        reducedReader ? 1 : 1 - Math.exp(-dt * 6),
+      );
+    } else {
+      this.readerSeconds = 0;
+      this.readerShortPulse = 0;
+      this.readerReceded = 0;
+    }
+    const readerFrame = evaluateOpticalReaderTimeline(
+      this.readerSeconds,
+      reducedReader,
+    );
+    this.lastReaderFrame = readerFrame;
+    if (
+      readerFrame.activationReady &&
+      !this.readerActivationFired &&
+      this.targetReader
+    ) {
+      this.readerActivationFired = true;
+      this.onReaderActivationSound?.();
+    }
+    const readerHold = this.targetReader || this.readerSeconds > 0.08;
+    if (!cinematic) {
+      if (this.returnY !== null && this.rotation !== 0 && !readerHold) {
         this.lift.value = this.returnY - selectedBase;
         this.lift.velocity = 0;
       } else {
         this.returnY = null;
         damp(
           this.lift,
-          this.targetDetail
-            ? INSPECTION_LIFT
-            : this.outgoing.some(
-                  (o) =>
-                    o.returnY !== null &&
-                    o.cell.lane === selectedLane &&
-                    Math.abs(o.cell.row - selectedRow) < 5,
-                )
-              ? 0
-              : 0.4 * this.targetReveal * (1 - this.flatMix),
+          readerHold
+            ? THREE.MathUtils.lerp(
+                this.targetDetail
+                  ? INSPECTION_LIFT
+                  : 0.4 * this.targetReveal * (1 - this.flatMix),
+                READER_LIFT,
+                readerFrame.verticalLift,
+              )
+            : this.targetDetail
+              ? INSPECTION_LIFT
+              : this.outgoing.some(
+                    (o) =>
+                      o.returnY !== null &&
+                      o.cell.lane === selectedLane &&
+                      Math.abs(o.cell.row - selectedRow) < 5,
+                  )
+                ? 0
+                : 0.4 * this.targetReveal * (1 - this.flatMix),
           !this.motion.detailTransition
             ? 35
-            : this.deferSelectionPulse &&
-                !this.targetDetail &&
-                this.lift.value < 0.4
-              ? 7.6
-              : 4.2,
+            : readerHold
+              ? 6.2
+              : this.deferSelectionPulse &&
+                  !this.targetDetail &&
+                  this.lift.value < 0.4
+                ? 7.6
+                : 4.2,
           dt,
         );
       }
     }
-    const cameraTarget = this.targetDetail
-      ? ease((this.lift.value - 0.8) / 2.4)
-      : this.returnY !== null
-        ? this.detail
-        : ease((this.lift.value - 0.4) / (INSPECTION_LIFT - 0.4));
+    const cameraTarget =
+      this.targetDetail || readerHold
+        ? ease((this.lift.value - 0.8) / 2.4)
+        : this.returnY !== null
+          ? this.detail
+          : ease((this.lift.value - 0.4) / (INSPECTION_LIFT - 0.4));
     this.detail = cinematic
       ? cinematic.zoom
       : THREE.MathUtils.lerp(this.detail, cameraTarget, detailBlend);
@@ -1494,10 +1627,31 @@ export class ArchiveScene {
       }
     }
     this.appearance.setTheme(this.model, this.theme.sample(this.selectedCell, time), indexDim(this.lift.value));
-    this.model.position.set(
+    const baseModelPos = new THREE.Vector3(
       chosen.x - trackX,
-      chosen.y + field(selectedRow, selectedLane) + this.lift.value + hoverLift(this.selectedCell) - this.presentationDrop(this.selectedCell),
+      chosen.y +
+        field(selectedRow, selectedLane) +
+        this.lift.value +
+        hoverLift(this.selectedCell) -
+        this.presentationDrop(this.selectedCell),
       chosen.z + entryZ + this.rail.value,
+    );
+    const shortDip =
+      this.readerShortPulse > 0
+        ? Math.sin(this.readerShortPulse * Math.PI) * 0.32
+        : 0;
+    const effectiveInsert = Math.max(0, readerFrame.lateralInsert - shortDip);
+    const insertOffsetX = effectiveInsert * 2.15 - this.readerReceded * 1.65;
+    this.model.position.set(
+      baseModelPos.x + insertOffsetX,
+      baseModelPos.y,
+      baseModelPos.z,
+    );
+    this.readerRig.update(
+      readerFrame,
+      baseModelPos,
+      this.themeAmount,
+      this.readerReceded,
     );
     // Extraction only changes elevation. Reframing belongs to the camera.
     this.model.rotation.set(
@@ -1558,6 +1712,16 @@ export class ArchiveScene {
       viewDirection
         .lerp(new THREE.Vector3(-0.277, 0.238, 0.931), detail)
         .normalize();
+      const readerTurn = THREE.MathUtils.clamp(
+        readerFrame.rigDock * 0.32 + readerFrame.cameraPush * 0.68,
+        0,
+        1,
+      );
+      if (readerTurn > 0.0001) {
+        viewDirection
+          .lerp(new THREE.Vector3(-0.036, 0.025, 0.999), readerTurn)
+          .normalize();
+      }
     }
     if (cinematic) {
       const pan = ease((shot - 25.4) / 0.95);
@@ -1622,6 +1786,11 @@ export class ArchiveScene {
     }
     const framing = archiveFraming(this.container.clientWidth, this.container.clientHeight, span, detail,
       this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout === "compact");
+    const readerCamMix = THREE.MathUtils.clamp(
+      readerFrame.rigDock * 0.34 + readerFrame.cameraPush * 0.66,
+      0,
+      1,
+    );
     if (!cinematic) {
       const right = new THREE.Vector3()
         .crossVectors(new THREE.Vector3(0, 1, 0), viewDirection)
@@ -1638,31 +1807,53 @@ export class ArchiveScene {
         previewAim.addScaledVector(up, (framing.previewY - 0.5) * height / pixelScale);
         cameraAim.copy(previewAim);
       }
-      const detailAim = this.model.position
+      const detailAim = baseModelPos
         .clone()
         .add(new THREE.Vector3(0, 1.85, 0));
       detailAim.addScaledVector(right, (0.5 - framing.detailX) * width / pixelScale);
       detailAim.addScaledVector(up, (framing.detailY - 0.5) * height / pixelScale);
       cameraAim.lerp(detailAim, detail);
+      if (readerCamMix > 0.0001) {
+        const isNarrow =
+          framing.portrait ||
+          this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout === "compact";
+        const readerCenterOffsetX = isNarrow
+          ? 6.45
+          : 4.95 + this.readerReceded * 1.15;
+        const readerAim = baseModelPos
+          .clone()
+          .add(new THREE.Vector3(readerCenterOffsetX, 1.85, 0));
+        cameraAim.lerp(readerAim, readerCamMix);
+      }
     }
     const cameraPosition = cameraAim
       .clone()
       .addScaledVector(viewDirection, distance);
-    if (!cinematic && this.motion.pointerParallax && !this.uiOnlyParallax) {
-      cameraPosition.x += this.pointer.x * 0.12;
-      cameraPosition.y -= this.pointer.y * 0.12;
+    if (
+      !cinematic &&
+      this.motion.pointerParallax &&
+      !this.uiOnlyParallax &&
+      readerCamMix < 0.5
+    ) {
+      cameraPosition.x += this.pointer.x * 0.12 * (1 - readerCamMix);
+      cameraPosition.y -= this.pointer.y * 0.12 * (1 - readerCamMix);
     }
-    const cameraTransition = this.targetDetail || this.detail > 0.01
+    const cameraTransition = this.targetDetail || this.detail > 0.01 || readerHold
       ? this.motion.detailTransition
       : this.motion.selectionTransition;
-    const cameraBlend = cinematic ? 1 : cameraTransition ? 1 - Math.exp(-dt * 5) : 1;
+    const cameraBlend = cinematic ? 1 : cameraTransition ? 1 - Math.exp(-dt * 5.4) : 1;
     this.camera.position.lerp(cameraPosition, cameraBlend);
     this.cameraAim.lerp(cameraAim, cameraBlend);
     this.camera.lookAt(this.cameraAim);
+    const effectiveSpan = THREE.MathUtils.lerp(
+      framing.span,
+      6.45 - this.readerReceded * 0.42,
+      readerCamMix,
+    );
     this.camera.fov = THREE.MathUtils.lerp(
       this.camera.fov,
       THREE.MathUtils.radToDeg(
-        2 * Math.atan((cinematic ? openingSpan(THREE.MathUtils.lerp(span, 5.9, detail)) : framing.span) / (2 * distance)),
+        2 * Math.atan((cinematic ? openingSpan(THREE.MathUtils.lerp(span, 5.9, detail)) : effectiveSpan) / (2 * distance)),
       ),
       cameraBlend,
     );
@@ -1740,6 +1931,7 @@ export class ArchiveScene {
     this.clearance = this.model.position.y - neighborTop;
     this.canInspect =
       !cinematic &&
+      !readerHold &&
       Boolean(this.targetDetail) &&
       detail > 0.9 &&
       this.pulseGain < 0.01 &&
@@ -1779,6 +1971,7 @@ export class ArchiveScene {
       state.floats(...this.camera.projectionMatrix.elements, ...this.camera.matrixWorldInverse.elements,
         ...this.camera.position.toArray(),
         fog.near, fog.far, this.themeAmount, this.subduedIndex.value,
+        this.readerSeconds, this.readerShortPulse, this.readerReceded,
         bokehUniforms.focus.value, bokehUniforms.aperture.value);
       this.scene.traverse(object => {
         state.add(object.id, Number(object.visible));
@@ -1827,7 +2020,9 @@ export class ArchiveScene {
   get decryptionFrame() { return this.decryption.frame; }
   finishDecryption() { this.decryption.finish(); }
   get detailVisibility() {
-    return ease((this.detail - 0.25) / 0.55);
+    return (
+      ease((this.detail - 0.25) / 0.55) * (1 - this.lastReaderFrame.takeover)
+    );
   }
   getStats() {
     this.model.updateMatrixWorld(true);

@@ -5,6 +5,7 @@ import test from "node:test";
 import { renderTelemetryHomeMarkup } from "../../src/app/telemetry-view.ts";
 import { renderLibraryViewMarkup } from "../../src/library/library-view.ts";
 import { renderReaderViewMarkup } from "../../src/reader/reader-view.ts";
+import { evaluateOpticalReaderTimeline } from "../../src/optical-reader-rig.ts";
 import {
   renderStudioViewMarkup,
   createDefaultStudioDraft,
@@ -134,4 +135,61 @@ test("MVP E2E: telemetry home, 2D library, and 3-column reader render valid HTML
       "search-index.json is bundled in dist/",
     );
   }
+});
+
+test("Optical Reader 6-stage timeline and 9-point reading surface subtraction", () => {
+  // Stage 0 (0ms): idle
+  const f0 = evaluateOpticalReaderTimeline(0, false);
+  assert.equal(f0.takeover, 0);
+  assert.equal(f0.verticalLift, 0);
+  assert.equal(f0.lateralInsert, 0);
+  assert.equal(f0.progress, 0);
+
+  // Stage 1 & 2 (500ms): vertical extraction in progress, lateral insertion has not started yet
+  const f500 = evaluateOpticalReaderTimeline(0.5, false);
+  assert.equal(f500.takeover, 1, "Takeover completes by 220ms");
+  assert.ok(f500.verticalLift > 0.5, "Vertical lift active at 500ms");
+  assert.equal(
+    f500.lateralInsert,
+    0,
+    "Lateral insertion strictly waits for vertical clearance (<1000ms)",
+  );
+
+  // Stage 3 & 4 (1300ms): vertical lift complete, rig docked, cassette inserting laterally
+  const f1300 = evaluateOpticalReaderTimeline(1.3, false);
+  assert.equal(f1300.verticalLift, 1, "Vertical clearance reached by 700ms");
+  assert.equal(f1300.rigDock, 1, "Optical Reader rig docked by 1100ms");
+  assert.ok(
+    f1300.lateralInsert > 0.3 && f1300.lateralInsert < 1,
+    "Cassette sliding into side slot between 1000ms and 1560ms",
+  );
+
+  // Stage 5 (1650ms): contact glow, amber sweep, and warm-white screen activation
+  const f1650 = evaluateOpticalReaderTimeline(1.65, false);
+  assert.equal(f1650.lateralInsert, 1, "Cassette seated by 1560ms");
+  assert.ok(f1650.contactGlow > 0.8, "Amber contact points illuminated");
+  assert.ok(f1650.amberSweep > 0.2 && f1650.amberSweep < 0.9, "Amber sweep in progress");
+  assert.equal(f1650.activationReady, true, "Electronic confirmation sound triggered");
+
+  // Stage 6 (2250ms): settled reading state
+  const f2250 = evaluateOpticalReaderTimeline(2.25, false);
+  assert.equal(f2250.screenActive, 1);
+  assert.equal(f2250.cameraPush, 1);
+  assert.equal(f2250.titleReveal, 1);
+  assert.equal(f2250.bodyReveal, 1);
+  assert.equal(f2250.progress, 1);
+
+  // Reduced motion: immediate fade without 3D choreography burden
+  const fReduced = evaluateOpticalReaderTimeline(0.18, true);
+  assert.equal(fReduced.progress, 1);
+  assert.equal(fReduced.bodyReveal, 1);
+
+  // Verify Optical Reader DOM surface implements the 9-point subtraction spec
+  const readerHtml = renderReaderViewMarkup("tools/aegisub", new Set(), true);
+  assert.ok(readerHtml.includes("OPTICAL READER"), "Stage signature renders");
+  assert.ok(readerHtml.includes("LINK ESTABLISHED"), "Link status footbar renders");
+  assert.ok(readerHtml.includes("档案大厅"), "Return to Archive Hall action renders");
+  assert.ok(readerHtml.includes('data-optical-toggle="toc"'), "Collapsible TOC toggle renders");
+  assert.ok(readerHtml.includes('data-optical-toggle="more"'), "More menu toggle renders");
+  assert.ok(readerHtml.includes('id="optical-archive-dossier"'), "Merged metadata dossier renders");
 });

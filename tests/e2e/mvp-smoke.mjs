@@ -6,6 +6,7 @@ import { renderTelemetryHomeMarkup } from "../../src/app/telemetry-view.ts";
 import { renderLibraryViewMarkup } from "../../src/library/library-view.ts";
 import { renderReaderViewMarkup } from "../../src/reader/reader-view.ts";
 import { evaluateOpticalReaderTimeline } from "../../src/optical-reader-rig.ts";
+import { evaluateIndexDeskTimeline } from "../../src/index-desk-rig.ts";
 import {
   renderStudioViewMarkup,
   createDefaultStudioDraft,
@@ -192,4 +193,65 @@ test("Optical Reader 6-stage timeline and 9-point reading surface subtraction", 
   assert.ok(readerHtml.includes('data-optical-toggle="toc"'), "Collapsible TOC toggle renders");
   assert.ok(readerHtml.includes('data-optical-toggle="more"'), "More menu toggle renders");
   assert.ok(readerHtml.includes('id="optical-archive-dossier"'), "Merged metadata dossier renders");
+});
+
+test("Glass Index Desk (检索桥) layout & 1.25s bidirectional transition timeline", () => {
+  // 01 检索 (0.00s): settled in 2D Glass Index Desk
+  const d0 = evaluateIndexDeskTimeline(0, false);
+  assert.equal(d0.deskPresence, 1);
+  assert.equal(d0.directoryOpacity, 1);
+  assert.equal(d0.deskRetreat, 0);
+  assert.equal(d0.cameraBridgeMix, 1);
+
+  // 02 台面退让 (0.35s): directory text faded out, selected anchor remains on retreating glass
+  const d350 = evaluateIndexDeskTimeline(0.35, false);
+  assert.equal(d350.responseAck, 1, "Response ack completed by 160ms");
+  assert.equal(d350.directoryOpacity, 0, "Directory text faded out by 340ms");
+  assert.equal(
+    d350.selectedAnchorOpacity,
+    1,
+    "Selected code & title anchor stays visible at 350ms",
+  );
+  assert.ok(
+    d350.deskRetreat > 0.15 && d350.deskRetreat < 0.85,
+    "Desk is lifting & retreating along side guide rails at 350ms",
+  );
+
+  // 03 镜头入轨 (0.80s): desk retreated, camera diving through clearance beneath front lip
+  const d800 = evaluateIndexDeskTimeline(0.8, false);
+  assert.equal(d800.deskRetreat, 1, "Desk retreat completed by 650ms");
+  assert.equal(d800.selectedAnchorOpacity, 0, "Anchor faded by 640ms");
+  assert.ok(
+    d800.cameraDive > 0.4 && d800.cameraDive < 0.9,
+    "Camera gliding into 3D lane at 800ms",
+  );
+
+  // 04 档案室接管 (1.25s): settled in 3D Archive Hall
+  const d1250 = evaluateIndexDeskTimeline(1.25, false);
+  assert.equal(d1250.deskPresence, 0);
+  assert.equal(d1250.cameraDive, 1);
+  assert.equal(d1250.hudHandover, 1);
+
+  // Verify Glass Index Desk DOM structure
+  const deskHtml = renderLibraryViewMarkup(
+    {
+      category: "tools",
+      type: "all",
+      status: "all",
+      query: "",
+      sortBy: "updated",
+      layout: "list",
+      selectedId: "tool-aegisub",
+      unfiltered3DNoticeId: "code-python-AsyncIO",
+    },
+    new Set(["tool-aegisub"]),
+    true,
+  );
+  assert.ok(deskHtml.includes("ATLAS / LIBRARY"), "Desk top kicker renders");
+  assert.ok(deskHtml.includes("知识索引"), "Desk main title renders");
+  assert.ok(deskHtml.includes("软件与工具"), "Left domain column renders");
+  assert.ok(deskHtml.includes("草稿箱"), "Draft box separated in left column");
+  assert.ok(deskHtml.includes("直接阅读"), "Secondary action renders in context bar");
+  assert.ok(deskHtml.includes("进入三维档案室 ↗"), "Primary 3D bridge action renders");
+  assert.ok(deskHtml.includes("ARCHIVE ARRAY"), "Under-desk 3D array window label renders");
 });

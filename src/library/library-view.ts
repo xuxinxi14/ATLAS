@@ -1,7 +1,6 @@
 import { escapeHtml } from "../html.ts";
 import {
   knowledgeRepository,
-  statusMeta,
   typeMeta,
 } from "../knowledge/repository.ts";
 import type {
@@ -19,6 +18,11 @@ export interface LibraryState {
   query: string;
   sortBy: "updated" | "title" | "status";
   layout: "grid" | "list";
+  selectedId?: string | null;
+  savedOnly?: boolean;
+  filterOpen?: boolean;
+  openRowMenuId?: string | null;
+  unfiltered3DNoticeId?: string | null;
 }
 
 const STATUS_PRIORITY: Record<EntryStatus, number> = {
@@ -29,8 +33,35 @@ const STATUS_PRIORITY: Record<EntryStatus, number> = {
   draft: 5,
 };
 
+const DESK_DOMAIN_TITLES: Record<string, string> = {
+  all: "全部档案",
+  tools: "软件与工具",
+  coding: "编程与 AI",
+  research: "科研与实验",
+  academics: "学科知识",
+  creation: "创作与生活",
+  inbox: "草稿箱",
+};
+
+const DESK_STATUS_LABELS: Record<EntryStatus, string> = {
+  proficient: "已掌握",
+  learning: "解析中",
+  todo: "待整理",
+  review: "需温习",
+  draft: "草稿",
+};
+
+export function deskDomainTitle(id: string, fallback?: string): string {
+  return DESK_DOMAIN_TITLES[id] ?? fallback ?? id;
+}
+
+export function deskStatusLabel(status: EntryStatus): string {
+  return DESK_STATUS_LABELS[status] ?? "已掌握";
+}
+
 export function filterAndSortLibraryEntries(
   state: LibraryState,
+  savedIds?: Set<string>,
 ): KnowledgeEntry[] {
   const includeDrafts = state.category === "inbox" || state.status === "draft";
   let list = knowledgeRepository.all(true).filter((entry) => {
@@ -45,6 +76,11 @@ export function filterAndSortLibraryEntries(
     }
     if (state.type !== "all" && entry.type !== state.type) return false;
     if (state.status !== "all" && entry.status !== state.status) return false;
+    if (state.savedOnly && savedIds) {
+      if (!savedIds.has(entry.id) && !savedIds.has(entry.globalCode)) {
+        return false;
+      }
+    }
     if (state.query.trim()) {
       const q = normalizeSearchText(state.query);
       const hay = normalizeSearchText(
@@ -64,10 +100,36 @@ export function filterAndSortLibraryEntries(
       const sb = STATUS_PRIORITY[b.status] ?? 9;
       if (sa !== sb) return sa - sb;
     }
+    // Preserve stable visualCode order when within a single domain and default sort
+    if (
+      state.sortBy === "updated" &&
+      state.category !== "all" &&
+      !state.query.trim() &&
+      a.category === b.category
+    ) {
+      return a.globalCode.localeCompare(b.globalCode, "en");
+    }
     return b.updated.localeCompare(a.updated);
   });
 
   return list;
+}
+
+export function resolveLibrarySelection(
+  entries: KnowledgeEntry[],
+  selectedId?: string | null,
+): KnowledgeEntry | null {
+  if (entries.length === 0) return null;
+  if (selectedId) {
+    const found = entries.find(
+      (e) =>
+        e.id === selectedId ||
+        e.globalCode === selectedId ||
+        e.visualCode === selectedId,
+    );
+    if (found) return found;
+  }
+  return entries[0] ?? null;
 }
 
 export function renderLibraryViewMarkup(
@@ -77,252 +139,391 @@ export function renderLibraryViewMarkup(
 ): string {
   const portals = knowledgeRepository.portals();
   const telemetry = knowledgeRepository.telemetry();
-  const entries = filterAndSortLibraryEntries(state);
+  const entries = filterAndSortLibraryEntries(state, savedIds);
+  const selectedEntry = resolveLibrarySelection(entries, state.selectedId);
 
-  const portalTabs = [
+  const activeFilterCount =
+    (state.type !== "all" ? 1 : 0) +
+    (state.status !== "all" ? 1 : 0) +
+    (state.savedOnly ? 1 : 0) +
+    (state.sortBy !== "updated" ? 1 : 0);
+
+  const mainDomains = [
     {
       id: "all",
-      code: "ALL",
-      title: "全部领域",
+      title: "全部档案",
       count: telemetry.totalEntries,
     },
-    ...portals.map((p, i) => ({
+    ...portals.map((p) => ({
       id: p.id,
-      code: `0${i + 1}`,
-      title: p.title,
+      title: deskDomainTitle(p.id, p.title),
       count: telemetry.portalStats.find((s) => s.id === p.id)?.total ?? 0,
     })),
-    {
-      id: "inbox",
-      code: "INB",
-      title: "闪念草稿箱",
-      count: telemetry.inboxCount,
-    },
   ];
 
-  const tabsHtml = portalTabs
-    .map(
-      (tab) => `
-      <button
-        type="button"
-        class="rhine-portal-tab ${state.category === tab.id ? "active" : ""}"
-        data-library-category="${escapeHtml(tab.id)}"
-        aria-pressed="${state.category === tab.id}"
-      >
-        <small>${escapeHtml(tab.code)}</small>
-        <span>${escapeHtml(tab.title)}</span>
-        <b>${String(tab.count).padStart(2, "0")}</b>
-      </button>
-    `,
-    )
-    .join("");
-
-  const typeFilters: { value: EntryType | "all"; label: string }[] = [
-    { value: "all", label: "ALL TYPES / 全部类型" },
-    { value: "skill", label: "SKILL / 技能操作" },
-    { value: "snippet", label: "SNIPPET / 速查微卡" },
-    { value: "concept", label: "CONCEPT / 核心概念" },
-    { value: "troubleshooting", label: "TROUBLESHOOT / 故障排错" },
-  ];
+  const domainNavHtml = `
+    ${mainDomains
+      .map((dom) => {
+        const isActive = state.category === dom.id;
+        return `
+          <button
+            type="button"
+            class="desk-domain-item ${isActive ? "active" : ""}"
+            data-library-category="${escapeHtml(dom.id)}"
+            aria-pressed="${isActive}"
+          >
+            <i class="desk-domain-amber-bar" aria-hidden="true"></i>
+            <span class="desk-domain-name">${escapeHtml(dom.title)}</span>
+            <b class="desk-domain-count">${String(dom.count).padStart(2, "0")}</b>
+          </button>
+        `;
+      })
+      .join("")}
+    <div class="desk-domain-divider" role="separator" aria-hidden="true"></div>
+    <button
+      type="button"
+      class="desk-domain-item desk-domain-draft ${state.category === "inbox" ? "active" : ""}"
+      data-library-category="inbox"
+      aria-pressed="${state.category === "inbox"}"
+    >
+      <i class="desk-domain-amber-bar" aria-hidden="true"></i>
+      <span class="desk-domain-name">草稿箱</span>
+      <b class="desk-domain-count">${String(telemetry.inboxCount).padStart(2, "0")}</b>
+    </button>
+  `;
 
   const statusFilters: { value: EntryStatus | "all"; label: string }[] = [
-    { value: "all", label: "ALL STATUS / 全部状态" },
+    { value: "all", label: "全部状态" },
     { value: "proficient", label: "已掌握" },
     { value: "learning", label: "解析中" },
-    { value: "todo", label: "待解密" },
-    { value: "review", label: "需校准" },
+    { value: "todo", label: "待整理" },
+    { value: "review", label: "需温习" },
+    { value: "draft", label: "草稿" },
   ];
 
-  const typeChipsHtml = typeFilters
-    .map(
-      (t) =>
-        `<button type="button" class="rhine-filter-chip ${state.type === t.value ? "active" : ""}" data-library-type="${t.value}">${escapeHtml(t.label)}</button>`,
-    )
-    .join("");
+  const typeFilters: { value: EntryType | "all"; label: string }[] = [
+    { value: "all", label: "全部类型" },
+    { value: "skill", label: "技能操作" },
+    { value: "snippet", label: "速查微卡" },
+    { value: "concept", label: "核心概念" },
+    { value: "troubleshooting", label: "故障排错" },
+  ];
 
-  const statusChipsHtml = statusFilters
-    .map(
-      (s) =>
-        `<button type="button" class="rhine-filter-chip ${state.status === s.value ? "active" : ""}" data-library-status="${s.value}">${s.value !== "all" ? `<i data-status="${s.value}"></i>` : ""}${escapeHtml(s.label)}</button>`,
-    )
-    .join("");
+  const sortOptions: { value: LibraryState["sortBy"]; label: string }[] = [
+    { value: "updated", label: "默认 / 最近更新" },
+    { value: "title", label: "标题 A–Z" },
+    { value: "status", label: "掌握状态优先" },
+  ];
 
-  const entriesHtml =
+  const rowsHtml =
     entries.length > 0
-      ? state.layout === "list"
-        ? `
-          <div class="rhine-ledger-header rhine-library-ledger-head">
-            <span>SERIAL / 编号</span>
-            <span>SPECIMEN / 档案标题与摘要</span>
-            <span>PORTAL / 所属门类</span>
-            <span>STATUS / 状态</span>
-            <span>ACTION / 操作</span>
-          </div>
-          <div class="rhine-ledger-list">
-            ${entries
-              .map((entry) => {
-                const sMeta = statusMeta(entry.status);
-                const tMeta = typeMeta(entry.type);
-                const isSaved =
-                  savedIds.has(entry.id) || savedIds.has(entry.globalCode);
-                return `
-                  <article class="rhine-ledger-row rhine-library-ledger-row">
-                    <span class="ledger-code">${escapeHtml(entry.visualCode)}<small>${escapeHtml(entry.globalCode)}</small></span>
-                    <a href="${buildEntryHash(entry.slug)}" class="ledger-title-cell">
-                      <strong>${escapeHtml(entry.title)}</strong>
-                      <small>${escapeHtml(tMeta.label)} · ${escapeHtml(entry.summary)}</small>
-                    </a>
-                    <span class="ledger-portal">${escapeHtml(entry.categoryTitle)}<small>${escapeHtml(entry.updated)}</small></span>
-                    <span class="ledger-status"><i data-status="${escapeHtml(entry.status)}"></i>${escapeHtml(sMeta.label)}</span>
-                    <span class="ledger-actions">
-                      ${
-                        hasWebGL && entry.category !== "inbox"
-                          ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 阵列中抽取">3D ↗</button>`
-                          : ""
-                      }
-                      <a href="${buildStudioHash(entry.slug)}" class="specimen-act" title="在内置编撰台中编辑">✎ 编辑</a>
-                      <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
-                      <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
-                    </span>
-                  </article>
-                `;
-              })
-              .join("")}
-          </div>
-        `
-        : entries
-            .map((entry) => {
-              const sMeta = statusMeta(entry.status);
-              const tMeta = typeMeta(entry.type);
-              const isSaved =
-                savedIds.has(entry.id) || savedIds.has(entry.globalCode);
-              return `
-                <article class="rhine-specimen-plate" data-entry-id="${escapeHtml(entry.id)}" data-status="${escapeHtml(entry.status)}">
-                  <div class="specimen-plate-rule"><i></i><span>+</span></div>
-                  <div class="specimen-kicker">
-                    <span class="specimen-serial">${escapeHtml(entry.visualCode)} <i>/</i> ${escapeHtml(entry.globalCode)}</span>
-                    <span class="specimen-status" title="${escapeHtml(sMeta.hint)}">
-                      <i data-status="${escapeHtml(entry.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}
-                    </span>
+      ? entries
+          .map((entry) => {
+            const isSelected = selectedEntry?.id === entry.id;
+            const isSaved =
+              savedIds.has(entry.id) || savedIds.has(entry.globalCode);
+            const isMenuOpen = state.openRowMenuId === entry.id;
+            const statusText = deskStatusLabel(entry.status);
+            const tMeta = typeMeta(entry.type);
+
+            return `
+              <div
+                class="desk-dir-row ${isSelected ? "selected" : ""}"
+                role="option"
+                tabindex="${isSelected ? "0" : "-1"}"
+                aria-selected="${isSelected}"
+                data-atlas-action="desk-select-row"
+                data-entry-id="${escapeHtml(entry.id)}"
+                data-status="${escapeHtml(entry.status)}"
+              >
+                <span class="desk-col-code">
+                  <i class="desk-row-amber-mark" aria-hidden="true"></i>
+                  <b>${escapeHtml(entry.globalCode)}</b>
+                </span>
+
+                <span class="desk-col-title" title="${escapeHtml(tMeta.label)} · ${escapeHtml(entry.summary)}">
+                  <strong class="desk-row-title">${escapeHtml(entry.title)}</strong>
+                </span>
+
+                <span class="desk-col-status" data-status="${escapeHtml(entry.status)}">
+                  ${escapeHtml(statusText)}
+                </span>
+
+                <div class="desk-col-more">
+                  <button
+                    type="button"
+                    class="desk-row-more-btn ${isMenuOpen ? "active" : ""}"
+                    data-atlas-action="toggle-row-menu"
+                    data-entry-id="${escapeHtml(entry.id)}"
+                    aria-haspopup="menu"
+                    aria-expanded="${isMenuOpen}"
+                    aria-label="档案 ${escapeHtml(entry.globalCode)} 更多操作"
+                    title="更多操作"
+                  >•••</button>
+
+                  <div
+                    class="desk-row-menu"
+                    role="menu"
+                    data-row-menu-for="${escapeHtml(entry.id)}"
+                    ${isMenuOpen ? "" : "hidden"}
+                  >
+                    <a
+                      href="${buildEntryHash(entry.slug)}"
+                      role="menuitem"
+                      class="desk-row-menu-item"
+                      data-atlas-action="desk-direct-read"
+                      data-entry-id="${escapeHtml(entry.id)}"
+                    >直接阅读</a>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class="desk-row-menu-item ${isSaved ? "active" : ""}"
+                      data-atlas-action="toggle-save"
+                      data-entry-id="${escapeHtml(entry.id)}"
+                    >${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
+                    <a
+                      href="${buildStudioHash(entry.slug)}"
+                      role="menuitem"
+                      class="desk-row-menu-item"
+                    >✎ 编辑档案</a>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class="desk-row-menu-item"
+                      data-atlas-action="desk-export-txt"
+                      data-entry-id="${escapeHtml(entry.id)}"
+                    >⇩ 导出 TXT</button>
                   </div>
-
-                  <div class="specimen-subkicker">
-                    <span>${escapeHtml(entry.en)} // ${escapeHtml(tMeta.en)}</span>
-                    <span>${escapeHtml(entry.categoryTitle)}${entry.autoInferred ? " · AUTO" : ""}</span>
-                  </div>
-
-                  <h3 class="specimen-title">
-                    <a href="${buildEntryHash(entry.slug)}">
-                      <span>${escapeHtml(entry.title)}</span>
-                      <i aria-hidden="true">↗</i>
-                    </a>
-                  </h3>
-
-                  <p class="specimen-summary">${escapeHtml(entry.summary)}</p>
-
-                  <div class="specimen-tags">
-                    ${entry.tags.map((t) => `<span class="specimen-tag">#${escapeHtml(t)}</span>`).join("")}
-                  </div>
-
-                  <div class="specimen-footer">
-                    <div class="specimen-meta">
-                      <span>${escapeHtml(entry.updated)}</span>
-                      <span>· ${escapeHtml(entry.version_scope)}</span>
-                    </div>
-                    <div class="specimen-actions">
-                      ${
-                        hasWebGL && entry.category !== "inbox"
-                          ? `<button type="button" class="specimen-act" data-atlas-action="locate-3d" data-entry-id="${escapeHtml(entry.id)}" title="在 3D 档案阵列中抽取该卡">3D 定位 ↗</button>`
-                          : ""
-                      }
-                      <a href="${buildStudioHash(entry.slug)}" class="specimen-act" title="在内置编撰台中编辑">✎ 编辑</a>
-                      <button type="button" class="specimen-act ${isSaved ? "active" : ""}" data-atlas-action="toggle-save" data-entry-id="${escapeHtml(entry.id)}">${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
-                      <a href="${buildEntryHash(entry.slug)}" class="specimen-act specimen-act-primary">READ →</a>
-                    </div>
-                  </div>
-                </article>
-              `;
-            })
-            .join("")
+                </div>
+              </div>
+            `;
+          })
+          .join("")
       : `
-        <div class="rhine-empty-specimen">
-          <span>∅</span>
-          <strong>NO MATCHING SPECIMENS // 未找到匹配的知识档案</strong>
-          <p>请尝试其他关键词、编号，或重置当前门类与状态过滤条件。</p>
-          <button type="button" class="solid-button" data-atlas-action="reset-library-filters">RESET FILTERS →<span>重置全部筛选条件</span></button>
+        <div class="desk-empty-state">
+          <p class="desk-empty-title">当前检索条件下无匹配档案</p>
+          <p class="desk-empty-sub">请尝试简化搜索关键词，或清除筛选条件。</p>
+          <button
+            type="button"
+            class="desk-empty-reset-btn"
+            data-atlas-action="reset-library-filters"
+          >清除筛选条件</button>
         </div>
       `;
 
-  return `
-    <div class="atlas-surface-scroll">
-      <div class="rhine-library-stage">
-        <header class="rhine-library-top" data-stagger="0">
-          <div class="rhine-section-kicker">
-            <span>00 // ARCHIVE DIRECTORY · 二维知识索引目录</span>
-            <span>SHOWING ${String(entries.length).padStart(2, "0")} OF ${String(telemetry.totalEntries + telemetry.inboxCount).padStart(2, "0")} SPECIMENS</span>
-          </div>
-          <div class="rhine-anchor-rule" data-rule><i></i></div>
+  const isSelectedDraft =
+    selectedEntry &&
+    (selectedEntry.category === "inbox" || selectedEntry.status === "draft");
 
-          <div class="rhine-library-head-row">
-            <div class="rhine-library-heading">
-              <h2>KNOWLEDGE DIRECTORY<small>二维知识索引目录</small></h2>
+  const selectedContextText = selectedEntry
+    ? isSelectedDraft
+      ? `已选 <strong>${escapeHtml(selectedEntry.globalCode)}</strong> · 草稿箱 <span class="desk-context-muted">· 无三维轨道位置</span>`
+      : `已选 <strong>${escapeHtml(selectedEntry.globalCode)}</strong> · ${escapeHtml(deskDomainTitle(selectedEntry.category, selectedEntry.categoryTitle))}`
+    : `当前无结果内选择 · 共 ${String(entries.length).padStart(2, "0")} 份档案`;
+
+  const noticeEntry = state.unfiltered3DNoticeId
+    ? knowledgeRepository.byId(state.unfiltered3DNoticeId)
+    : undefined;
+  const unfilteredNoticeHtml =
+    noticeEntry && (!selectedEntry || selectedEntry.id !== noticeEntry.id)
+      ? `
+        <span class="desk-unfiltered-notice">
+          三维当前档案 <b>${escapeHtml(noticeEntry.globalCode)}</b> 不在当前筛选中
+          <button
+            type="button"
+            class="desk-unfiltered-reveal"
+            data-atlas-action="reveal-3d-selection"
+            data-entry-id="${escapeHtml(noticeEntry.id)}"
+          >显示该档案</button>
+        </span>
+      `
+      : "";
+
+  const primaryActionHtml = isSelectedDraft && selectedEntry
+    ? `<a href="${buildStudioHash(selectedEntry.slug)}" class="desk-act-primary">继续编撰草稿 ↗</a>`
+    : hasWebGL
+      ? `<button
+          type="button"
+          class="desk-act-primary"
+          data-atlas-action="desk-enter-3d"
+          ${selectedEntry ? `data-entry-id="${escapeHtml(selectedEntry.id)}"` : ""}
+        >${selectedEntry ? "进入三维档案室 ↗" : "进入三维档案室概览 ↗"}</button>`
+      : "";
+
+  return `
+    <div class="desk-bridge-stage" aria-label="二维知识索引目录">
+      <!-- Glass Index Desk / 检索桥主体 -->
+      <section class="glass-index-desk" role="region" aria-label="ATLAS / LIBRARY 知识索引台">
+        <div class="desk-glass-lip-top" aria-hidden="true"></div>
+        <div class="desk-rail-left" aria-hidden="true"><i></i></div>
+        <div class="desk-rail-right" aria-hidden="true"><i></i></div>
+
+        <!-- Stage 02 (80-340ms) Retreating Glass Anchor -->
+        <div class="desk-transition-anchor" aria-hidden="true">
+          <div class="desk-anchor-row">
+            <i class="desk-row-amber-mark"></i>
+            <b class="desk-anchor-code">${escapeHtml(selectedEntry?.globalCode ?? "X-001")}</b>
+            <span class="desk-anchor-title">${escapeHtml(selectedEntry?.title ?? "RHINE LAB ARCHIVE DIRECTORY")}</span>
+          </div>
+          <div class="desk-anchor-amber-rule"></div>
+        </div>
+
+        <div class="desk-surface-plate">
+          <!-- 上沿：ATLAS / LIBRARY · 知识索引 + 搜索 / 筛选 / 新建 一行完成 -->
+          <header class="desk-top-bar">
+            <div class="desk-heading-block">
+              <span class="desk-kicker">ATLAS / LIBRARY</span>
+              <h2 class="desk-title">知识索引</h2>
             </div>
 
-            <div class="rhine-library-search-bar">
-              <div class="search-field rhine-inline-search">
-                <span class="nav-glyph" aria-hidden="true"></span>
+            <div class="desk-controls-row">
+              <div class="desk-search-field ${state.query.trim() ? "has-query" : ""}">
+                <span class="desk-search-icon" aria-hidden="true">⌕</span>
                 <input
                   id="atlas-library-search"
                   type="search"
                   autocomplete="off"
-                  placeholder="筛选标题、编号 (C-001 / X-001)、标签或正文命令…"
+                  placeholder="搜索标题、编号或正文"
                   value="${escapeHtml(state.query)}"
-                  aria-label="筛选知识目录"
+                  aria-label="搜索标题、编号或正文"
                 />
-                <span class="key">FILTER</span>
+                ${
+                  state.query.trim()
+                    ? `<button type="button" class="desk-search-clear" data-atlas-action="clear-library-query" aria-label="清除搜索关键词">×</button>`
+                    : ""
+                }
               </div>
-              <a href="${buildStudioHash()}" class="solid-button library-new-btn">
-                + NEW ARCHIVE ✎<span>在 WebUI 新建笔记 [N]</span>
+
+              <div class="desk-filter-wrap">
+                <button
+                  type="button"
+                  class="desk-filter-btn ${state.filterOpen ? "open" : ""} ${activeFilterCount > 0 ? "has-active" : ""}"
+                  data-atlas-action="toggle-desk-filter"
+                  aria-expanded="${Boolean(state.filterOpen)}"
+                  aria-haspopup="dialog"
+                >
+                  <span aria-hidden="true">▽</span>
+                  <span>筛选${activeFilterCount > 0 ? ` · ${activeFilterCount}` : ""}</span>
+                </button>
+
+                <div
+                  class="desk-filter-popover"
+                  role="dialog"
+                  aria-label="筛选与排序条件"
+                  ${state.filterOpen ? "" : "hidden"}
+                >
+                  <div class="desk-filter-section">
+                    <span class="desk-filter-label">状态</span>
+                    <div class="desk-filter-options">
+                      ${statusFilters
+                        .map(
+                          (s) =>
+                            `<button type="button" class="desk-filter-opt ${state.status === s.value ? "active" : ""}" data-library-status="${s.value}">${escapeHtml(s.label)}</button>`,
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+
+                  <div class="desk-filter-section">
+                    <span class="desk-filter-label">类型</span>
+                    <div class="desk-filter-options">
+                      ${typeFilters
+                        .map(
+                          (t) =>
+                            `<button type="button" class="desk-filter-opt ${state.type === t.value ? "active" : ""}" data-library-type="${t.value}">${escapeHtml(t.label)}</button>`,
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+
+                  <div class="desk-filter-section">
+                    <span class="desk-filter-label">收藏与排序</span>
+                    <div class="desk-filter-options">
+                      <button
+                        type="button"
+                        class="desk-filter-opt ${state.savedOnly ? "active" : ""}"
+                        data-atlas-action="toggle-library-saved-only"
+                      >★ 仅看已收藏</button>
+                      ${sortOptions
+                        .map(
+                          (so) =>
+                            `<button type="button" class="desk-filter-opt ${state.sortBy === so.value ? "active" : ""}" data-library-sort="${so.value}">${escapeHtml(so.label)}</button>`,
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+
+                  <div class="desk-filter-footer">
+                    <button
+                      type="button"
+                      class="desk-filter-reset"
+                      data-atlas-action="reset-library-filters"
+                    >重置筛选</button>
+                  </div>
+                </div>
+              </div>
+
+              <span class="desk-top-divider" aria-hidden="true">|</span>
+
+              <a href="${buildStudioHash()}" class="desk-new-btn" title="新建档案 [N]">
+                <span aria-hidden="true">＋</span>
+                <span>新建</span>
               </a>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <!-- Row 1: 5-Lane Portal Scale -->
-        <nav class="rhine-portal-strip" data-stagger="1" aria-label="知识领域切换">
-          ${tabsHtml}
-        </nav>
+          <!-- 中部：左侧领域栏 + 主目录 -->
+          <div class="desk-body">
+            <nav class="desk-domain-nav" aria-label="知识领域导航">
+              ${domainNavHtml}
+            </nav>
 
-        <!-- Row 2: Hairline Dimension Filters & View Controls -->
-        <div class="rhine-dimension-bar" data-stagger="1" role="region" aria-label="多维筛选与排序">
-          <div class="rhine-chip-group">
-            <span class="chip-group-label">TYPE //</span>
-            ${typeChipsHtml}
-          </div>
+            <div class="desk-directory">
+              <div class="desk-dir-head" aria-hidden="true">
+                <span class="desk-head-code">编号</span>
+                <span class="desk-head-title">档案</span>
+                <span class="desk-head-status">状态</span>
+                <span class="desk-head-count">${String(entries.length).padStart(2, "0")} 份档案</span>
+              </div>
 
-          <div class="rhine-chip-group">
-            <span class="chip-group-label">STATUS //</span>
-            ${statusChipsHtml}
-          </div>
-
-          <div class="rhine-view-controls">
-            <div class="rhine-sort-group" role="group" aria-label="排序方式">
-              <span class="chip-group-label">SORT //</span>
-              <button type="button" class="rhine-filter-chip ${state.sortBy === "updated" ? "active" : ""}" data-library-sort="updated">UPDATED ↓</button>
-              <button type="button" class="rhine-filter-chip ${state.sortBy === "status" ? "active" : ""}" data-library-sort="status">PRIORITY</button>
-              <button type="button" class="rhine-filter-chip ${state.sortBy === "title" ? "active" : ""}" data-library-sort="title">A–Z</button>
-            </div>
-
-            <div class="rhine-layout-group" role="group" aria-label="视图模式">
-              <button type="button" class="rhine-filter-chip ${state.layout === "grid" ? "active" : ""}" data-library-layout="grid">MATRIX 切片</button>
-              <button type="button" class="rhine-filter-chip ${state.layout === "list" ? "active" : ""}" data-library-layout="list">LEDGER 列表</button>
+              <div class="desk-dir-list" role="listbox" aria-label="档案列表">
+                ${rowsHtml}
+              </div>
             </div>
           </div>
+
+          <!-- 下沿：上下文与双主次动作 -->
+          <footer class="desk-bottom-bar">
+            <div class="desk-context-status">
+              <span class="desk-context-main">${selectedContextText}</span>
+              ${unfilteredNoticeHtml}
+            </div>
+
+            <div class="desk-context-actions">
+              ${
+                selectedEntry
+                  ? `<a
+                      href="${buildEntryHash(selectedEntry.slug)}"
+                      class="desk-act-secondary"
+                      data-atlas-action="desk-direct-read"
+                      data-entry-id="${escapeHtml(selectedEntry.id)}"
+                    >直接阅读</a>`
+                  : `<button type="button" class="desk-act-secondary" disabled>直接阅读</button>`
+              }
+              <span class="desk-act-sep" aria-hidden="true">|</span>
+              ${primaryActionHtml}
+            </div>
+          </footer>
         </div>
 
-        <div class="rhine-specimens-container layout-${state.layout}" data-stagger="2">
-          ${entriesHtml}
+        <div class="desk-glass-lip-bottom" aria-hidden="true">
+          <i class="desk-lip-amber-tick"></i>
         </div>
+      </section>
+
+      <!-- 台下阵列视窗标识 (底部露出 12-16% 屏高的实体档案阵列) -->
+      <div class="desk-under-array-window" aria-hidden="true">
+        <span class="desk-under-array-label">ARCHIVE ARRAY</span>
       </div>
     </div>
   `;

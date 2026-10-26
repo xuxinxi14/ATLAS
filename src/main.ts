@@ -60,6 +60,9 @@ import {
 import { renderTelemetryHomeMarkup } from "./app/telemetry-view";
 import {
   renderLibraryViewMarkup,
+  filterAndSortLibraryEntries,
+  resolveLibrarySelection,
+  deskDomainTitle,
   type LibraryState,
 } from "./library/library-view";
 import {
@@ -201,7 +204,13 @@ const libraryState: LibraryState = {
   query: "",
   sortBy: "updated",
   layout: "grid",
+  selectedId: records[0]?.entryId ?? "tools/aegisub",
+  savedOnly: false,
+  filterOpen: false,
+  openRowMenuId: null,
+  unfiltered3DNoticeId: null,
 };
+const libraryDomainMemory: Record<string, string> = {};
 const studioState: StudioDraftState = createDefaultStudioDraft("tools");
 let studioPreviewTimer: ReturnType<typeof setTimeout> | undefined;
 let transitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -667,6 +676,43 @@ function syncOpticalReaderDom() {
   stage.style.setProperty("--optical-body-reveal", f.bodyReveal.toFixed(4));
 }
 
+function syncIndexDeskDom() {
+  const stage = $("#stage");
+  const surface = $("#atlas-surface");
+  if (!scene || !motionActive("surfaceTransitions")) {
+    const active = atlasView === "library";
+    stage.style.setProperty("--desk-ack", active ? "0" : "1");
+    stage.style.setProperty("--desk-dir-opacity", active ? "1" : "0");
+    stage.style.setProperty("--desk-anchor-opacity", "0");
+    stage.style.setProperty("--desk-retreat", active ? "0" : "1");
+    stage.style.setProperty("--desk-dive", active ? "0" : "1");
+    stage.style.setProperty("--desk-hud-handover", "1");
+    stage.dataset.deskTransitioning = "false";
+    return;
+  }
+  const f = scene.indexDeskFrame;
+  stage.style.setProperty("--desk-ack", f.responseAck.toFixed(4));
+  stage.style.setProperty("--desk-dir-opacity", f.directoryOpacity.toFixed(4));
+  stage.style.setProperty(
+    "--desk-anchor-opacity",
+    f.selectedAnchorOpacity.toFixed(4),
+  );
+  stage.style.setProperty("--desk-retreat", f.deskRetreat.toFixed(4));
+  stage.style.setProperty("--desk-dive", f.cameraDive.toFixed(4));
+  stage.style.setProperty("--desk-hud-handover", f.hudHandover.toFixed(4));
+  const isMidTransition = f.time > 0.008 && f.time < 1.242;
+  stage.dataset.deskTransitioning = String(isMidTransition);
+  if (
+    atlasView === "archive" &&
+    surface.dataset.deskBridgeHold === "true" &&
+    f.time >= 1.24
+  ) {
+    delete surface.dataset.deskBridgeHold;
+    delete stage.dataset.atlasOverlay;
+    surface.hidden = true;
+  }
+}
+
 function exitOpticalReader() {
   manualReaderRecede = null;
   previousReaderSlug = "";
@@ -682,7 +728,7 @@ function exitOpticalReader() {
 }
 
 function renderSpatialLinkBarMarkup(): string {
-  if (atlasView === "reader") return "";
+  if (atlasView === "reader" || atlasView === "library") return "";
   const rec = records[selected];
   if (!rec) return "";
   const { lane } = fileLocation(selected);
@@ -734,7 +780,14 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       if (!motionActive("surfaceTransitions") || mode === "boot") {
         atlasExitAnimation?.cancel();
         atlasExitAnimation = undefined;
+        delete surface.dataset.deskBridgeHold;
         surface.hidden = true;
+      } else if (prevView === "library" && scene) {
+        atlasExitAnimation?.cancel();
+        atlasExitAnimation = undefined;
+        surface.dataset.deskBridgeHold = "true";
+        $("#stage").dataset.atlasOverlay = "true";
+        syncIndexDeskDom();
       } else if (prevView === "reader") {
         atlasExitAnimation?.cancel();
         const anim = surface.animate([{ opacity: 1 }, { opacity: 0 }], {
@@ -781,15 +834,24 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     return;
   }
 
-  const wasHidden = surface.hidden || Boolean(atlasExitAnimation);
+  const wasHidden =
+    surface.hidden ||
+    Boolean(atlasExitAnimation) ||
+    surface.dataset.deskBridgeHold === "true";
   const previousView = renderedAtlasView;
+  delete surface.dataset.deskBridgeHold;
   atlasExitAnimation?.cancel();
   atlasExitAnimation = undefined;
 
   let selStart: number | null = null;
   let selEnd: number | null = null;
   let activeInputId = "";
+  let prevDirScrollTop = 0;
   if (preserveLibraryInputFocus) {
+    const dirListEl = surface.querySelector<HTMLElement>(".desk-dir-list");
+    if (dirListEl) {
+      prevDirScrollTop = dirListEl.scrollTop;
+    }
     const activeEl = document.activeElement as
       | HTMLInputElement
       | HTMLTextAreaElement
@@ -857,6 +919,14 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       },
       { passive: true },
     );
+  } else if (atlasView === "library") {
+    syncIndexDeskDom();
+    if (preserveLibraryInputFocus && prevDirScrollTop > 0) {
+      const nextDirList = surface.querySelector<HTMLElement>(".desk-dir-list");
+      if (nextDirList) {
+        nextDirList.scrollTop = prevDirScrollTop;
+      }
+    }
   } else if (
     viewChanged &&
     !preserveLibraryInputFocus &&
@@ -972,31 +1042,60 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
 function sync3DCameraWith2DView() {
   if (!scene || !ready || mode === "boot") return;
   if (atlasView === "home") {
+    scene.setIndexDeskMode(false);
     scene.setReaderMode(false);
     scene.setMode("archive");
   } else if (atlasView === "library") {
     scene.setReaderMode(false);
-    scene.setMode("archive");
-    if (libraryState.category && libraryState.category !== "all") {
-      const lane = portals.findIndex(
-        (p) =>
-          p.id === libraryState.category || p.title === libraryState.category,
-      );
-      if (lane >= 0 && columnMemory[lane] !== undefined) {
-        const targetIdx = columnMemory[lane];
-        if (targetIdx !== selected) {
-          selected = targetIdx;
-          scene.select(selected, { axis: "lane", direction: 1 });
-          updateSelection();
+    if (mode === "detail") {
+      setMode("archive");
+    } else {
+      scene.setMode("archive");
+    }
+    const entries = filterAndSortLibraryEntries(libraryState, saved);
+    const chosen = resolveLibrarySelection(entries, libraryState.selectedId);
+    if (chosen) {
+      libraryState.selectedId = chosen.id;
+      libraryDomainMemory[libraryState.category] = chosen.id;
+      libraryDomainMemory[chosen.category] = chosen.id;
+    }
+    const recIndex =
+      chosen && chosen.category !== "inbox"
+        ? records.findIndex((r) => r.entryId === chosen.id)
+        : -1;
+    if (recIndex >= 0) {
+      if (recIndex !== selected) {
+        selected = recIndex;
+        columnMemory[fileLocation(selected).lane] = selected;
+        scene.select(selected);
+        updateSelection();
+      }
+      scene.setIndexDeskMode(true, { hasValid3DTarget: true });
+    } else {
+      if (libraryState.category && libraryState.category !== "all") {
+        const lane = portals.findIndex(
+          (p) =>
+            p.id === libraryState.category || p.title === libraryState.category,
+        );
+        if (lane >= 0 && columnMemory[lane] !== undefined) {
+          const targetIdx = columnMemory[lane];
+          if (targetIdx !== selected) {
+            selected = targetIdx;
+            scene.select(selected, { axis: "lane", direction: 1 });
+            updateSelection();
+          }
         }
       }
+      scene.setIndexDeskMode(true, { hasValid3DTarget: false });
     }
   } else if (atlasView === "reader") {
     void prefetchEntryAssets(activeReaderSlug);
+    scene.setIndexDeskMode(false, { immediate: true });
     const isShortSwitch =
-      renderedAtlasView === "reader" &&
-      previousReaderSlug !== "" &&
-      previousReaderSlug !== activeReaderSlug;
+      renderedAtlasView === "library" ||
+      (renderedAtlasView === "reader" &&
+        previousReaderSlug !== "" &&
+        previousReaderSlug !== activeReaderSlug);
     previousReaderSlug = activeReaderSlug;
     if (!isShortSwitch) {
       manualReaderRecede = null;
@@ -1014,6 +1113,7 @@ function sync3DCameraWith2DView() {
     }
     scene.setReaderMode(true, { shortSwitch: isShortSwitch });
   } else if (atlasView === "studio") {
+    scene.setIndexDeskMode(false);
     scene.setReaderMode(false);
     if (!studioState.isNew && studioState.originalSlug) {
       const entry = knowledgeRepository.bySlug(studioState.originalSlug);
@@ -1053,6 +1153,7 @@ function syncHashRoute() {
     atlasView = "archive";
     previousReaderSlug = "";
     if (ready && mode !== "boot") {
+      scene?.setIndexDeskMode(false);
       scene?.setReaderMode(false);
       scene?.setMode(mode === "detail" ? "detail" : "archive");
     }
@@ -1073,11 +1174,27 @@ function syncHashRoute() {
   }
 
   if (parsed.view === "library") {
+    const comingFrom3D = atlasView === "archive";
     atlasView = "library";
     previousReaderSlug = "";
-    libraryState.category = parsed.category || "all";
+    if (parsed.category) {
+      libraryState.category = parsed.category;
+    }
     if (parsed.query !== undefined) {
       libraryState.query = parsed.query;
+    }
+    libraryState.openRowMenuId = null;
+    if (comingFrom3D) {
+      const current3DId = records[selected]?.entryId;
+      if (current3DId) {
+        const visibleEntries = filterAndSortLibraryEntries(libraryState, saved);
+        if (visibleEntries.some((e) => e.id === current3DId)) {
+          libraryState.selectedId = current3DId;
+          libraryState.unfiltered3DNoticeId = null;
+        } else {
+          libraryState.unfiltered3DNoticeId = current3DId;
+        }
+      }
     }
     sync3DCameraWith2DView();
     renderAtlasSurface();
@@ -1130,6 +1247,7 @@ function syncHashRoute() {
         select(columnMemory[lane]);
       }
     }
+    scene?.setIndexDeskMode(false);
     scene?.setReaderMode(false);
     scene?.setMode(mode === "detail" ? "detail" : "archive");
     renderAtlasSurface();
@@ -2065,6 +2183,7 @@ document.addEventListener("input", (e) => {
   }
   if ((e.target as HTMLElement).id === "atlas-library-search") {
     libraryState.query = (e.target as HTMLInputElement).value;
+    sync3DCameraWith2DView();
     renderAtlasSurface(true);
   }
   const targetId = (e.target as HTMLElement).id;
@@ -2359,18 +2478,72 @@ document.addEventListener("click", (e) => {
         ?.setAttribute("aria-expanded", "false");
     }
   }
+  if (atlasView === "library") {
+    const clickedFilterWrap = Boolean(
+      (e.target as Element).closest(".desk-filter-wrap"),
+    );
+    if (libraryState.filterOpen && !clickedFilterWrap) {
+      libraryState.filterOpen = false;
+      const pop = document.querySelector<HTMLElement>(".desk-filter-popover");
+      const btn = document.querySelector<HTMLElement>(
+        '[data-atlas-action="toggle-desk-filter"]',
+      );
+      if (pop) pop.hidden = true;
+      if (btn) {
+        btn.classList.remove("open");
+        btn.setAttribute("aria-expanded", "false");
+      }
+    }
+    const clickedMoreWrap = Boolean(
+      (e.target as Element).closest(".desk-col-more"),
+    );
+    if (libraryState.openRowMenuId && !clickedMoreWrap) {
+      const prevMenuId = libraryState.openRowMenuId;
+      libraryState.openRowMenuId = null;
+      document
+        .querySelectorAll<HTMLElement>(".desk-row-menu")
+        .forEach((m) => (m.hidden = true));
+      document
+        .querySelectorAll<HTMLElement>('[data-atlas-action="toggle-row-menu"]')
+        .forEach((b) => {
+          b.classList.remove("active");
+          b.setAttribute("aria-expanded", "false");
+        });
+      document
+        .querySelector<HTMLElement>(
+          `.desk-dir-row[data-entry-id="${CSS.escape(prevMenuId)}"]`,
+        )
+        ?.focus({ preventScroll: true });
+    }
+  }
   const catTab = (e.target as Element).closest<HTMLButtonElement>(
     "[data-library-category]",
   );
   if (catTab) {
     const nextCat = catTab.dataset.libraryCategory ?? "all";
     libraryState.category = nextCat;
+    libraryState.openRowMenuId = null;
+    const rememberedId = libraryDomainMemory[nextCat];
+    const nextEntries = filterAndSortLibraryEntries(libraryState, saved);
+    if (rememberedId && nextEntries.some((en) => en.id === rememberedId)) {
+      libraryState.selectedId = rememberedId;
+    } else if (nextCat !== "all" && nextCat !== "inbox") {
+      const lane = portals.findIndex((p) => p.id === nextCat);
+      const laneEntryId =
+        lane >= 0 ? records[columnMemory[lane]]?.entryId : undefined;
+      if (laneEntryId && nextEntries.some((en) => en.id === laneEntryId)) {
+        libraryState.selectedId = laneEntryId;
+      } else {
+        libraryState.selectedId = nextEntries[0]?.id ?? null;
+      }
+    } else {
+      libraryState.selectedId = nextEntries[0]?.id ?? null;
+    }
     const targetHash = buildLibraryHash(nextCat);
     if (location.hash !== targetHash) {
       history.replaceState(null, "", targetHash);
     }
     sync3DCameraWith2DView();
-    triggerSpatialTransit("library", "library");
     renderAtlasSurface(true);
     audio.play("column");
     return;
@@ -2567,15 +2740,201 @@ document.addEventListener("click", (e) => {
       return;
     }
     if (act === "toggle-save") {
-      toggleSavedById(atlasActionBtn.dataset.entryId);
+      const rowId = atlasActionBtn.dataset.entryId;
+      const hadRowMenu = libraryState.openRowMenuId === rowId;
+      libraryState.openRowMenuId = null;
+      toggleSavedById(rowId);
+      if (hadRowMenu && rowId) {
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLElement>(
+              `.desk-dir-row[data-entry-id="${CSS.escape(rowId)}"]`,
+            )
+            ?.focus({ preventScroll: true }),
+        );
+      }
+      return;
+    }
+    if (act === "toggle-desk-filter") {
+      libraryState.filterOpen = !libraryState.filterOpen;
+      const pop = document.querySelector<HTMLElement>(".desk-filter-popover");
+      if (pop) {
+        pop.hidden = !libraryState.filterOpen;
+        atlasActionBtn.classList.toggle("open", libraryState.filterOpen);
+        atlasActionBtn.setAttribute(
+          "aria-expanded",
+          String(libraryState.filterOpen),
+        );
+      } else {
+        renderAtlasSurface(true);
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (act === "clear-library-query") {
+      libraryState.query = "";
+      renderAtlasSurface(true);
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLInputElement>("#atlas-library-search")
+          ?.focus(),
+      );
+      audio.play("ui-tick");
+      return;
+    }
+    if (act === "toggle-library-saved-only") {
+      libraryState.savedOnly = !libraryState.savedOnly;
+      sync3DCameraWith2DView();
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (act === "toggle-row-menu") {
+      e.stopPropagation();
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      const isClosing = libraryState.openRowMenuId === entryId;
+      libraryState.openRowMenuId = isClosing ? null : entryId;
+      document.querySelectorAll<HTMLElement>(".desk-row-menu").forEach((m) => {
+        m.hidden = m.dataset.rowMenuFor !== libraryState.openRowMenuId;
+      });
+      document
+        .querySelectorAll<HTMLElement>('[data-atlas-action="toggle-row-menu"]')
+        .forEach((b) => {
+          const open = b.dataset.entryId === libraryState.openRowMenuId;
+          b.classList.toggle("active", open);
+          b.setAttribute("aria-expanded", String(open));
+        });
+      if (isClosing && entryId) {
+        document
+          .querySelector<HTMLElement>(
+            `.desk-dir-row[data-entry-id="${CSS.escape(entryId)}"]`,
+          )
+          ?.focus({ preventScroll: true });
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (act === "desk-select-row") {
+      if ((e.target as Element).closest(".desk-col-more")) {
+        return;
+      }
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      if (!entryId) return;
+      libraryState.selectedId = entryId;
+      libraryState.openRowMenuId = null;
+      libraryState.unfiltered3DNoticeId = null;
+      const entry = knowledgeRepository.byId(entryId);
+      if (entry) {
+        libraryDomainMemory[libraryState.category] = entry.id;
+        libraryDomainMemory[entry.category] = entry.id;
+      }
+      sync3DCameraWith2DView();
+      renderAtlasSurface(true);
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(
+            `.desk-dir-row[data-entry-id="${CSS.escape(entryId)}"]`,
+          )
+          ?.focus({ preventScroll: true }),
+      );
+      audio.play("tick");
+      return;
+    }
+    if (act === "desk-direct-read") {
+      e.preventDefault();
+      const entryId =
+        atlasActionBtn.dataset.entryId ?? libraryState.selectedId ?? "";
+      const entry =
+        knowledgeRepository.byId(entryId) ??
+        knowledgeRepository.bySlug(entryId);
+      if (!entry) return;
+      libraryState.openRowMenuId = null;
+      void prefetchEntryAssets(entry.slug);
+      navigateAtlas(buildEntryHash(entry.slug));
+      audio.play("open");
+      return;
+    }
+    if (act === "desk-enter-3d") {
+      // Prevent duplicate triggers during the 0-160ms responseAck window
+      if (
+        scene &&
+        scene.indexDeskFrame.time > 0.002 &&
+        scene.indexDeskFrame.time < 0.16
+      ) {
+        return;
+      }
+      const entryId =
+        atlasActionBtn.dataset.entryId ?? libraryState.selectedId ?? "";
+      const entry = entryId ? knowledgeRepository.byId(entryId) : undefined;
+      if (entry && entry.category !== "inbox") {
+        const recIdx = records.findIndex(
+          (r) => r.entryId === entry.id || r.id === entry.globalCode,
+        );
+        if (recIdx >= 0) {
+          select(recIdx);
+        }
+      }
+      navigateAtlas("#/archive");
+      audio.play("confirm");
+      return;
+    }
+    if (act === "desk-export-txt") {
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      const entry = knowledgeRepository.byId(entryId);
+      libraryState.openRowMenuId = null;
+      if (entry) {
+        const blob = new Blob(
+          [
+            `ATLAS ARCHIVE // ${entry.globalCode} (${entry.visualCode})\nTITLE: ${entry.title}\nCATEGORY: ${deskDomainTitle(entry.category, entry.categoryTitle)}\nUPDATED: ${entry.updated}\n\n${entry.plainText}\n`,
+          ],
+          { type: "text/plain;charset=utf-8" },
+        );
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ATLAS-${entry.globalCode}-${entry.id.replace(/\//g, "-")}.txt`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        audio.play("confirm");
+        notify(`已导出 ${entry.globalCode} 纯文本档案`);
+      }
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(
+            `.desk-dir-row[data-entry-id="${CSS.escape(entryId)}"]`,
+          )
+          ?.focus({ preventScroll: true }),
+      );
+      return;
+    }
+    if (act === "reveal-3d-selection") {
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      const entry = knowledgeRepository.byId(entryId);
+      libraryState.category = "all";
+      libraryState.type = "all";
+      libraryState.status = "all";
+      libraryState.savedOnly = false;
+      libraryState.query = "";
+      libraryState.unfiltered3DNoticeId = null;
+      if (entry) {
+        libraryState.selectedId = entry.id;
+      }
+      sync3DCameraWith2DView();
+      renderAtlasSurface(true);
+      audio.play("confirm");
       return;
     }
     if (act === "reset-library-filters") {
       libraryState.category = "all";
       libraryState.type = "all";
       libraryState.status = "all";
+      libraryState.savedOnly = false;
+      libraryState.filterOpen = false;
       libraryState.query = "";
+      libraryState.unfiltered3DNoticeId = null;
+      sync3DCameraWith2DView();
       navigateAtlas("#/library");
+      audio.play("ui-tick");
       return;
     }
     if (act === "quick-new-guide") {
@@ -2839,6 +3198,51 @@ document.addEventListener("keydown", (e) => {
         return;
       }
       exitOpticalReader();
+    } else if (atlasView === "library") {
+      if (libraryState.openRowMenuId) {
+        const prevRowId = libraryState.openRowMenuId;
+        libraryState.openRowMenuId = null;
+        renderAtlasSurface(true);
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLElement>(
+              `.desk-dir-row[data-entry-id="${CSS.escape(prevRowId)}"]`,
+            )
+            ?.focus({ preventScroll: true }),
+        );
+        audio.play("ui-tick");
+        return;
+      }
+      if (libraryState.filterOpen) {
+        libraryState.filterOpen = false;
+        renderAtlasSurface(true);
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLElement>(
+              '[data-atlas-action="toggle-desk-filter"]',
+            )
+            ?.focus({ preventScroll: true }),
+        );
+        audio.play("ui-tick");
+        return;
+      }
+      if (libraryState.query.trim()) {
+        libraryState.query = "";
+        sync3DCameraWith2DView();
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
+        return;
+      }
+      navigateAtlas("#/archive");
+      audio.play("back");
+    } else if (
+      atlasView === "archive" &&
+      scene &&
+      $("#atlas-surface").dataset.deskBridgeHold === "true"
+    ) {
+      // Mid-transition Esc from 2D -> 3D reverses smoothly back to 2D Glass Index Desk
+      navigateAtlas("#/library");
+      audio.play("back");
     } else if (mode === "detail" || (mode === "boot" && ready)) {
       const sound = mode === "detail" ? "back" : "ui-tick";
       setMode("archive");
@@ -2944,6 +3348,51 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (mode === "boot") setMode("archive");
     navigateAtlas("#/studio");
+    return;
+  }
+  if (atlasView === "library") {
+    const entries = filterAndSortLibraryEntries(libraryState, saved);
+    if (entries.length > 0 && ["ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.preventDefault();
+      const cur = resolveLibrarySelection(entries, libraryState.selectedId);
+      const curIdx = cur ? entries.findIndex((en) => en.id === cur.id) : 0;
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      const nextEntry =
+        entries[(curIdx + step + entries.length) % entries.length];
+      if (nextEntry) {
+        libraryState.selectedId = nextEntry.id;
+        libraryState.openRowMenuId = null;
+        libraryDomainMemory[libraryState.category] = nextEntry.id;
+        libraryDomainMemory[nextEntry.category] = nextEntry.id;
+        sync3DCameraWith2DView();
+        renderAtlasSurface(true);
+        requestAnimationFrame(() => {
+          const rowEl = document.querySelector<HTMLElement>(
+            `.desk-dir-row[data-entry-id="${CSS.escape(nextEntry.id)}"]`,
+          );
+          rowEl?.scrollIntoView({ block: "nearest" });
+          rowEl?.focus({ preventScroll: true });
+        });
+        audio.play("tick");
+      }
+      return;
+    }
+    if (
+      e.key === "Enter" &&
+      (document.activeElement === document.body ||
+        (document.activeElement as HTMLElement)?.classList.contains(
+          "desk-dir-row",
+        ))
+    ) {
+      e.preventDefault();
+      const cur = resolveLibrarySelection(entries, libraryState.selectedId);
+      if (cur) {
+        void prefetchEntryAssets(cur.slug);
+        navigateAtlas(buildEntryHash(cur.slug));
+        audio.play("open");
+      }
+      return;
+    }
     return;
   }
   if (atlasView !== "archive") return;
@@ -3086,6 +3535,13 @@ function frame(ms: number) {
     scene?.update(time, cinema);
   if (atlasView === "reader" || scene?.readerActiveOrTransitioning) {
     syncOpticalReaderDom();
+  }
+  if (
+    atlasView === "library" ||
+    scene?.indexDeskActiveOrTransitioning ||
+    $("#atlas-surface").dataset.deskBridgeHold === "true"
+  ) {
+    syncIndexDeskDom();
   }
   viewer?.update(time);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();

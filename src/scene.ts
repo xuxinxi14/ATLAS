@@ -58,6 +58,12 @@ import {
   OPTICAL_TIMELINE_DURATION,
   type OpticalReaderTimelineFrame,
 } from "./optical-reader-rig";
+import {
+  IndexDeskRig,
+  evaluateIndexDeskTimeline,
+  INDEX_DESK_TIMELINE_DURATION,
+  type IndexDeskTimelineFrame,
+} from "./index-desk-rig";
 
 const READER_LIFT = 5.35;
 
@@ -264,6 +270,12 @@ export class ArchiveScene {
   private readerActivationFired = false;
   private lastReaderFrame: OpticalReaderTimelineFrame =
     evaluateOpticalReaderTimeline(0);
+  private indexDeskRig = new IndexDeskRig();
+  private targetIndexDesk = false;
+  private indexDeskHasTarget = true;
+  private indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
+  private lastIndexDeskFrame: IndexDeskTimelineFrame =
+    evaluateIndexDeskTimeline(INDEX_DESK_TIMELINE_DURATION);
   onReaderActivationSound?: () => void;
   onSelect?: (index: number, cell?: ArchiveCell) => void;
   onHover?: (index: number | null) => void;
@@ -330,6 +342,7 @@ export class ArchiveScene {
     floor.receiveShadow = true;
     this.scene.add(floor);
     this.scene.add(this.readerRig.group);
+    this.scene.add(this.indexDeskRig.group);
     this.camera.position.set(-62.26, 35.98, 43.28);
     this.cameraAim.set(-0.5, 1.1, 0.4);
     this.camera.fov = 6.15;
@@ -683,6 +696,50 @@ export class ArchiveScene {
   getOpticalReaderScreenBounds() {
     return this.readerRig.projectScreenBounds(this.camera);
   }
+  setIndexDeskMode(
+    active: boolean,
+    options?: { hasValid3DTarget?: boolean; immediate?: boolean },
+  ) {
+    this.cancelPointer();
+    this.setHover(null);
+    this.lastInteraction = this.clock;
+    if (options?.hasValid3DTarget !== undefined) {
+      this.indexDeskHasTarget = options.hasValid3DTarget;
+    }
+    const reduced = this.reduced || !this.motion.surfaceTransitions;
+    this.targetIndexDesk = active;
+    if (active) {
+      this.looping = true;
+      this.targetReveal = 1;
+      this.targetDetail = 0;
+      this.targetRotation = 0;
+      if (this.rotation !== 0) this.returnY = this.model.position.y;
+      if (options?.immediate || reduced) {
+        this.indexDeskSeconds = 0;
+      }
+    } else if (options?.immediate || reduced) {
+      this.indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
+    }
+    this.lastIndexDeskFrame = evaluateIndexDeskTimeline(
+      this.indexDeskSeconds,
+      reduced,
+    );
+    this.renderState.invalidate();
+  }
+  setIndexDeskTargetValid(valid: boolean) {
+    if (this.indexDeskHasTarget === valid) return;
+    this.indexDeskHasTarget = valid;
+    this.renderState.invalidate();
+  }
+  get indexDeskFrame(): IndexDeskTimelineFrame {
+    return this.lastIndexDeskFrame;
+  }
+  get indexDeskActiveOrTransitioning(): boolean {
+    return (
+      this.targetIndexDesk ||
+      this.indexDeskSeconds < INDEX_DESK_TIMELINE_DURATION - 0.002
+    );
+  }
   // Legacy review pages use the old whole-scene toggle.
   setReduced(value: boolean) { this.setMotion(value ? reducedMotion() : fullMotion()); }
   setMotion(value: MotionPreferences) {
@@ -956,6 +1013,8 @@ export class ArchiveScene {
     return (
       this.presenceTarget === 1 &&
       this.looping &&
+      !this.targetIndexDesk &&
+      this.indexDeskSeconds >= INDEX_DESK_TIMELINE_DURATION - 0.05 &&
       !this.targetDetail &&
       this.detail < 0.2 &&
       this.reveal >= 0.8 &&
@@ -1494,11 +1553,29 @@ export class ArchiveScene {
         this.targetReader ? this.targetReaderReceded : 0,
         reducedReader ? 1 : 1 - Math.exp(-dt * 6),
       );
+      if (this.targetIndexDesk) {
+        this.indexDeskSeconds = Math.max(
+          0,
+          this.indexDeskSeconds - dt * (reducedReader ? 14 : 1),
+        );
+      } else if (this.indexDeskSeconds < INDEX_DESK_TIMELINE_DURATION) {
+        this.indexDeskSeconds = Math.min(
+          INDEX_DESK_TIMELINE_DURATION,
+          this.indexDeskSeconds + dt * (reducedReader ? 14 : 1),
+        );
+      }
     } else {
       this.readerSeconds = 0;
       this.readerShortPulse = 0;
       this.readerReceded = 0;
+      this.indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
     }
+    const indexDeskFrame = evaluateIndexDeskTimeline(
+      this.indexDeskSeconds,
+      reducedReader,
+    );
+    this.lastIndexDeskFrame = indexDeskFrame;
+    const bridgeMix = indexDeskFrame.cameraBridgeMix;
     const readerFrame = evaluateOpticalReaderTimeline(
       this.readerSeconds,
       reducedReader,
@@ -1538,7 +1615,10 @@ export class ArchiveScene {
                       Math.abs(o.cell.row - selectedRow) < 5,
                   )
                 ? 0
-                : 0.4 * this.targetReveal * (1 - this.flatMix),
+                : 0.4 *
+                  this.targetReveal *
+                  (1 - this.flatMix) *
+                  (bridgeMix > 0.05 && !this.indexDeskHasTarget ? 0 : 1),
           !this.motion.detailTransition
             ? 35
             : readerHold
@@ -1653,6 +1733,12 @@ export class ArchiveScene {
       this.themeAmount,
       this.readerReceded,
     );
+    this.indexDeskRig.update(
+      indexDeskFrame,
+      baseModelPos,
+      this.indexDeskHasTarget && !readerHold,
+      this.themeAmount,
+    );
     // Extraction only changes elevation. Reframing belongs to the camera.
     this.model.rotation.set(
       (field(selectedRow + 0.5, selectedLane) -
@@ -1720,6 +1806,14 @@ export class ArchiveScene {
       if (readerTurn > 0.0001) {
         viewDirection
           .lerp(new THREE.Vector3(-0.036, 0.025, 0.999), readerTurn)
+          .normalize();
+      }
+      if (bridgeMix > 0.0001 && readerTurn < 0.5) {
+        viewDirection
+          .lerp(
+            new THREE.Vector3(-0.24, 0.34, 0.909),
+            bridgeMix * (1 - readerTurn),
+          )
           .normalize();
       }
     }
@@ -1824,6 +1918,16 @@ export class ArchiveScene {
           .clone()
           .add(new THREE.Vector3(readerCenterOffsetX, 1.85, 0));
         cameraAim.lerp(readerAim, readerCamMix);
+      }
+      if (bridgeMix > 0.0001 && readerCamMix < 0.5) {
+        const clearanceDip =
+          Math.sin(indexDeskFrame.cameraDive * Math.PI) * 0.52;
+        const bridgeAim = new THREE.Vector3(
+          THREE.MathUtils.lerp(cameraAim.x, -0.38, 0.65),
+          cameraAim.y + 2.15 - clearanceDip,
+          cameraAim.z + 0.36,
+        );
+        cameraAim.lerp(bridgeAim, bridgeMix * (1 - readerCamMix));
       }
     }
     const cameraPosition = cameraAim
@@ -1972,6 +2076,7 @@ export class ArchiveScene {
         ...this.camera.position.toArray(),
         fog.near, fog.far, this.themeAmount, this.subduedIndex.value,
         this.readerSeconds, this.readerShortPulse, this.readerReceded,
+        this.indexDeskSeconds, Number(this.indexDeskHasTarget),
         bokehUniforms.focus.value, bokehUniforms.aperture.value);
       this.scene.traverse(object => {
         state.add(object.id, Number(object.visible));

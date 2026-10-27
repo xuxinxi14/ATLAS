@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { evaluateHomeTransit, type HomeTransitFrame } from "./home-transit";
 import { ArchiveVisibility } from "./archive-visibility";
 import { ArchiveDrawCoverage, ArchiveShadowCoverage } from "./archive-draw-coverage";
 import { InstanceUpdates } from "./instance-updates";
@@ -278,6 +279,7 @@ export class ArchiveScene {
   private lastReaderFrame: OpticalReaderTimelineFrame =
     evaluateOpticalReaderTimeline(0);
   private indexDeskRig = new IndexDeskRig();
+  private homeObservation = evaluateHomeTransit(1, "archive");
   private targetIndexDesk = false;
   private indexDeskHasTarget = true;
   private indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
@@ -749,6 +751,18 @@ export class ArchiveScene {
   }
   get indexDeskFrame(): IndexDeskTimelineFrame {
     return this.lastIndexDeskFrame;
+  }
+  setHomeObservation(frame: HomeTransitFrame) {
+    const old = this.homeObservation;
+    if (
+      old.cameraMix !== frame.cameraMix ||
+      old.retreat !== frame.retreat ||
+      old.rigPresence !== frame.rigPresence ||
+      old.observationMix !== frame.observationMix
+    ) {
+      this.renderState.invalidate();
+    }
+    this.homeObservation = frame;
   }
   get indexDeskActiveOrTransitioning(): boolean {
     return (
@@ -1865,11 +1879,28 @@ export class ArchiveScene {
       this.themeAmount,
       this.readerReceded,
     );
+    const homeRig = cinematic ? evaluateHomeTransit(1, "archive") : this.homeObservation;
+    const rigFrame =
+      homeRig.rigPresence > 0.0001
+        ? {
+            ...indexDeskFrame,
+            progress: Math.min(
+              indexDeskFrame.progress,
+              1 - homeRig.rigPresence,
+            ),
+            deskRetreat: THREE.MathUtils.lerp(
+              indexDeskFrame.deskRetreat,
+              homeRig.retreat,
+              homeRig.rigPresence,
+            ),
+          }
+        : indexDeskFrame;
     this.indexDeskRig.update(
-      indexDeskFrame,
+      rigFrame,
       baseModelPos,
       this.indexDeskHasTarget && !readerHold,
       this.themeAmount,
+      homeRig.observationMix,
     );
     // Extraction only changes elevation. Reframing belongs to the camera.
     this.model.rotation.set(
@@ -2105,6 +2136,13 @@ export class ArchiveScene {
         this.themeAmount,
       );
     }
+    if (!cinematic && this.homeObservation.cameraMix > 0) {
+      const homeMix = this.homeObservation.cameraMix;
+      viewDirection
+        .lerp(new THREE.Vector3(-0.16, 0.38, 0.911).normalize(), homeMix)
+        .normalize();
+      cameraAim.lerp(new THREE.Vector3(-0.38, 1.12, 0.7), homeMix);
+    }
     const cameraPosition = cameraAim
       .clone()
       .addScaledVector(viewDirection, distance);
@@ -2251,7 +2289,8 @@ export class ArchiveScene {
     } else {
       state.begin();
       state.floats(...this.camera.projectionMatrix.elements, ...this.camera.matrixWorldInverse.elements,
-        ...this.camera.position.toArray(),
+        ...this.camera.position.toArray(), this.homeObservation.cameraMix,
+        this.homeObservation.retreat, this.homeObservation.rigPresence,
         fog.near, fog.far, this.themeAmount, this.subduedIndex.value,
         this.readerSeconds, this.readerShortPulse, this.readerReceded,
         this.indexDeskSeconds, Number(this.indexDeskHasTarget),

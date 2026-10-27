@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "check:content": "node scripts/validate-content.mjs && node --experimental-strip-types --test scripts/check-content.mjs",
     "check:viewport": "node --experimental-strip-types scripts/check-viewport.mjs",
-    "test": "node scripts/build-content.mjs && node --experimental-strip-types --test tests/content/content-engine.test.mjs tests/archive/archive-dynamic.test.mjs tests/routing/search-and-router.test.mjs tests/e2e/mvp-smoke.mjs scripts/check-content.mjs",
+    "test": "node scripts/build-content.mjs && node --experimental-strip-types --test tests/content/content-engine.test.mjs tests/archive/archive-dynamic.test.mjs tests/routing/search-and-router.test.mjs tests/routing/home-transit.test.mjs tests/e2e/mvp-smoke.mjs scripts/check-content.mjs",
     "review:mobile": "node scripts/serve-mobile-review.mjs",
     "export:archives": "node scripts/build-content.mjs && node scripts/export-records.mjs",
     "build": "tsc && vite build && node scripts/build-pwa.mjs",

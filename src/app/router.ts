@@ -1,10 +1,5 @@
 export type RouteView =
-  | "boot"
-  | "home"
-  | "archive"
-  | "library"
-  | "reader"
-  | "studio";
+  "boot" | "home" | "archive" | "library" | "reader" | "studio";
 
 export interface ParsedRoute {
   view: RouteView;
@@ -53,7 +48,9 @@ export function parseHashRoute(rawHash: string): ParsedRoute | null {
     return {
       view: "reader",
       slug: decodeURIComponent(slugPart),
-      anchor: anchor ? decodeURIComponent(anchor) : params.get("section") ?? undefined,
+      anchor: anchor
+        ? decodeURIComponent(anchor)
+        : (params.get("section") ?? undefined),
     };
   }
   return null;
@@ -66,7 +63,7 @@ export function buildEntryHash(slug: string): string {
 export function buildLibraryHash(category = "all"): string {
   return category && category !== "all"
     ? `#/library/${encodeURIComponent(category)}`
-    : "#/library";
+    : "#/library?category=all";
 }
 
 export function buildStudioHash(slug?: string): string {

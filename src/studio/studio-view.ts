@@ -1,8 +1,5 @@
 import { escapeHtml } from "../html.ts";
-import {
-  knowledgeRepository,
-  typeMeta,
-} from "../knowledge/repository.ts";
+import { knowledgeRepository, typeMeta } from "../knowledge/repository.ts";
 import type { EntryStatus, EntryType } from "../knowledge/types.ts";
 import { deskDomainTitle, deskStatusLabel } from "../library/library-view.ts";
 import type { StudioEntrySource } from "../studio-tray-rig.ts";
@@ -95,7 +92,7 @@ id: <category>-<英文短横线slug>
 title: "<中文主标题：清晰、精准、偏向技术手册风格>"
 slug: <category>/<英文短横线slug>
 type: <只能从 concept | skill | troubleshooting | snippet 四选一>
-category: <只能从 tools | coding | research | academics | creation 五选一>
+category: <只能从 ${knowledgeRepository.portals().map(p => p.id).join(" | ")} 五选一>
 subcategory: <英文短横线子分类，如 cli-workflow / video-editing / bio-protocol>
 status: learning
 tags: [标签1, 标签2, 标签3]
@@ -256,7 +253,7 @@ export function renderStudioSaveStatusMarkup(state: StudioDraftState): string {
     `;
   }
   if (!state.localDiskAvailable) {
-    return `<span class="studio-status-pill is-static"><i class="studio-status-dot"></i><span>静态模式 · 可导出 MD</span></span>`;
+    return `<span class="studio-status-pill ${state.dirty ? "is-dirty" : "is-static"}"><i class="studio-status-dot"></i><span>${state.dirty ? "未保存 · 可导出 MD" : "静态模式 · 可导出 MD"}</span></span>`;
   }
   if (state.dirty) {
     return `<span class="studio-status-pill is-dirty"><i class="studio-status-dot"></i><span>未保存</span></span>`;
@@ -314,11 +311,13 @@ export function renderStudioViewMarkup(
     hasWebGL && !state.isNew && state.category !== "inbox";
 
   const returnLabel =
-    state.entryOrigin === "archive"
-      ? "返回档案室"
-      : state.entryOrigin === "reader"
-        ? "返回阅读"
-        : "返回索引";
+    state.entryOrigin === "home"
+      ? "返回主页"
+      : state.entryOrigin === "archive"
+        ? "返回档案室"
+        : state.entryOrigin === "reader"
+          ? "返回阅读"
+          : "返回索引";
 
   const lineCount = state.body ? state.body.split("\n").length : 1;
   const charCount = state.body.length;

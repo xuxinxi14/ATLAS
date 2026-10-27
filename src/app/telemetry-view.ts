@@ -26,14 +26,13 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
       const rot = -90 + idx * 38;
       return `
         <circle cx="110" cy="110" r="${r}" class="orbital-track" />
-        <circle
+        <g transform="rotate(${rot} 110 110)"><circle
           cx="110"
           cy="110"
           r="${r}"
           class="orbital-arc orbital-arc-${idx}"
           stroke-dasharray="${arcLen} ${gapLen}"
-          transform="rotate(${rot} 110 110)"
-        />
+        /></g>
       `;
     })
     .join("");
@@ -135,6 +134,8 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
     .join("");
 
   return `
+    <div class="home-outer-brand" aria-hidden="true">RHINE LAB / ATLAS</div>
+    <section class="home-observation-deck" aria-label="玻璃总控面">
     <div class="atlas-surface-scroll">
       <div class="rhine-telemetry-stage">
         <!-- Left Wing: Observation Core & Calibration Ring -->
@@ -271,7 +272,7 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
           <section class="rhine-recent-section" data-stagger="2" aria-label="最近更新档案">
             <div class="rhine-section-kicker">
               <span>04 // RECENT TRANSMISSIONS · 最近更新与归档流</span>
-              <a href="#/library" class="rhine-kicker-link">ALL ARCHIVES (${telemetry.totalEntries}) →</a>
+              <a href="${buildLibraryHash("all")}" class="rhine-kicker-link">ALL ARCHIVES (${telemetry.totalEntries}) →</a>
             </div>
             <div class="rhine-ledger-header">
               <span>SERIAL / 编号</span>
@@ -287,5 +288,6 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
         </div>
       </div>
     </div>
+    </section>
   `;
 }

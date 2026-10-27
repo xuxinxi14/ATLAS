@@ -37,9 +37,11 @@ const DESK_DOMAIN_TITLES: Record<string, string> = {
   all: "全部档案",
   tools: "软件与工具",
   coding: "编程与 AI",
+  computing: "编程与 AI",
   research: "科研与实验",
   academics: "学科知识",
   creation: "创作与生活",
+  life: "创作与生活",
   inbox: "草稿箱",
 };
 

@@ -17,6 +17,7 @@ import "./style.css";
 import "./quality-settings.css";
 import "./responsive.css";
 import "./styles/atlas-views.css";
+import "./styles/home-transit.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
 import { initPwa, pwaSettingsMarkup } from "./pwa";
@@ -25,6 +26,7 @@ import {
   createRollingText,
 } from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
+import { HomeTransitClock } from "./home-transit";
 import { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
 import { BootSequence } from "./boot";
@@ -53,10 +55,7 @@ import {
   buildStudioHash,
   type RouteView,
 } from "./app/router";
-import {
-  searchKnowledge,
-  hotReloadSearchIndex,
-} from "./search/search-engine";
+import { searchKnowledge, hotReloadSearchIndex } from "./search/search-engine";
 import { renderTelemetryHomeMarkup } from "./app/telemetry-view";
 import {
   renderLibraryViewMarkup,
@@ -203,6 +202,26 @@ let activeTab = "overview";
 let atlasView: RouteView = "archive";
 let activeReaderSlug = records[0]?.slug ?? "tools/aegisub";
 let activeReaderAnchor: string | undefined;
+let readerOrigin = { hash: "#/archive", label: "档案大厅" };
+let currentRouteHash = "";
+let libraryReturnHash = "#/library";
+let libraryOriginHash = "#/archive";
+let homeAwayHash = "#/archive";
+let routeInitialized = false;
+const homeTransit = new HomeTransitClock();
+let outgoingSurface: HTMLElement | null = null;
+let lastHomeFrameKey = "";
+let pendingSurfaceFocus = false;
+const surfaceMemory = new Map<
+  string,
+  {
+    scrolls: { selector: string; top: number; left: number }[];
+    focus: string;
+    selection?: [number, number];
+  }
+>();
+let studioLoadRevision = 0;
+let studioPreviewRevision = 0;
 const libraryState: LibraryState = {
   category: "all",
   type: "all",
@@ -595,8 +614,18 @@ const VIEW_SPATIAL_META: Record<
 > = {
   boot: { depth: 0, x: 0, code: "00", label: "SYSTEM BOOT // 启动序列" },
   home: { depth: 1, x: -1, code: "01", label: "TELEMETRY MATRIX // 遥测中枢" },
-  archive: { depth: 2, x: 0, code: "02", label: "3D ARCHIVE HALL // 三维档案大厅" },
-  library: { depth: 3, x: 1, code: "03", label: "2D DIRECTORY // 二维知识索引" },
+  archive: {
+    depth: 2,
+    x: 0,
+    code: "02",
+    label: "3D ARCHIVE HALL // 三维档案大厅",
+  },
+  library: {
+    depth: 3,
+    x: 1,
+    code: "03",
+    label: "2D DIRECTORY // 二维知识索引",
+  },
   reader: { depth: 4, x: 2, code: "04", label: "SPECIMEN DOSSIER // 档案正文" },
   studio: { depth: 5, x: 3, code: "05", label: "ARCHIVE STUDIO // 档案编撰台" },
 };
@@ -738,14 +767,8 @@ function syncStudioTrayDom() {
   }
   const f = scene.studioTrayFrame;
   stage.style.setProperty("--studio-slide", f.traySlide.toFixed(4));
-  stage.style.setProperty(
-    "--studio-editor-reveal",
-    f.editorReveal.toFixed(4),
-  );
-  stage.style.setProperty(
-    "--studio-contact-glow",
-    f.contactGlow.toFixed(4),
-  );
+  stage.style.setProperty("--studio-editor-reveal", f.editorReveal.toFixed(4));
+  stage.style.setProperty("--studio-contact-glow", f.contactGlow.toFixed(4));
   stage.style.setProperty(
     "--studio-bridge-retreat",
     f.indexBridgeRetreat.toFixed(4),
@@ -777,7 +800,9 @@ function exitStudioToOrigin() {
       snapshotStudioDraft(studioState),
     );
   }
-  if (studioState.entryOrigin === "archive") {
+  if (studioState.entryOrigin === "home") {
+    navigateAtlas("#/home");
+  } else if (studioState.entryOrigin === "archive") {
     navigateAtlas("#/archive");
   } else if (
     studioState.entryOrigin === "reader" &&
@@ -800,37 +825,204 @@ function exitOpticalReader() {
   } else {
     scene?.setMode("archive");
   }
-  navigateAtlas("#/archive");
+  navigateAtlas(readerOrigin.hash);
   audio.play("back");
 }
 
-function renderSpatialLinkBarMarkup(): string {
-  if (
-    atlasView === "reader" ||
-    atlasView === "library" ||
-    atlasView === "studio"
-  ) {
-    return "";
+function surfaceMemoryKey() {
+  if (atlasView === "reader") return `reader:${activeReaderSlug}`;
+  if (atlasView === "studio") {
+    return `studio:${parseHashRoute(currentRouteHash)?.slug || "__new__"}`;
   }
-  const rec = records[selected];
-  if (!rec) return "";
-  const { lane } = fileLocation(selected);
-  const cameraModeLabel = "ARRAY ORBIT // 阵列轨道已对齐";
-  return `
-    <div class="atlas-spatial-bar" role="region" aria-label="三维档案馆空间联动状态">
-      <div class="spatial-bar-left">
-        <span class="spatial-pulse"></span>
-        <span class="spatial-kicker">3D SPATIAL LOCK // ${cameraModeLabel}</span>
-        <strong>COLUMN 0${lane + 1} · ${escapeHtml(rec.category)} · ${escapeHtml(rec.visualCode)} (${escapeHtml(rec.id)})</strong>
-        <span class="spatial-title">${escapeHtml(rec.title)}</span>
-      </div>
-      <div class="spatial-bar-actions">
-        <button type="button" class="spatial-jump-btn" data-atlas-action="inspect-current-3d" title="收起二维终端，直接检视当前已锁定的三维档案盒">
-          INSPECT 3D MODEL ↗ <span>切回三维现场</span>
-        </button>
-      </div>
-    </div>
-  `;
+  return atlasView;
+}
+
+function rememberSurfaceState() {
+  const surface = $("#atlas-surface");
+  const active = document.activeElement as HTMLInputElement | null;
+  let focus = "";
+  if (active?.id) focus = `#${CSS.escape(active.id)}`;
+  else if (active?.getAttribute("href")) {
+    focus = `a[href="${CSS.escape(active.getAttribute("href")!)}"]`;
+  } else if (active?.dataset.action) {
+    focus = `[data-action="${CSS.escape(active.dataset.action)}"]`;
+  } else if (active?.dataset.entryId) {
+    focus = `[data-entry-id="${CSS.escape(active.dataset.entryId)}"]`;
+  }
+  const selectors = [
+    ".atlas-surface-scroll",
+    ".desk-dir-list",
+    "#atlas-reader-scroll",
+    "#studio-input-body",
+    "#studio-preview-pane",
+  ];
+  const scrolls = selectors.flatMap((selector) => {
+    const el = surface.querySelector<HTMLElement>(selector);
+    return el ? [{ selector, top: el.scrollTop, left: el.scrollLeft }] : [];
+  });
+  const memory: typeof surfaceMemory extends Map<string, infer T> ? T : never =
+    { scrolls, focus };
+  try {
+    if (active?.selectionStart != null && active.selectionEnd != null) {
+      memory.selection = [active.selectionStart, active.selectionEnd];
+    }
+  } catch {
+    /* Inputs such as file/select do not support text selection. */
+  }
+  surfaceMemory.set(surfaceMemoryKey(), memory);
+  if (atlasView === "library")
+    libraryReturnHash = currentRouteHash || "#/library";
+  if (atlasView === "studio" && studioState.dirty && !studioState.loading) {
+    studioDraftCache.set(
+      studioCacheKey(studioState.originalSlug, studioState.isNew),
+      snapshotStudioDraft(studioState),
+    );
+  }
+}
+
+function restoreSurfaceState(focus = false) {
+  const memory = surfaceMemory.get(surfaceMemoryKey());
+  for (const item of memory?.scrolls ?? []) {
+    const el = $("#atlas-surface").querySelector<HTMLElement>(item.selector);
+    if (el) {
+      el.scrollTop = item.top;
+      el.scrollLeft = item.left;
+    }
+  }
+  if (!focus || modal || homeTransit.active) return;
+  const target = memory?.focus
+    ? document.querySelector<HTMLElement>(memory.focus)
+    : null;
+  if (target && !target.closest("[inert]") && target.getClientRects().length) {
+    target.focus({ preventScroll: true });
+    if (
+      memory?.selection &&
+      (target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLInputElement)
+    ) {
+      try {
+        target.setSelectionRange(...memory.selection);
+      } catch {}
+    }
+  } else if (
+    atlasView === "studio" &&
+    !studioState.loading &&
+    !matchMedia("(pointer: coarse)").matches
+  ) {
+    const selector = studioState.isNew
+      ? "#studio-input-title"
+      : "#studio-input-body";
+    document
+      .querySelector<HTMLElement>(selector)
+      ?.focus({ preventScroll: true });
+  } else if (atlasView === "home") {
+    document
+      .querySelector<HTMLElement>('[data-action="nav-home"]')
+      ?.focus({ preventScroll: true });
+  }
+}
+
+function captureOutgoingSurface(from: RouteView) {
+  outgoingSurface?.remove();
+  outgoingSurface = null;
+  const surface = $("#atlas-surface");
+  if (surface.hidden || from === "archive" || mode === "boot") return;
+  const clone = surface.cloneNode(true) as HTMLElement;
+  clone.id = "home-transit-outgoing";
+  clone.classList.add("home-transit-layer");
+  clone.dataset.source = from;
+  delete clone.dataset.deskBridgeHold;
+  delete clone.dataset.studioTrayHold;
+  clone.inert = true;
+  clone.setAttribute("aria-hidden", "true");
+  clone.removeAttribute("aria-label");
+  const outerStyle = getComputedStyle(surface);
+  for (const property of ["padding", "background", "backdrop-filter"]) {
+    clone.style.setProperty(property, outerStyle.getPropertyValue(property));
+  }
+  const stageStyle = getComputedStyle($("#stage"));
+  for (const variable of [
+    "--studio-slide",
+    "--studio-editor-reveal",
+    "--studio-contact-glow",
+    "--desk-retreat",
+    "--desk-dir-opacity",
+    "--desk-anchor-opacity",
+    "--optical-dock",
+    "--optical-active",
+    "--optical-title-reveal",
+    "--optical-body-reveal",
+  ]) {
+    const value = stageStyle.getPropertyValue(variable);
+    if (value) clone.style.setProperty(variable, value);
+  }
+  // A visual snapshot must not introduce duplicate IDs, live inputs or accessible links.
+  clone.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+  $("#stage").appendChild(clone);
+  const originals = surface.querySelectorAll<HTMLElement>("*");
+  clone.querySelectorAll<HTMLElement>("*").forEach((el, i) => {
+    el.scrollTop = originals[i]?.scrollTop ?? 0;
+    el.scrollLeft = originals[i]?.scrollLeft ?? 0;
+  });
+  outgoingSurface = clone;
+}
+
+function syncHomeTransitDom(ms = performance.now()) {
+  const f = homeTransit.update(ms);
+  const stage = $("#stage");
+  scene?.setHomeObservation(f);
+  const frameKey = `${f.progress}:${homeTransit.destination}:${homeTransit.reduced}:${homeTransit.active}`;
+  if (frameKey !== lastHomeFrameKey) {
+    lastHomeFrameKey = frameKey;
+    stage.dataset.homeTransitioning = String(homeTransit.active);
+    stage.dataset.homeDestination = homeTransit.destination;
+    stage.style.setProperty("--home-ui", String(f.homeOpacity));
+    stage.style.setProperty("--home-shell", String(f.shellOpacity));
+    stage.style.setProperty("--home-target", String(f.otherOpacity));
+    stage.style.setProperty("--home-anchor", String(f.anchorOpacity));
+    stage.style.setProperty("--home-retreat", String(f.retreat));
+    stage.style.setProperty("--home-approach", String(1 - f.observationMix));
+    stage.style.setProperty("--home-progress", String(f.progress));
+  }
+  const studioBusy =
+    atlasView === "studio" &&
+    (studioState.loading ||
+      Boolean(
+        scene &&
+        motionActive("surfaceTransitions") &&
+        !scene.studioTrayFrame.settled,
+      ));
+  const deskBusy =
+    atlasView === "library" &&
+    Boolean(
+      scene &&
+      motionActive("surfaceTransitions") &&
+      scene.indexDeskFrame.time > 0.015,
+    );
+  const blocked = Boolean(modal) || modalClosing || Boolean(viewer?.isOpen);
+  $("#atlas-surface").inert =
+    blocked || homeTransit.active || studioBusy || deskBusy;
+  $("#archive-ui").inert =
+    blocked ||
+    homeTransit.active ||
+    atlasView !== "archive" ||
+    mode !== "archive" ||
+    Boolean(workbench?.enabled) ||
+    $("#atlas-surface").dataset.deskBridgeHold === "true" ||
+    $("#atlas-surface").dataset.studioTrayHold === "true";
+  $("#detail-ui").inert =
+    blocked ||
+    homeTransit.active ||
+    atlasView !== "archive" ||
+    mode !== "detail";
+  if (!homeTransit.active) {
+    outgoingSurface?.remove();
+    outgoingSurface = null;
+    if (pendingSurfaceFocus && !studioBusy && !deskBusy && !blocked) {
+      pendingSurfaceFocus = false;
+      restoreSurfaceState(true);
+    }
+  }
 }
 
 function renderAtlasSurface(preserveLibraryInputFocus = false) {
@@ -863,7 +1055,11 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
 
     if (!surface.hidden) {
       surface.inert = true;
-      if (!motionActive("surfaceTransitions") || mode === "boot") {
+      if (
+        prevView === "home" ||
+        !motionActive("surfaceTransitions") ||
+        mode === "boot"
+      ) {
         atlasExitAnimation?.cancel();
         atlasExitAnimation = undefined;
         delete surface.dataset.deskBridgeHold;
@@ -924,6 +1120,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         };
       }
     }
+    syncHomeTransitDom();
     return;
   }
 
@@ -954,9 +1151,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       prevStudioScrollTop = studioBodyEl.scrollTop;
     }
     const activeEl = document.activeElement as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | null;
+      HTMLInputElement | HTMLTextAreaElement | null;
     if (activeEl && activeEl.id) {
       activeInputId = activeEl.id;
       try {
@@ -973,10 +1168,15 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       : atlasView === "library"
         ? renderLibraryViewMarkup(libraryState, saved, hasWebGL)
         : atlasView === "studio"
-          ? renderStudioViewMarkup(studioState)
-          : renderReaderViewMarkup(activeReaderSlug, saved, hasWebGL);
+          ? renderStudioViewMarkup(studioState, hasWebGL)
+          : renderReaderViewMarkup(
+              activeReaderSlug,
+              saved,
+              hasWebGL,
+              readerOrigin,
+            );
 
-  surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>${renderSpatialLinkBarMarkup()}`;
+  surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
   surface.hidden = false;
   surface.inert = Boolean(modal);
   $("#stage").dataset.atlasOverlay = "true";
@@ -1050,7 +1250,9 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
             posEl.textContent =
               studioState.activeTab === "preview" ? "预览就绪" : "正文就绪";
           } else {
-            const pct = Math.round((nextStudioBody.scrollTop / maxScroll) * 100);
+            const pct = Math.round(
+              (nextStudioBody.scrollTop / maxScroll) * 100,
+            );
             posEl.textContent = `阅读进度 ${pct}%`;
           }
         },
@@ -1059,6 +1261,8 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     }
   } else if (
     viewChanged &&
+    previousView !== "home" &&
+    atlasView !== "home" &&
     !preserveLibraryInputFocus &&
     motionActive("surfaceTransitions")
   ) {
@@ -1133,23 +1337,18 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     surface
       .querySelectorAll<HTMLElement>("[data-rule]")
       .forEach((rule, idx) => {
-        rule.animate(
-          [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }],
-          {
-            duration: 540,
-            delay: 50 + idx * 65,
-            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-            fill: "backwards",
-          },
-        );
+        rule.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], {
+          duration: 540,
+          delay: 50 + idx * 65,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "backwards",
+        });
       });
   }
 
   if (preserveLibraryInputFocus && activeInputId) {
     const nextInput = document.getElementById(activeInputId) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | null;
+      HTMLInputElement | HTMLTextAreaElement | null;
     if (nextInput) {
       nextInput.focus({ preventScroll: true });
       if (selStart !== null && selEnd !== null) {
@@ -1167,13 +1366,15 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
       heading?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
+  if (viewChanged) restoreSurfaceState();
+  syncHomeTransitDom();
 }
 
 function sync3DCameraWith2DView() {
   if (!scene || !ready || mode === "boot") return;
   if (atlasView === "home") {
     scene.setStudioMode(false);
-    scene.setIndexDeskMode(false);
+    scene.setIndexDeskMode(false, { immediate: true });
     scene.setReaderMode(false);
     scene.setMode("archive");
   } else if (atlasView === "library") {
@@ -1202,7 +1403,10 @@ function sync3DCameraWith2DView() {
         scene.select(selected);
         updateSelection();
       }
-      scene.setIndexDeskMode(true, { hasValid3DTarget: true });
+      scene.setIndexDeskMode(true, {
+        hasValid3DTarget: true,
+        immediate: renderedAtlasView === "home",
+      });
     } else {
       if (libraryState.category && libraryState.category !== "all") {
         const lane = portals.findIndex(
@@ -1218,7 +1422,10 @@ function sync3DCameraWith2DView() {
           }
         }
       }
-      scene.setIndexDeskMode(true, { hasValid3DTarget: false });
+      scene.setIndexDeskMode(true, {
+        hasValid3DTarget: false,
+        immediate: renderedAtlasView === "home",
+      });
     }
   } else if (atlasView === "reader") {
     void prefetchEntryAssets(activeReaderSlug);
@@ -1247,6 +1454,7 @@ function sync3DCameraWith2DView() {
     scene.setReaderMode(true, { shortSwitch: isShortSwitch });
   } else if (atlasView === "studio") {
     scene.setReaderMode(false);
+    scene.setIndexDeskMode(false);
     let hasPhysicalCassette = false;
     if (!studioState.isNew && studioState.originalSlug) {
       const entry = knowledgeRepository.bySlug(studioState.originalSlug);
@@ -1269,7 +1477,10 @@ function sync3DCameraWith2DView() {
       scene.setMode("archive");
     }
     scene.setStudioMode(true, {
-      source: studioState.entryOrigin,
+      source:
+        studioState.entryOrigin === "home" && hasPhysicalCassette
+          ? "archive"
+          : studioState.entryOrigin,
       hasPhysicalCassette,
     });
   }
@@ -1289,6 +1500,60 @@ function studioCacheKey(slug: string, isNew: boolean): string {
 
 function syncHashRoute() {
   const parsed = parseHashRoute(location.hash);
+  const nextView = parsed?.view ?? (scene ? "archive" : "home");
+  const nextHash = location.hash || "#/archive";
+  const routeChanged = nextHash !== currentRouteHash;
+  const previousView = atlasView;
+  const sourceView = homeTransit.active && outgoingSurface?.dataset.source === "home"
+    ? "home" : previousView;
+  if (routeChanged) {
+    rememberSurfaceState();
+    if (previousView === "studio") {
+      studioLoadRevision++;
+      studioPreviewRevision++;
+    }
+    if (
+      previousView !== nextView &&
+      (previousView === "home" || nextView === "home")
+    ) {
+      if (!(
+        outgoingSurface?.dataset.source === "home" && nextView !== "home"
+      )) {
+        captureOutgoingSurface(previousView);
+      }
+      let anchor = document.getElementById("home-transit-anchor");
+      if (!anchor) {
+        anchor = document.createElement("div");
+        anchor.id = "home-transit-anchor";
+        anchor.setAttribute("aria-hidden", "true");
+        $("#stage").appendChild(anchor);
+      }
+      const portal = portals.find((p) => p.id === parsed?.category);
+      const note = parsed?.slug
+        ? knowledgeRepository.bySlug(parsed.slug)
+        : undefined;
+      anchor.textContent = portal
+        ? portal.title
+        : note
+          ? `${note.visualCode} · ${note.title}`
+          : nextView === "studio"
+            ? "NEW · 信息录入"
+            : "ATLAS · 档案工作区";
+    }
+    homeTransit.navigate(
+      previousView,
+      nextView,
+      performance.now(),
+      routeInitialized && mode !== "boot",
+      !scene || !motionActive("surfaceTransitions"),
+    );
+    if (previousView === "home" && nextView !== "home") homeAwayHash = nextHash;
+    if (nextView === "home" && previousView !== "home")
+      homeAwayHash = currentRouteHash || "#/archive";
+    pendingSurfaceFocus = true;
+    currentRouteHash = nextHash;
+  }
+  routeInitialized = true;
   if (!parsed) {
     if (!scene && ready) {
       atlasView = "home";
@@ -1322,9 +1587,14 @@ function syncHashRoute() {
 
   if (parsed.view === "library") {
     const comingFrom3D = atlasView === "archive";
+    if (sourceView === "home") libraryOriginHash = "#/home";
+    else if (previousView === "archive") libraryOriginHash = "#/archive";
     atlasView = "library";
     previousReaderSlug = "";
-    if (parsed.category) {
+    const explicitCategory =
+      /^#\/library\//.test(nextHash) ||
+      new URLSearchParams(nextHash.split("?")[1]).has("category");
+    if (parsed.category && explicitCategory) {
       libraryState.category = parsed.category;
     }
     if (parsed.query !== undefined) {
@@ -1349,14 +1619,16 @@ function syncHashRoute() {
   }
 
   if (parsed.view === "studio") {
-    const prevView = atlasView;
+    const prevView = sourceView;
     if (prevView !== "studio") {
       studioState.entryOrigin =
-        prevView === "archive"
-          ? "archive"
-          : prevView === "reader"
-            ? "reader"
-            : "library";
+        prevView === "home"
+          ? "home"
+          : prevView === "archive"
+            ? "archive"
+            : prevView === "reader"
+              ? "reader"
+              : "library";
     }
     atlasView = "studio";
     previousReaderSlug = "";
@@ -1369,9 +1641,15 @@ function syncHashRoute() {
       );
     }
 
-    if (targetSlug && targetSlug !== studioState.originalSlug) {
+    if (
+      targetSlug &&
+      (targetSlug !== studioState.originalSlug || studioState.loading)
+    ) {
       void loadStudioEntryFromDisk(targetSlug);
-    } else if (!targetSlug && (!studioState.isNew || studioState.originalSlug)) {
+    } else if (
+      !targetSlug &&
+      (prevView !== "studio" || !studioState.isNew || studioState.originalSlug)
+    ) {
       const origin = studioState.entryOrigin;
       const defaultCat =
         parsed.category && parsed.category !== "all"
@@ -1379,10 +1657,7 @@ function syncHashRoute() {
           : libraryState.category !== "all"
             ? libraryState.category
             : "tools";
-      Object.assign(
-        studioState,
-        createDefaultStudioDraft(defaultCat, origin),
-      );
+      Object.assign(studioState, createDefaultStudioDraft(defaultCat, origin));
       const cachedNew = studioDraftCache.get("__new__");
       if (cachedNew && cachedNew.dirty) {
         applyStudioDraftSnapshot(studioState, cachedNew);
@@ -1397,6 +1672,24 @@ function syncHashRoute() {
   }
 
   if (parsed.view === "reader" && parsed.slug) {
+    if (sourceView !== "reader" && sourceView !== "studio") {
+      readerOrigin = {
+        hash:
+          sourceView === "home"
+            ? "#/home"
+            : sourceView === "library"
+              ? surfaceMemory.has("library")
+                ? libraryReturnHash
+                : "#/library"
+              : "#/archive",
+        label:
+          sourceView === "home"
+            ? "主页"
+            : sourceView === "library"
+              ? "二维索引"
+              : "档案大厅",
+      };
+    }
     atlasView = "reader";
     activeReaderSlug = parsed.slug;
     activeReaderAnchor = parsed.anchor;
@@ -1425,6 +1718,7 @@ function syncHashRoute() {
     scene?.setStudioMode(false);
     scene?.setIndexDeskMode(false);
     scene?.setReaderMode(false);
+    if (previousView === "home" && mode === "detail") setMode("archive");
     scene?.setMode(mode === "detail" ? "detail" : "archive");
     renderAtlasSurface();
   }
@@ -1468,15 +1762,22 @@ function applyHotSnapshot(
 
 async function scheduleStudioLivePreview(immediate = false) {
   clearTimeout(studioPreviewTimer);
+  const request = ++studioPreviewRevision;
+  const body = studioState.body;
   const runPreview = async () => {
     try {
       const res = await fetch("/__atlas_api/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: studioState.body }),
+        body: JSON.stringify({ body }),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        if ([404, 405, 501].includes(res.status)) throw new Error("Studio API unavailable");
+        return;
+      }
       const data = await res.json();
+      if (request !== studioPreviewRevision || body !== studioState.body)
+        return;
       if (!data.ok) return;
       studioState.previewHtml = hydrateEntryHtmlImages(data.html || "");
       studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
@@ -1491,6 +1792,8 @@ async function scheduleStudioLivePreview(immediate = false) {
           '<p class="studio-preview-placeholder">暂无正文内容，切回「编辑」输入 Markdown 后即可在此检视排版效果。</p>';
       }
     } catch {
+      if (request !== studioPreviewRevision || body !== studioState.body)
+        return;
       // Fallback client-side minimal preview when running in static mode
       studioState.localDiskAvailable = false;
       syncStudioStatusDom();
@@ -1511,10 +1814,25 @@ async function scheduleStudioLivePreview(immediate = false) {
 
 async function loadStudioEntryFromDisk(slugOrId: string) {
   const clean = slugOrId.replace(/^\/+|\/+$/g, "");
+  const request = ++studioLoadRevision;
+  const current = () =>
+    request === studioLoadRevision && atlasView === "studio";
   const fallbackEntry =
     knowledgeRepository.bySlug(clean) ?? knowledgeRepository.byId(clean);
 
-  studioState.loading = true;
+  const origin = studioState.entryOrigin;
+  Object.assign(
+    studioState,
+    createDefaultStudioDraft(fallbackEntry?.category ?? "tools", origin),
+    {
+      originalSlug: clean,
+      isNew: false,
+      lockedCode: fallbackEntry?.visualCode ?? "…",
+      title: fallbackEntry?.title ?? "",
+      loading: true,
+    },
+  );
+  studioEditRevision++;
   studioState.saveError = "";
   syncStudioStatusDom();
 
@@ -1524,6 +1842,7 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
     );
     if (res.ok) {
       const data = await res.json();
+      if (!current()) return;
       if (data.ok && data.exists) {
         const fm = data.frontMatter || {};
         const entry = data.entry || fallbackEntry;
@@ -1576,25 +1895,25 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
         studioState.loading = false;
         studioState.localDiskAvailable = true;
 
-        studioSavedBaseline.set(
-          resolvedSlug,
-          snapshotStudioDraft(studioState),
-        );
+        studioSavedBaseline.set(resolvedSlug, snapshotStudioDraft(studioState));
         const cached = studioDraftCache.get(resolvedSlug);
         if (cached && cached.dirty) {
           applyStudioDraftSnapshot(studioState, cached);
         }
 
         await scheduleStudioLivePreview(true);
+        if (!current()) return;
         sync3DCameraWith2DView();
         renderAtlasSurface();
         return;
       }
     }
   } catch {
+    if (!current()) return;
     studioState.localDiskAvailable = false;
   }
 
+  if (!current()) return;
   studioState.loading = false;
   if (fallbackEntry) {
     studioState.originalSlug = fallbackEntry.slug;
@@ -1685,6 +2004,8 @@ function syncStudioStatusDom() {
   );
   if (saveBtn) {
     saveBtn.disabled = studioState.saving || studioState.loading;
+    const label = saveBtn.querySelector("span");
+    if (label) label.textContent = studioState.localDiskAvailable ? "保存并归档" : "导出 Markdown";
   }
   const bottomRightSpan = document.querySelector<HTMLElement>(
     ".studio-bottom-right span",
@@ -1712,8 +2033,7 @@ function markStudioDirty() {
 function exportStudioMarkdown() {
   const title = studioState.title.trim() || "未命名知识档案";
   const stem =
-    studioState.fileSlug
-      .trim()
+    (studioState.fileSlug.trim() || title)
       .toLowerCase()
       .replace(/[^a-z0-9\u4e00-\u9fa5_-]+/g, "-")
       .replace(/^-+|-+$/g, "") || "new-specimen";
@@ -1792,19 +2112,15 @@ function setStudioEditorTab(tab: "edit" | "preview") {
       btn.setAttribute("aria-selected", String(active));
     });
   const previewPane = document.getElementById("studio-preview-pane");
-  const textarea = document.querySelector<HTMLTextAreaElement>(
-    "#studio-input-body",
-  );
+  const textarea =
+    document.querySelector<HTMLTextAreaElement>("#studio-input-body");
   if (!textarea || !previewPane) {
     renderAtlasSurface(true);
     return;
   }
   if (tab === "preview") {
     void scheduleStudioLivePreview(true);
-    const maxEdit = Math.max(
-      1,
-      textarea.scrollHeight - textarea.clientHeight,
-    );
+    const maxEdit = Math.max(1, textarea.scrollHeight - textarea.clientHeight);
     const scrollRatio = textarea.scrollTop / maxEdit;
     textarea.hidden = true;
     previewPane.hidden = false;
@@ -1852,6 +2168,8 @@ async function saveStudioDraftToDisk(andReturn = false) {
   }
 
   const requestRevision = studioEditRevision;
+  const requestContext = studioLoadRevision;
+  const requestDraft = snapshotStudioDraft(studioState);
   const prevCacheKey = studioCacheKey(
     studioState.originalSlug,
     studioState.isNew,
@@ -1890,6 +2208,65 @@ async function saveStudioDraftToDisk(andReturn = false) {
     }
 
     const savedEntry = knowledgeRepository.bySlug(data.slug);
+    const savedAt = new Date().toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const baseline: StudioDraftSnapshot = {
+      ...requestDraft,
+      originalSlug: data.slug,
+      isNew: false,
+      fileSlug: String(data.slug).split("/").slice(1).join("/"),
+      lockedCode: savedEntry?.visualCode || requestDraft.lockedCode,
+      updated: new Date().toISOString().slice(0, 10),
+      lastSavedAt: savedAt,
+      dirty: false,
+    };
+    studioSavedBaseline.set(data.slug, baseline);
+    if (requestContext !== studioLoadRevision) {
+      const cached = studioDraftCache.get(prevCacheKey);
+      const changed =
+        cached &&
+        Object.keys(requestDraft).some(
+          (key) =>
+            key !== "dirty" &&
+            key !== "lastSavedAt" &&
+            cached[key as keyof StudioDraftSnapshot] !==
+              requestDraft[key as keyof StudioDraftSnapshot],
+        );
+      studioDraftCache.delete(prevCacheKey);
+      if (cached && changed) {
+        studioDraftCache.set(data.slug, {
+          ...cached,
+          originalSlug: data.slug,
+          isNew: false,
+          lockedCode: baseline.lockedCode,
+          fileSlug: baseline.fileSlug,
+          dirty: true,
+        });
+      }
+      if (
+        atlasView !== "studio" &&
+        studioCacheKey(studioState.originalSlug, studioState.isNew) ===
+          prevCacheKey
+      ) {
+        applyStudioDraftSnapshot(
+          studioState,
+          changed && cached
+            ? {
+                ...cached,
+                originalSlug: data.slug,
+                isNew: false,
+                lockedCode: baseline.lockedCode,
+                fileSlug: baseline.fileSlug,
+              }
+            : baseline,
+        );
+        studioState.saving = false;
+      }
+      notify(`✓ 已保存并归档：${data.relPath}`);
+      return;
+    }
     studioState.saving = false;
     studioState.isNew = false;
     studioState.originalSlug = data.slug;
@@ -1906,10 +2283,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
     const modifiedDuringSave = studioEditRevision !== requestRevision;
     studioState.dirty = modifiedDuringSave;
 
-    studioSavedBaseline.set(
-      data.slug,
-      snapshotStudioDraft({ ...studioState, dirty: false }),
-    );
+    // The baseline is the version actually submitted, not edits made while saving.
     studioDraftCache.delete(prevCacheKey);
     if (modifiedDuringSave) {
       studioDraftCache.set(data.slug, snapshotStudioDraft(studioState));
@@ -1921,6 +2295,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
     if (location.hash !== nextHash) {
       history.replaceState(null, "", nextHash);
     }
+    currentRouteHash = nextHash;
 
     scene?.pulseStudioSaveContact();
     sync3DCameraWith2DView();
@@ -1932,6 +2307,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
       exitStudioToOrigin();
     }
   } catch (err) {
+    if (requestContext !== studioLoadRevision && atlasView === "studio") return;
     studioState.saving = false;
     studioState.saveError =
       err instanceof Error ? err.message : "请确认使用本地 npm run dev 启动";
@@ -2097,7 +2473,9 @@ async function parseAiMarkdownIntoStudio() {
       studioState.aiPendingCandidate = candidate;
       renderAtlasSurface(true);
       audio.play("ui-tick");
-      notify("检测到当前草稿已有正文，请选择『插入到正文末尾』或『替换当前草稿』");
+      notify(
+        "检测到当前草稿已有正文，请选择『插入到正文末尾』或『替换当前草稿』",
+      );
     } else {
       applyAiCandidateToStudio(candidate, "replace");
     }
@@ -2110,9 +2488,8 @@ function insertStudioSnippet(kind: string) {
   if (studioState.activeTab !== "edit") {
     setStudioEditorTab("edit");
   }
-  const textarea = document.querySelector<HTMLTextAreaElement>(
-    "#studio-input-body",
-  );
+  const textarea =
+    document.querySelector<HTMLTextAreaElement>("#studio-input-body");
   if (!textarea) return;
   const snippets: Record<string, string> = {
     quickstart: `\n## 快速复习\n\n- **核心结论**：一句话总结最关键的操作或判断标准。\n\n~~~powershell\n# 核心可执行命令\n~~~\n`,
@@ -2164,9 +2541,8 @@ async function uploadStudioImageFile(file: File) {
     if (!res.ok || !data.ok) throw new Error(data.error || "上传失败");
 
     const mdImage = `\n![${file.name.replace(/\.[^.]+$/, "") || "截图说明"}](${data.markdownPath})\n`;
-    const textarea = document.querySelector<HTMLTextAreaElement>(
-      "#studio-input-body",
-    );
+    const textarea =
+      document.querySelector<HTMLTextAreaElement>("#studio-input-body");
     if (textarea) {
       const pos = textarea.selectionStart ?? textarea.value.length;
       textarea.value =
@@ -2178,7 +2554,9 @@ async function uploadStudioImageFile(file: File) {
     markStudioDirty();
     void scheduleStudioLivePreview(true);
     audio.play("confirm");
-    notify(`图片已存入 content/${studioState.category}/assets/${data.fileName}`);
+    notify(
+      `图片已存入 content/${studioState.category}/assets/${data.fileName}`,
+    );
   } catch (err) {
     notify(`图片上传失败：${err instanceof Error ? err.message : String(err)}`);
   }
@@ -2346,10 +2724,7 @@ function updateSelection(navigation?: ArchiveNavigation) {
     button.hidden = false;
     button.dataset.select = String(index);
     button.dataset.status = record.status;
-    button.setAttribute(
-      "aria-label",
-      `选择档案 ${record.id} ${record.title}`,
-    );
+    button.setAttribute("aria-label", `选择档案 ${record.id} ${record.title}`);
     button.title = `${record.visualCode} (${record.id}) · ${record.title} [${statusMeta(record.status).label}]`;
     button.classList.toggle("selected", index === selected);
     button.setAttribute("aria-pressed", String(index === selected));
@@ -2361,10 +2736,18 @@ function replayBoot(forcePreview = false) {
   closeModal(() => replayBootAfterModal(forcePreview));
 }
 function replayBootAfterModal(forcePreview: boolean) {
+  // Reinitialization bypasses hash navigation, so explicitly release the
+  // observation pose and any outgoing snapshot before the original boot.
+  homeTransit.navigate("home", "archive", performance.now(), false,
+    !scene || !motionActive("surfaceTransitions"));
+  outgoingSurface?.remove();
+  outgoingSurface = null;
+  pendingSurfaceFocus = false;
   atlasView = "archive";
   if (location.hash && location.hash !== "#/archive") {
     history.replaceState(null, "", location.pathname + location.search);
   }
+  currentRouteHash = location.hash || "#/archive";
   bootStart = performance.now() / 1000 - 1.76;
   frozenTime = null;
   lastStep = "";
@@ -2446,10 +2829,7 @@ function renderDetail() {
   <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button><button class="solid-button secondary-solid" data-action="edit-studio" data-entry-slug="${escapeHtml(r.slug)}">EDIT FILE ✎<span>编辑档案</span></button><button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
   <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">OPEN IN 2D READER (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
-  $('[data-action="bookmark"]').setAttribute(
-    "aria-pressed",
-    String(isSaved),
-  );
+  $('[data-action="bookmark"]').setAttribute("aria-pressed", String(isSaved));
   documentDecryption.reset(
     $("#detail-content"),
     !motionActive("documentReveal") ||
@@ -2587,7 +2967,10 @@ function renderResults() {
   });
   const filtered = rawResults.filter(({ item }) => {
     if (modal === "saved") {
-      return isEntrySaved(item.id) || (item.globalCode ? isEntrySaved(item.globalCode) : false);
+      return (
+        isEntrySaved(item.id) ||
+        (item.globalCode ? isEntrySaved(item.globalCode) : false)
+      );
     }
     return true;
   });
@@ -2822,6 +3205,23 @@ document.addEventListener("change", (e) => {
   }
 });
 document.addEventListener("click", (e) => {
+  // A deliberate portal click starts a fresh domain search. Browser Back and
+  // the global library shortcut instead restore the user's existing filters.
+  const homeLibraryLink = atlasView === "home" && e.button === 0 &&
+    !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey
+    ? (e.target as Element).closest<HTMLAnchorElement>('a[href^="#/library"]') : null;
+  if (homeLibraryLink) {
+    const target = parseHashRoute(homeLibraryLink.hash);
+    const explicit = /#\/library\//.test(homeLibraryLink.hash) ||
+      homeLibraryLink.hash.includes("category=");
+    if (target?.view === "library" && explicit) {
+      libraryState.query = "";
+      libraryState.type = "all";
+      libraryState.status = "all";
+      libraryState.savedOnly = false;
+      libraryState.selectedId = libraryDomainMemory[target.category ?? "all"] ?? null;
+    }
+  }
   const themeButton = (e.target as Element).closest<HTMLElement>(
     "[data-color-theme]",
   );
@@ -2913,9 +3313,7 @@ document.addEventListener("click", (e) => {
     const tab = opticalDrawerTabBtn.dataset.opticalDrawerTab;
     document
       .querySelectorAll<HTMLElement>("[data-optical-drawer-tab]")
-      .forEach((b) =>
-        b.classList.toggle("active", b === opticalDrawerTabBtn),
-      );
+      .forEach((b) => b.classList.toggle("active", b === opticalDrawerTabBtn));
     const paneToc = document.getElementById("optical-pane-toc");
     const paneTree = document.getElementById("optical-pane-tree");
     if (paneToc && paneTree) {
@@ -3081,13 +3479,8 @@ document.addEventListener("click", (e) => {
   );
   if (studioDropdownBtn) {
     const kind = (studioDropdownBtn.dataset.studioDropdown ?? "category") as
-      | "category"
-      | "type"
-      | "status"
-      | "insert"
-      | "top-more";
-    studioState.openDropdown =
-      studioState.openDropdown === kind ? null : kind;
+      "category" | "type" | "status" | "insert" | "top-more";
+    studioState.openDropdown = studioState.openDropdown === kind ? null : kind;
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -3265,10 +3658,7 @@ document.addEventListener("click", (e) => {
       const origin = studioState.entryOrigin;
       Object.assign(
         studioState,
-        createDefaultStudioDraft(
-          studioState.category || "tools",
-          origin,
-        ),
+        createDefaultStudioDraft(studioState.category || "tools", origin),
       );
       studioDraftCache.delete("__new__");
       void scheduleStudioLivePreview(true);
@@ -3329,8 +3719,7 @@ document.addEventListener("click", (e) => {
   );
   if (typeChip) {
     libraryState.type = (typeChip.dataset.libraryType ?? "all") as
-      | EntryType
-      | "all";
+      EntryType | "all";
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -3340,8 +3729,7 @@ document.addEventListener("click", (e) => {
   );
   if (statusChip) {
     libraryState.status = (statusChip.dataset.libraryStatus ?? "all") as
-      | EntryStatus
-      | "all";
+      EntryStatus | "all";
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -3351,9 +3739,7 @@ document.addEventListener("click", (e) => {
   );
   if (sortChip) {
     libraryState.sortBy = (sortChip.dataset.librarySort ?? "updated") as
-      | "updated"
-      | "title"
-      | "status";
+      "updated" | "title" | "status";
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -3391,9 +3777,7 @@ document.addEventListener("click", (e) => {
     }
     if (act === "open-3d-portal") {
       const portalId = atlasActionBtn.dataset.portal ?? "";
-      const lane = portals.findIndex((p) => p.id === portalId);
-      navigateAtlas("#/archive");
-      if (lane >= 0) select(columnMemory[lane]);
+      navigateAtlas(`#/archive?category=${encodeURIComponent(portalId)}`);
       audio.play("column");
       return;
     }
@@ -3795,6 +4179,7 @@ document.addEventListener("click", (e) => {
   }
 });
 document.addEventListener("keydown", (e) => {
+  if (e.isComposing) return;
   if (!started) return;
   if (viewer?.isOpen) return;
   if (
@@ -3839,6 +4224,12 @@ document.addEventListener("keydown", (e) => {
     e.target instanceof HTMLSelectElement ||
     e.target instanceof HTMLTextAreaElement;
   if (e.key === "Escape") {
+    if (!modal && homeTransit.active) {
+      e.preventDefault();
+      navigateAtlas(atlasView === "home" ? homeAwayHash : "#/home");
+      audio.play("back");
+      return;
+    }
     if (modal) closeModal();
     else if (atlasView === "studio") {
       if (studioState.openDropdown) {
@@ -3915,7 +4306,7 @@ document.addEventListener("keydown", (e) => {
         audio.play("ui-tick");
         return;
       }
-      navigateAtlas("#/archive");
+      navigateAtlas(libraryOriginHash);
       audio.play("back");
     } else if (
       atlasView === "archive" &&
@@ -4199,6 +4590,7 @@ function frame(ms: number) {
   }
   workbench?.tick();
   const time = ms / 1000;
+  syncHomeTransitDom(ms);
   const theme = scene?.themeAmount ?? (prefs.colorTheme === "dark" ? 1 : 0);
   paintTheme(theme);
   viewer?.setTheme(theme);
@@ -4588,10 +4980,7 @@ if (isWallpaper) {
       .querySelectorAll<HTMLInputElement>("[data-pref]")
       .forEach((input) => {
         const key = input.dataset.pref as
-          | "sound"
-          | "music"
-          | "quality"
-          | "superPerformance";
+          "sound" | "music" | "quality" | "superPerformance";
         if (key in prefs) input.checked = prefs[key];
       });
     document
@@ -4727,6 +5116,11 @@ Object.assign(window, {
       fps: Math.round(fps),
       mode,
       atlasView,
+      homeTransit: {
+        progress: homeTransit.progress,
+        active: homeTransit.active,
+        destination: homeTransit.destination,
+      },
       activeReaderSlug,
       ready,
       startup: started ? "started" : (entry?.phase ?? "loading"),

@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "home glass deck and orbital arcs stay inside their instrument",
+    "home reader returns to the same home scroll and entry",
+    "explicit domain entry clears incompatible search and preserves global library memory",
+    "Escape reverses the home transfer without resetting its pose or leaving duplicate IDs",
+    "home 3D domain entry restores the chosen lane without opening a file",
+    "rapid destination changes keep the newest target and home return source",
+    "new-note draft survives top navigation and restores body selection",
+    "late entry load cannot replace a newer editor target",
+    "late preview cannot replace the current body preview",
+    "save completion for a departed note cannot rewrite another editor or route",
+    "discard after editing during save restores the submitted version",
+    "reinitialize releases the home observation pose and snapshot",
+    "fallback / viewport {\"width\":390,\"height\":844}",
+    "fallback / viewport {\"width\":844,\"height\":390}",
+    "fallback / viewport {\"reduced\":true,\"dark\":true}",
+    "fallback / viewport {\"webgl\":false}"
+  ],
+  "errors": [],
+  "note": "save requests intercepted; no content writes"
+}

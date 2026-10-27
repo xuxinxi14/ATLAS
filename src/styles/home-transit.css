@@ -1,0 +1,513 @@
+/* Shared observation deck: the existing index bridge in its higher overview position. */
+#stage[data-atlas-view="home"] > #atlas-surface {
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+#stage[data-atlas-view="home"] > .brand {
+  opacity: 0;
+  pointer-events: none;
+}
+.home-outer-brand {
+  position: absolute;
+  top: 22px;
+  left: max(4.75%, calc(50% - 868px));
+  color: var(--atlas-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+.home-observation-deck {
+  position: absolute;
+  top: 66px;
+  left: 4.75%;
+  width: 90.5%;
+  height: calc(100% - 66px - 10%);
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 30px 22px;
+  overflow: hidden;
+  color: var(--atlas-ink);
+  background: linear-gradient(
+    155deg,
+    rgba(252, 250, 246, 0.91),
+    rgba(237, 233, 225, 0.84)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow:
+    0 20px 50px rgba(18, 19, 15, 0.1),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(18px);
+  transform-origin: center top;
+  transform: perspective(1600px)
+    translate3d(
+      0,
+      calc(var(--home-retreat, 0) * -68px),
+      calc(var(--home-retreat, 0) * -210px)
+    )
+    rotateX(calc(var(--home-retreat, 0) * 5deg));
+  opacity: var(--home-shell, 1);
+}
+.home-observation-deck > .atlas-surface-scroll {
+  opacity: var(--home-ui, 1);
+}
+.home-observation-deck .rhine-telemetry-stage {
+  grid-template-columns: minmax(350px, 0.95fr) minmax(0, 2fr);
+  gap: 38px;
+}
+.home-observation-deck .rhine-title-block h2 {
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.home-observation-deck .rhine-title-block h2 small {
+  line-height: 1.5;
+}
+.home-observation-deck .rhine-primary-actions .solid-button {
+  height: auto;
+  min-height: 60px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+[data-dark-surface="true"] .home-observation-deck {
+  background: linear-gradient(
+    155deg,
+    rgba(36, 47, 52, 0.94),
+    rgba(22, 30, 34, 0.9)
+  );
+  border-color: rgba(145, 166, 172, 0.4);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 4px rgba(145, 166, 172, 0.06);
+}
+#stage:not([data-mode="boot"]):not([data-layout="compact"]):not(
+    [data-layout="portrait"]
+  )
+  > .system-nav {
+  top: 18px !important;
+  right: max(4.75%, calc(50% - 868px)) !important;
+  gap: 24px !important;
+}
+#stage[data-atlas-view="studio"] > .system-nav {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.home-transit-layer {
+  z-index: 9;
+  pointer-events: none !important;
+  user-select: none;
+}
+
+#stage:not([data-mode="boot"]):is(
+    [data-layout="compact"],
+    [data-layout="portrait"]
+  )
+  > .system-nav {
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  gap: 6px;
+  justify-content: space-between;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  > .system-nav
+  button {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  > .system-nav
+  :is(.key, .settings-label) {
+  display: none;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  > .system-nav
+  [data-action="search"] {
+  font-size: 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  > .system-nav
+  .nav-glyph {
+  font-size: 22px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  > .system-nav
+  [data-action="settings"] {
+  min-width: 25px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(.desk-outer-brand, .studio-outer-brand) {
+  display: none;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .home-observation-deck {
+  top: 70px;
+  height: calc(100% - 108px);
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .glass-index-desk {
+  min-height: 0;
+}
+/* On narrow displays retain a usable writing surface; controls must never
+   squeeze into vertical letter stacks or sit below the viewport's min-height. */
+#stage[data-atlas-view="studio"]:is(
+    [data-layout="compact"],
+    [data-layout="portrait"]
+  )
+  > .system-nav {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .sliding-studio-tray {
+  top: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  min-height: 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-writing-surface {
+  padding: 10px 14px 8px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .studio-top-bar {
+  gap: 6px;
+  padding-bottom: 8px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(
+    .studio-top-kicker,
+    .studio-shortcut-badge,
+    .studio-top-sep,
+    .studio-dock-foot
+  ) {
+  display: none;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-return-btn {
+  flex-shrink: 0;
+  padding: 0;
+  gap: 5px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-top-actions {
+  min-width: 0;
+  gap: 5px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .studio-save-status-wrap {
+  min-width: 0;
+  max-width: 65px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-status-pill {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-status-pill
+  > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-primary-save-btn {
+  flex-shrink: 0;
+  padding: 0 10px;
+  height: 44px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-more-icon-btn {
+  width: 28px;
+  height: 44px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-title-zone {
+  padding: 12px 0 10px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-title-input {
+  height: 36px;
+  min-height: 36px;
+  max-height: 68px;
+  font-size: 23px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .studio-meta-row {
+  gap: 6px;
+  padding: 8px 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(.studio-meta-chip, .studio-more-info-trigger) {
+  height: 38px;
+  padding: 0 8px;
+  gap: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .studio-tool-row {
+  flex-wrap: wrap;
+  gap: 0 10px;
+  padding-bottom: 4px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .studio-mode-tabs {
+  height: 40px;
+  gap: 18px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-assist-tools {
+  gap: 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-assist-btn {
+  font-size: 13px;
+  padding: 0 7px;
+  gap: 5px;
+  white-space: nowrap;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .studio-assist-sep {
+  display: none;
+}
+@media (max-height: 500px) {
+  #stage[data-layout="compact"] .studio-writing-surface {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  #stage[data-layout="compact"] .studio-body-zone {
+    flex: 0 0 180px;
+    min-height: 180px;
+  }
+}
+.home-transit-layer:not([data-source="home"]) {
+  opacity: var(--home-target, 1);
+  transform: perspective(1600px)
+    translateY(calc((1 - var(--home-target, 1)) * -36px));
+}
+.home-transit-layer[data-source="home"] {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  padding: 0 !important;
+}
+#stage[data-home-destination="library"]
+  .home-transit-layer[data-source="home"]
+  .home-observation-deck {
+  transform: perspective(1600px)
+    translate3d(
+      0,
+      calc(var(--home-approach, 0) * 18px),
+      calc(var(--home-approach, 0) * 45px)
+    );
+}
+#home-transit-anchor {
+  position: absolute;
+  z-index: 10;
+  top: 21%;
+  left: 11%;
+  max-width: 68%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--atlas-ink);
+}
+#home-transit-anchor::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 14px;
+  background: var(--atlas-amber);
+}
+#stage[data-home-transitioning="true"] > #home-transit-anchor {
+  opacity: var(--home-anchor, 0);
+}
+.home-transit-layer .home-outer-brand,
+.home-transit-layer .desk-outer-brand,
+.home-transit-layer .studio-outer-brand {
+  visibility: hidden;
+}
+#stage[data-home-transitioning="true"]:not([data-atlas-view="home"])
+  > #atlas-surface {
+  opacity: var(--home-target, 1);
+}
+#stage[data-home-transitioning="true"][data-atlas-view="archive"]
+  > #archive-ui {
+  opacity: var(--home-target, 0) !important;
+}
+#stage[data-home-transitioning="true"] > #spatial-transit-hud {
+  display: none;
+}
+#stage[data-home-transitioning="true"] > .brand {
+  opacity: 0 !important;
+}
+#stage[data-home-transitioning="true"] > .powered {
+  opacity: 0 !important;
+}
+#stage[data-home-transitioning="true"] .atlas-spatial-bar {
+  opacity: 0;
+}
+#stage[data-home-transitioning="true"] .glass-index-desk {
+  translate: 0 calc((1 - var(--home-target, 1)) * -26px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-observation-deck,
+  .home-transit-layer {
+    transform: none !important;
+  }
+}
+:is([data-layout="portrait"], [data-layout="compact"]) .home-observation-deck {
+  top: 126px;
+  left: 4%;
+  width: 92%;
+  min-height: 0;
+  height: calc(100% - 164px);
+  padding: 20px 16px;
+  transform: none;
+}
+:is([data-layout="portrait"], [data-layout="compact"])
+  .home-observation-deck
+  .rhine-telemetry-stage {
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+:is([data-layout="portrait"], [data-layout="compact"]) .home-outer-brand {
+  display: none;
+}
+:is([data-layout="portrait"], [data-layout="compact"]) .home-transit-layer {
+  transform: none;
+}
+
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .home-observation-deck
+  .rhine-telemetry-stage {
+  grid-template-columns: minmax(0, 1fr);
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(.rhine-telemetry-left, .rhine-telemetry-right, .rhine-kpi-column) {
+  min-width: 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-title-block
+  h2 {
+  display: block;
+  font-size: 28px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-title-block
+  h2
+  small {
+  display: block;
+  margin-top: 8px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .rhine-subtitle {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-orbital-panel {
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 16px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-orbital-graphic {
+  width: 130px;
+  height: 130px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .kpi-giant-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .kpi-giant-row
+  strong {
+  font-size: 48px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(.rhine-spectrum-legend, .spectrum-head, .rhine-section-kicker) {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .rhine-mini-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-mini-kpis
+  dt {
+  overflow-wrap: anywhere;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-ledger-header {
+  display: none;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .rhine-ledger-row {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 10px;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  :is(.ledger-portal, .ledger-status, .ledger-date) {
+  display: none;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-portal-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"]) .rhine-portal-col {
+  min-width: 0;
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .rhine-primary-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+#stage:is([data-layout="compact"], [data-layout="portrait"])
+  .portal-col-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 520px) {
+  #stage:is([data-layout="compact"], [data-layout="portrait"]) > .system-nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px 8px;
+  }
+  #stage:is([data-layout="compact"], [data-layout="portrait"])
+    > .system-nav
+    .nav-mode-btn {
+    flex: 1 0 calc(25% - 8px);
+  }
+  #stage:is([data-layout="compact"], [data-layout="portrait"])
+    > .system-nav
+    .nav-mode-indicator {
+    top: 44px;
+    bottom: auto;
+  }
+  #stage:is([data-layout="compact"], [data-layout="portrait"])
+    .home-observation-deck {
+    top: 116px;
+    height: calc(100% - 150px);
+  }
+  #stage:is([data-layout="compact"], [data-layout="portrait"])
+    .glass-index-desk {
+    top: 116px;
+    height: calc(100% - 128px);
+  }
+}

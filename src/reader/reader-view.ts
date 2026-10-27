@@ -58,6 +58,7 @@ export function renderReaderViewMarkup(
   slugOrId: string,
   savedIds: Set<string>,
   hasWebGL = true,
+  origin = { hash: "#/archive", label: "档案大厅" },
 ): string {
   const entry =
     knowledgeRepository.bySlug(slugOrId) ?? knowledgeRepository.byId(slugOrId);
@@ -70,7 +71,7 @@ export function renderReaderViewMarkup(
             <h2>SPECIMEN NOT FOUND // 未找到指定的知识档案</h2>
             <p>请求路径：<code>${escapeHtml(slugOrId)}</code></p>
             <div style="display:flex;gap:16px;justify-content:center;margin-top:20px">
-              <a href="#/archive" class="solid-button" style="max-width:260px">← 档案大厅<span>返回三维阵列</span></a>
+              <a href="${escapeHtml(origin.hash)}" class="solid-button" style="max-width:260px">← ${escapeHtml(origin.label)}<span>返回来源页面</span></a>
               <a href="#/library" class="solid-button secondary-solid" style="max-width:240px">2D LIBRARY ↗<span>返回二维索引</span></a>
             </div>
           </div>
@@ -282,10 +283,10 @@ export function renderReaderViewMarkup(
               type="button"
               class="optical-return-btn"
               data-atlas-action="exit-optical-reader"
-              title="退片并返回三维档案大厅 (Esc)"
+              title="退片并返回${escapeHtml(origin.label)} (Esc)"
             >
               <span class="optical-return-arrow">←</span>
-              <span>档案大厅</span>
+              <span>${escapeHtml(origin.label)}</span>
             </button>
 
             <div class="optical-loaded-pill" id="optical-loaded-pill">

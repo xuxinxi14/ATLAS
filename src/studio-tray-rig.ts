@@ -12,12 +12,13 @@ const smootherstep = (edge0: number, edge1: number, x: number) => {
   return t * t * t * (t * (t * 6 - 15) + 10);
 };
 
-export type StudioEntrySource = "library" | "archive" | "reader";
+export type StudioEntrySource = "home" | "library" | "archive" | "reader";
 
 export const STUDIO_LIBRARY_DURATION = 1.3;
 export const STUDIO_ARCHIVE_DURATION = 1.8;
 
 export function studioTimelineDuration(source: StudioEntrySource): number {
+  if (source === "home") return 1.4;
   return source === "library"
     ? STUDIO_LIBRARY_DURATION
     : STUDIO_ARCHIVE_DURATION;
@@ -85,6 +86,25 @@ export function evaluateStudioTrayTimeline(
 
   const t = Math.max(0, Math.min(duration, seconds));
   const progress = t / duration;
+
+  if (source === "home") {
+    return {
+      source,
+      time: t,
+      duration,
+      progress,
+      responseAck: smoothstep(0, 0.12, t),
+      indexBridgeRetreat: smootherstep(0.1, 0.4, t),
+      verticalClearance: 0,
+      traySlide: smootherstep(0.25, 0.85, t),
+      cassetteTransfer: 0,
+      cassetteDock: smootherstep(0.7, 1.1, t),
+      cameraFrame: smootherstep(0.4, 1.1, t),
+      contactGlow: smoothstep(0.85, 1.12, t),
+      editorReveal: smootherstep(1.02, 1.4, t),
+      settled: t >= duration - 0.015,
+    };
+  }
 
   if (source === "library") {
     // Section 5: 2D Index -> Sliding Studio (1.30s)

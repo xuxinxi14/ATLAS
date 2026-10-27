@@ -222,12 +222,7 @@ export class IndexDeskRig {
     const rightRim = new THREE.Mesh(leftRimGeo, this.ivoryRimMat);
     rightRim.position.set(8.68, 2.7, -0.3);
 
-    this.bridgeAssembly.add(
-      frontLipGlass,
-      frontIvoryTrim,
-      leftRim,
-      rightRim,
-    );
+    this.bridgeAssembly.add(frontLipGlass, frontIvoryTrim, leftRim, rightRim);
 
     // 3. Localized Warm-Amber Positioning Signal (台下局部琥珀定位信号)
     const amberStripGeo = new THREE.BoxGeometry(0.16, 0.12, 3.85);
@@ -255,6 +250,7 @@ export class IndexDeskRig {
     selectedCassettePos: THREE.Vector3,
     hasValid3DTarget: boolean,
     themeAmount: number,
+    observationMix = 0,
   ) {
     // Visible whenever not completely settled in 3D Archive Hall
     const active = frame.progress < 0.998;
@@ -274,12 +270,14 @@ export class IndexDeskRig {
     // and slides backward (-5.6 Z) along the side guide rails so the camera
     // passes cleanly through the real clearance beneath the front lip!
     const retreat = frame.deskRetreat;
-    const bridgeVisibility = clamp01(1 - smoothstep(0.55, 0.92, frame.progress));
+    const bridgeVisibility = clamp01(
+      1 - smoothstep(0.55, 0.92, frame.progress),
+    );
 
     this.bridgeAssembly.position.set(
       selectedCassettePos.x * 0.15,
-      retreat * 2.35,
-      -retreat * 5.8,
+      retreat * 2.35 + observationMix * 0.65,
+      -retreat * 5.8 - observationMix * 0.45,
     );
     this.bridgeAssembly.rotation.x = THREE.MathUtils.degToRad(-4 * retreat);
 

@@ -1943,7 +1943,7 @@ export class ArchiveScene {
       if (bridgeMix > 0.0001 && readerTurn < 0.5) {
         viewDirection
           .lerp(
-            new THREE.Vector3(-0.24, 0.34, 0.909),
+            new THREE.Vector3(-0.25, 0.29, 0.924),
             bridgeMix * (1 - readerTurn),
           )
           .normalize();
@@ -2065,7 +2065,7 @@ export class ArchiveScene {
           Math.sin(indexDeskFrame.cameraDive * Math.PI) * 0.52;
         const bridgeAim = new THREE.Vector3(
           THREE.MathUtils.lerp(cameraAim.x, -0.38, 0.65),
-          cameraAim.y + 2.15 - clearanceDip,
+          cameraAim.y + 0.92 - clearanceDip,
           cameraAim.z + 0.36,
         );
         cameraAim.lerp(bridgeAim, bridgeMix * (1 - readerCamMix));

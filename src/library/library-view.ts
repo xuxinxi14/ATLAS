@@ -59,6 +59,10 @@ export function deskStatusLabel(status: EntryStatus): string {
   return DESK_STATUS_LABELS[status] ?? "已掌握";
 }
 
+export function deskDisplayCode(entry: KnowledgeEntry): string {
+  return entry.visualCode || entry.globalCode;
+}
+
 export function filterAndSortLibraryEntries(
   state: LibraryState,
   savedIds?: Set<string>,
@@ -107,7 +111,7 @@ export function filterAndSortLibraryEntries(
       !state.query.trim() &&
       a.category === b.category
     ) {
-      return a.globalCode.localeCompare(b.globalCode, "en");
+      return deskDisplayCode(a).localeCompare(deskDisplayCode(b), "en");
     }
     return b.updated.localeCompare(a.updated);
   });
@@ -224,6 +228,7 @@ export function renderLibraryViewMarkup(
               savedIds.has(entry.id) || savedIds.has(entry.globalCode);
             const isMenuOpen = state.openRowMenuId === entry.id;
             const statusText = deskStatusLabel(entry.status);
+            const displayCode = deskDisplayCode(entry);
             const tMeta = typeMeta(entry.type);
 
             return `
@@ -238,7 +243,7 @@ export function renderLibraryViewMarkup(
               >
                 <span class="desk-col-code">
                   <i class="desk-row-amber-mark" aria-hidden="true"></i>
-                  <b>${escapeHtml(entry.globalCode)}</b>
+                  <b>${escapeHtml(displayCode)}</b>
                 </span>
 
                 <span class="desk-col-title" title="${escapeHtml(tMeta.label)} · ${escapeHtml(entry.summary)}">
@@ -257,7 +262,7 @@ export function renderLibraryViewMarkup(
                     data-entry-id="${escapeHtml(entry.id)}"
                     aria-haspopup="menu"
                     aria-expanded="${isMenuOpen}"
-                    aria-label="档案 ${escapeHtml(entry.globalCode)} 更多操作"
+                    aria-label="档案 ${escapeHtml(displayCode)} 更多操作"
                     title="更多操作"
                   >•••</button>
 
@@ -317,8 +322,8 @@ export function renderLibraryViewMarkup(
 
   const selectedContextText = selectedEntry
     ? isSelectedDraft
-      ? `已选 <strong>${escapeHtml(selectedEntry.globalCode)}</strong> · 草稿箱 <span class="desk-context-muted">· 无三维轨道位置</span>`
-      : `已选 <strong>${escapeHtml(selectedEntry.globalCode)}</strong> · ${escapeHtml(deskDomainTitle(selectedEntry.category, selectedEntry.categoryTitle))}`
+      ? `已选 <strong>${escapeHtml(deskDisplayCode(selectedEntry))}</strong> · 草稿箱 <span class="desk-context-muted">· 无三维轨道位置</span>`
+      : `已选 <strong>${escapeHtml(deskDisplayCode(selectedEntry))}</strong> · ${escapeHtml(deskDomainTitle(selectedEntry.category, selectedEntry.categoryTitle))}`
     : `当前无结果内选择 · 共 ${String(entries.length).padStart(2, "0")} 份档案`;
 
   const noticeEntry = state.unfiltered3DNoticeId
@@ -328,7 +333,7 @@ export function renderLibraryViewMarkup(
     noticeEntry && (!selectedEntry || selectedEntry.id !== noticeEntry.id)
       ? `
         <span class="desk-unfiltered-notice">
-          三维当前档案 <b>${escapeHtml(noticeEntry.globalCode)}</b> 不在当前筛选中
+          三维当前档案 <b>${escapeHtml(deskDisplayCode(noticeEntry))}</b> 不在当前筛选中
           <button
             type="button"
             class="desk-unfiltered-reveal"
@@ -352,6 +357,8 @@ export function renderLibraryViewMarkup(
 
   return `
     <div class="desk-bridge-stage" aria-label="二维知识索引目录">
+      <div class="desk-outer-brand" aria-hidden="true">RHINE LAB / ATLAS</div>
+
       <!-- Glass Index Desk / 检索桥主体 -->
       <section class="glass-index-desk" role="region" aria-label="ATLAS / LIBRARY 知识索引台">
         <div class="desk-glass-lip-top" aria-hidden="true"></div>
@@ -362,7 +369,7 @@ export function renderLibraryViewMarkup(
         <div class="desk-transition-anchor" aria-hidden="true">
           <div class="desk-anchor-row">
             <i class="desk-row-amber-mark"></i>
-            <b class="desk-anchor-code">${escapeHtml(selectedEntry?.globalCode ?? "X-001")}</b>
+            <b class="desk-anchor-code">${escapeHtml(selectedEntry ? deskDisplayCode(selectedEntry) : "T-001")}</b>
             <span class="desk-anchor-title">${escapeHtml(selectedEntry?.title ?? "RHINE LAB ARCHIVE DIRECTORY")}</span>
           </div>
           <div class="desk-anchor-amber-rule"></div>

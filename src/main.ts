@@ -766,6 +766,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     const prevView = renderedAtlasView;
     delete $("#stage").dataset.atlasOverlay;
     $("#stage").dataset.atlasView = "archive";
+    syncNavButtons();
     $("#archive-ui").inert =
       mode !== "archive" || Boolean(modal) || Boolean(workbench?.enabled);
     $("#detail-ui").inert = mode !== "detail" || Boolean(modal);
@@ -880,6 +881,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   surface.inert = Boolean(modal);
   $("#stage").dataset.atlasOverlay = "true";
   $("#stage").dataset.atlasView = atlasView;
+  syncNavButtons();
   $("#archive-ui").inert = true;
   $("#detail-ui").inert = true;
 

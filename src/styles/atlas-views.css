@@ -3703,16 +3703,37 @@ i[data-status="draft"] {
   ) !important;
 }
 
-/* Compact outer brand & hide bottom footer bar in library mode so the bottom 12-16% exposes the 3D Archive Array cleanly */
-#stage[data-atlas-view="library"]:not([data-layout="compact"]):not([data-layout="portrait"]) > .brand {
-  transform: scale(0.42);
-  transform-origin: top left;
-  opacity: 0.78;
+/* Hide the tall 3-line 3D brand & footer in library mode; use the single-line outer brand & top-margin mode bar above the desk */
+#stage[data-atlas-view="library"] > .brand {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#stage[data-atlas-view="library"]:not([data-layout="compact"]):not([data-layout="portrait"]) > .system-nav {
+  top: 18px !important;
+  right: max(4.75%, calc(50% - 868px)) !important;
+  gap: 28px !important;
+}
+
+#stage[data-atlas-view="library"] > .system-nav :is([data-action="search"], [data-action="saved"], .settings-label) {
+  display: none !important;
 }
 
 #stage[data-atlas-view="library"] > .system-footer {
   opacity: 0;
   pointer-events: none;
+}
+
+.desk-outer-brand {
+  position: absolute;
+  top: 22px;
+  left: max(4.75%, calc(50% - 868px));
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--atlas-muted);
+  pointer-events: none;
+  opacity: calc(1 - var(--desk-retreat, 0));
 }
 
 /* Smoothly hand over 3D Archive Hall HUD during 860-1250ms of the 1.25s transition */
@@ -4754,6 +4775,12 @@ i[data-status="draft"] {
   flex-direction: column;
   align-items: flex-start;
   gap: 10px;
+}
+
+:is([data-layout="compact"], [data-layout="portrait"]) .desk-outer-brand {
+  left: var(--edge, 20px);
+  top: 22px;
+  font-size: 11px;
 }
 
 :is([data-layout="compact"], [data-layout="portrait"]) .desk-rail-left,

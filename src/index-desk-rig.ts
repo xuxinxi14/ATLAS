@@ -65,7 +65,7 @@ export function evaluateIndexDeskTimeline(
       responseAck: p > 0.01 ? 1 : 0,
       directoryFade: p,
       directoryOpacity: inv,
-      selectedAnchorOpacity: inv,
+      selectedAnchorOpacity: 0,
       deskRetreat: p,
       cameraDive: p,
       cameraBridgeMix: inv,
@@ -81,9 +81,11 @@ export function evaluateIndexDeskTimeline(
   // 2. 80–340ms: Directory text and secondary controls fade out
   const directoryFade = smoothstep(0.08, 0.34, t);
   const directoryOpacity = 1 - directoryFade;
-  // Selected code & short amber marker remain visible during 80–360ms (02 台面退让)
-  // and fade out cleanly between 360ms and 640ms
-  const selectedAnchorOpacity = 1 - smoothstep(0.36, 0.64, t);
+  // Selected code & short amber marker fade in ONLY during 02 台面退让 (80–360ms)
+  // as the directory text fades out, and fade out between 380ms and 640ms.
+  // At t = 0.00s (settled in 2D), selectedAnchorOpacity is strictly 0.
+  const selectedAnchorOpacity =
+    smoothstep(0.08, 0.28, t) * (1 - smoothstep(0.38, 0.64, t));
   // 3. 180–650ms: Desk lifts slightly and retreats along side guide rails
   const deskRetreat = smootherstep(0.18, 0.65, t);
   // 4. 440–1060ms: Camera lowers, pitches, and enters the array beneath the front lip

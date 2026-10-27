@@ -72,9 +72,15 @@ import {
 } from "./reader/reader-view";
 import {
   renderStudioViewMarkup,
+  renderStudioSaveStatusMarkup,
   createDefaultStudioDraft,
+  snapshotStudioDraft,
+  applyStudioDraftSnapshot,
+  computeStudioTargetPath,
   ATLAS_AI_ARCHIVE_PROMPT,
   type StudioDraftState,
+  type StudioDraftSnapshot,
+  type StudioAiCandidate,
 } from "./studio/studio-view";
 import { TerminalAudio } from "./audio";
 import { audioSettingsMarkup } from "./audio-settings";
@@ -212,6 +218,10 @@ const libraryState: LibraryState = {
 };
 const libraryDomainMemory: Record<string, string> = {};
 const studioState: StudioDraftState = createDefaultStudioDraft("tools");
+const studioDraftCache = new Map<string, StudioDraftSnapshot>();
+const studioSavedBaseline = new Map<string, StudioDraftSnapshot>();
+let studioEditRevision = 0;
+let studioComposing = false;
 let studioPreviewTimer: ReturnType<typeof setTimeout> | undefined;
 let transitTimer: ReturnType<typeof setTimeout> | undefined;
 const reviewParams = new URLSearchParams(location.search);
@@ -713,6 +723,73 @@ function syncIndexDeskDom() {
   }
 }
 
+function syncStudioTrayDom() {
+  const stage = $("#stage");
+  const surface = $("#atlas-surface");
+  if (!scene || !motionActive("surfaceTransitions")) {
+    const active = atlasView === "studio";
+    stage.style.setProperty("--studio-slide", active ? "1" : "0");
+    stage.style.setProperty("--studio-editor-reveal", active ? "1" : "0");
+    stage.style.setProperty("--studio-contact-glow", active ? "0.74" : "0");
+    stage.style.setProperty("--studio-bridge-retreat", active ? "1" : "0");
+    stage.style.setProperty("--studio-dock", active ? "1" : "0");
+    stage.dataset.studioTransitioning = "false";
+    return;
+  }
+  const f = scene.studioTrayFrame;
+  stage.style.setProperty("--studio-slide", f.traySlide.toFixed(4));
+  stage.style.setProperty(
+    "--studio-editor-reveal",
+    f.editorReveal.toFixed(4),
+  );
+  stage.style.setProperty(
+    "--studio-contact-glow",
+    f.contactGlow.toFixed(4),
+  );
+  stage.style.setProperty(
+    "--studio-bridge-retreat",
+    f.indexBridgeRetreat.toFixed(4),
+  );
+  stage.style.setProperty("--studio-dock", f.cassetteDock.toFixed(4));
+  const isMidTransition = f.time > 0.008 && f.time < f.duration - 0.012;
+  stage.dataset.studioTransitioning = String(isMidTransition);
+  if (
+    atlasView !== "studio" &&
+    surface.dataset.studioTrayHold === "true" &&
+    f.time <= 0.02
+  ) {
+    delete surface.dataset.studioTrayHold;
+    if (atlasView === "archive") {
+      delete stage.dataset.atlasOverlay;
+      surface.hidden = true;
+    }
+  }
+}
+
+function exitStudioToOrigin() {
+  studioState.openDropdown = null;
+  studioState.moreDrawerOpen = false;
+  studioState.aiPasteOpen = false;
+  studioState.aiPendingCandidate = null;
+  if (studioState.dirty) {
+    studioDraftCache.set(
+      studioCacheKey(studioState.originalSlug, studioState.isNew),
+      snapshotStudioDraft(studioState),
+    );
+  }
+  if (studioState.entryOrigin === "archive") {
+    navigateAtlas("#/archive");
+  } else if (
+    studioState.entryOrigin === "reader" &&
+    studioState.originalSlug
+  ) {
+    navigateAtlas(buildEntryHash(studioState.originalSlug));
+  } else {
+    navigateAtlas("#/library");
+  }
+  audio.play("back");
+}
+
 function exitOpticalReader() {
   manualReaderRecede = null;
   previousReaderSlug = "";
@@ -728,14 +805,17 @@ function exitOpticalReader() {
 }
 
 function renderSpatialLinkBarMarkup(): string {
-  if (atlasView === "reader" || atlasView === "library") return "";
+  if (
+    atlasView === "reader" ||
+    atlasView === "library" ||
+    atlasView === "studio"
+  ) {
+    return "";
+  }
   const rec = records[selected];
   if (!rec) return "";
   const { lane } = fileLocation(selected);
-  const cameraModeLabel =
-    atlasView === "studio" && !studioState.isNew
-      ? "CASSETTE INSPECT // 档案盒已升起检视"
-      : "ARRAY ORBIT // 阵列轨道已对齐";
+  const cameraModeLabel = "ARRAY ORBIT // 阵列轨道已对齐";
   return `
     <div class="atlas-spatial-bar" role="region" aria-label="三维档案馆空间联动状态">
       <div class="spatial-bar-left">
@@ -772,7 +852,12 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
     $("#detail-ui").inert = mode !== "detail" || Boolean(modal);
     renderedAtlasView = "archive";
 
-    if (prevView !== "archive" && prevView !== "reader" && mode !== "boot") {
+    if (
+      prevView !== "archive" &&
+      prevView !== "reader" &&
+      prevView !== "studio" &&
+      mode !== "boot"
+    ) {
       triggerSpatialTransit(prevView, "archive");
     }
 
@@ -782,6 +867,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         atlasExitAnimation?.cancel();
         atlasExitAnimation = undefined;
         delete surface.dataset.deskBridgeHold;
+        delete surface.dataset.studioTrayHold;
         surface.hidden = true;
       } else if (prevView === "library" && scene) {
         atlasExitAnimation?.cancel();
@@ -789,6 +875,12 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         surface.dataset.deskBridgeHold = "true";
         $("#stage").dataset.atlasOverlay = "true";
         syncIndexDeskDom();
+      } else if (prevView === "studio" && scene) {
+        atlasExitAnimation?.cancel();
+        atlasExitAnimation = undefined;
+        surface.dataset.studioTrayHold = "true";
+        $("#stage").dataset.atlasOverlay = "true";
+        syncStudioTrayDom();
       } else if (prevView === "reader") {
         atlasExitAnimation?.cancel();
         const anim = surface.animate([{ opacity: 1 }, { opacity: 0 }], {
@@ -838,9 +930,11 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   const wasHidden =
     surface.hidden ||
     Boolean(atlasExitAnimation) ||
-    surface.dataset.deskBridgeHold === "true";
+    surface.dataset.deskBridgeHold === "true" ||
+    surface.dataset.studioTrayHold === "true";
   const previousView = renderedAtlasView;
   delete surface.dataset.deskBridgeHold;
+  delete surface.dataset.studioTrayHold;
   atlasExitAnimation?.cancel();
   atlasExitAnimation = undefined;
 
@@ -848,10 +942,16 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   let selEnd: number | null = null;
   let activeInputId = "";
   let prevDirScrollTop = 0;
+  let prevStudioScrollTop = 0;
   if (preserveLibraryInputFocus) {
     const dirListEl = surface.querySelector<HTMLElement>(".desk-dir-list");
     if (dirListEl) {
       prevDirScrollTop = dirListEl.scrollTop;
+    }
+    const studioBodyEl =
+      surface.querySelector<HTMLTextAreaElement>("#studio-input-body");
+    if (studioBodyEl) {
+      prevStudioScrollTop = studioBodyEl.scrollTop;
     }
     const activeEl = document.activeElement as
       | HTMLInputElement
@@ -929,12 +1029,40 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         nextDirList.scrollTop = prevDirScrollTop;
       }
     }
+  } else if (atlasView === "studio") {
+    syncStudioTrayDom();
+    const nextStudioBody =
+      surface.querySelector<HTMLTextAreaElement>("#studio-input-body");
+    if (nextStudioBody) {
+      if (preserveLibraryInputFocus && prevStudioScrollTop > 0) {
+        nextStudioBody.scrollTop = prevStudioScrollTop;
+      }
+      nextStudioBody.addEventListener(
+        "scroll",
+        () => {
+          const posEl = document.getElementById("studio-body-scroll-pos");
+          if (!posEl) return;
+          const maxScroll = Math.max(
+            0,
+            nextStudioBody.scrollHeight - nextStudioBody.clientHeight,
+          );
+          if (maxScroll <= 12) {
+            posEl.textContent =
+              studioState.activeTab === "preview" ? "预览就绪" : "正文就绪";
+          } else {
+            const pct = Math.round((nextStudioBody.scrollTop / maxScroll) * 100);
+            posEl.textContent = `阅读进度 ${pct}%`;
+          }
+        },
+        { passive: true },
+      );
+    }
   } else if (
     viewChanged &&
     !preserveLibraryInputFocus &&
     motionActive("surfaceTransitions")
   ) {
-    if (previousView !== "reader") {
+    if (previousView !== "reader" && previousView !== "studio") {
       triggerSpatialTransit(previousView, atlasView);
     }
 
@@ -1044,10 +1172,12 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
 function sync3DCameraWith2DView() {
   if (!scene || !ready || mode === "boot") return;
   if (atlasView === "home") {
+    scene.setStudioMode(false);
     scene.setIndexDeskMode(false);
     scene.setReaderMode(false);
     scene.setMode("archive");
   } else if (atlasView === "library") {
+    scene.setStudioMode(false);
     scene.setReaderMode(false);
     if (mode === "detail") {
       setMode("archive");
@@ -1092,6 +1222,7 @@ function sync3DCameraWith2DView() {
     }
   } else if (atlasView === "reader") {
     void prefetchEntryAssets(activeReaderSlug);
+    scene.setStudioMode(false, { immediate: true });
     scene.setIndexDeskMode(false, { immediate: true });
     const isShortSwitch =
       renderedAtlasView === "library" ||
@@ -1115,23 +1246,32 @@ function sync3DCameraWith2DView() {
     }
     scene.setReaderMode(true, { shortSwitch: isShortSwitch });
   } else if (atlasView === "studio") {
-    scene.setIndexDeskMode(false);
     scene.setReaderMode(false);
+    let hasPhysicalCassette = false;
     if (!studioState.isNew && studioState.originalSlug) {
       const entry = knowledgeRepository.bySlug(studioState.originalSlug);
-      if (entry) {
+      if (entry && entry.category !== "inbox") {
         const recIndex = records.findIndex((r) => r.entryId === entry.id);
         if (recIndex >= 0) {
-          selected = recIndex;
-          columnMemory[fileLocation(selected).lane] = selected;
-          scene.select(selected);
-          updateSelection();
+          hasPhysicalCassette = true;
+          if (recIndex !== selected) {
+            selected = recIndex;
+            columnMemory[fileLocation(selected).lane] = selected;
+            scene.select(selected);
+            updateSelection();
+          }
         }
       }
-      scene.setMode("detail");
+    }
+    if (mode === "detail") {
+      setMode("archive");
     } else {
       scene.setMode("archive");
     }
+    scene.setStudioMode(true, {
+      source: studioState.entryOrigin,
+      hasPhysicalCassette,
+    });
   }
 }
 
@@ -1141,6 +1281,10 @@ function navigateAtlas(hash: string) {
   } else {
     location.hash = hash;
   }
+}
+
+function studioCacheKey(slug: string, isNew: boolean): string {
+  return isNew || !slug ? "__new__" : slug;
 }
 
 function syncHashRoute() {
@@ -1155,6 +1299,7 @@ function syncHashRoute() {
     atlasView = "archive";
     previousReaderSlug = "";
     if (ready && mode !== "boot") {
+      scene?.setStudioMode(false);
       scene?.setIndexDeskMode(false);
       scene?.setReaderMode(false);
       scene?.setMode(mode === "detail" ? "detail" : "archive");
@@ -1204,16 +1349,44 @@ function syncHashRoute() {
   }
 
   if (parsed.view === "studio") {
+    const prevView = atlasView;
+    if (prevView !== "studio") {
+      studioState.entryOrigin =
+        prevView === "archive"
+          ? "archive"
+          : prevView === "reader"
+            ? "reader"
+            : "library";
+    }
     atlasView = "studio";
     previousReaderSlug = "";
-    const targetSlug = parsed.slug || "";
+    const targetSlug = (parsed.slug || "").replace(/^\/+|\/+$/g, "");
+
+    if (studioState.dirty) {
+      studioDraftCache.set(
+        studioCacheKey(studioState.originalSlug, studioState.isNew),
+        snapshotStudioDraft(studioState),
+      );
+    }
+
     if (targetSlug && targetSlug !== studioState.originalSlug) {
       void loadStudioEntryFromDisk(targetSlug);
-    } else if (!targetSlug && !studioState.isNew) {
+    } else if (!targetSlug && (!studioState.isNew || studioState.originalSlug)) {
+      const origin = studioState.entryOrigin;
+      const defaultCat =
+        parsed.category && parsed.category !== "all"
+          ? parsed.category
+          : libraryState.category !== "all"
+            ? libraryState.category
+            : "tools";
       Object.assign(
         studioState,
-        createDefaultStudioDraft(parsed.category || "tools"),
+        createDefaultStudioDraft(defaultCat, origin),
       );
+      const cachedNew = studioDraftCache.get("__new__");
+      if (cachedNew && cachedNew.dirty) {
+        applyStudioDraftSnapshot(studioState, cachedNew);
+      }
       void scheduleStudioLivePreview(true);
     } else if (!studioState.previewHtml) {
       void scheduleStudioLivePreview(true);
@@ -1249,6 +1422,7 @@ function syncHashRoute() {
         select(columnMemory[lane]);
       }
     }
+    scene?.setStudioMode(false);
     scene?.setIndexDeskMode(false);
     scene?.setReaderMode(false);
     scene?.setMode(mode === "detail" ? "detail" : "archive");
@@ -1284,7 +1458,7 @@ function applyHotSnapshot(
   if (mode === "detail") {
     renderDetail();
   }
-  if (atlasView !== "archive") {
+  if (atlasView !== "archive" && atlasView !== "studio") {
     renderAtlasSurface(true);
   }
   if (!silent) {
@@ -1314,21 +1488,12 @@ async function scheduleStudioLivePreview(immediate = false) {
       if (bodyContainer) {
         bodyContainer.innerHTML =
           studioState.previewHtml ||
-          '<p class="studio-preview-placeholder">暂无正文内容</p>';
-      }
-      const qsBox = document.querySelector<HTMLElement>(
-        "#studio-preview-quickstart",
-      );
-      const qsBody = document.querySelector<HTMLElement>(
-        "#studio-preview-quickstart-body",
-      );
-      if (qsBox && qsBody) {
-        qsBox.hidden = !studioState.previewQuickstartHtml;
-        qsBody.innerHTML = studioState.previewQuickstartHtml;
+          '<p class="studio-preview-placeholder">暂无正文内容，切回「编辑」输入 Markdown 后即可在此检视排版效果。</p>';
       }
     } catch {
       // Fallback client-side minimal preview when running in static mode
       studioState.localDiskAvailable = false;
+      syncStudioStatusDom();
       const bodyContainer = document.querySelector<HTMLElement>(
         "#studio-preview-body",
       );
@@ -1349,6 +1514,10 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
   const fallbackEntry =
     knowledgeRepository.bySlug(clean) ?? knowledgeRepository.byId(clean);
 
+  studioState.loading = true;
+  studioState.saveError = "";
+  syncStudioStatusDom();
+
   try {
     const res = await fetch(
       `/__atlas_api/entry?slug=${encodeURIComponent(clean)}`,
@@ -1362,6 +1531,9 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
         const slugParts = resolvedSlug.split("/");
         studioState.originalSlug = resolvedSlug;
         studioState.isNew = false;
+        studioState.lockedCode = String(
+          entry?.visualCode || fm.visualCode || "T-001",
+        );
         studioState.title = String(fm.title || entry?.title || "");
         studioState.category = String(
           fm.category || entry?.category || slugParts[0] || "tools",
@@ -1392,10 +1564,27 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
             entry?.created ||
             new Date().toISOString().slice(0, 10),
         );
+        studioState.updated = String(
+          fm.updated ||
+            entry?.updated ||
+            studioState.created,
+        );
         studioState.body = String(data.body || "")
           .replace(/^#\s+.+\n+/, "")
           .trim();
+        studioState.dirty = false;
+        studioState.loading = false;
         studioState.localDiskAvailable = true;
+
+        studioSavedBaseline.set(
+          resolvedSlug,
+          snapshotStudioDraft(studioState),
+        );
+        const cached = studioDraftCache.get(resolvedSlug);
+        if (cached && cached.dirty) {
+          applyStudioDraftSnapshot(studioState, cached);
+        }
+
         await scheduleStudioLivePreview(true);
         sync3DCameraWith2DView();
         renderAtlasSurface();
@@ -1406,9 +1595,11 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
     studioState.localDiskAvailable = false;
   }
 
+  studioState.loading = false;
   if (fallbackEntry) {
     studioState.originalSlug = fallbackEntry.slug;
     studioState.isNew = false;
+    studioState.lockedCode = fallbackEntry.visualCode || "T-001";
     studioState.title = fallbackEntry.title;
     studioState.category = fallbackEntry.category;
     studioState.fileSlug =
@@ -1421,65 +1612,253 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
     studioState.version_scope = fallbackEntry.version_scope;
     studioState.source_urls = fallbackEntry.source_urls.join(", ");
     studioState.created = fallbackEntry.created;
+    studioState.updated = fallbackEntry.updated;
     studioState.body = fallbackEntry.plainText;
+    studioState.dirty = false;
     studioState.previewHtml = hydrateEntryHtmlImages(fallbackEntry.html);
     studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
       fallbackEntry.quickstartHtml,
     );
+    studioSavedBaseline.set(
+      fallbackEntry.slug,
+      snapshotStudioDraft(studioState),
+    );
+    const cached = studioDraftCache.get(fallbackEntry.slug);
+    if (cached && cached.dirty) {
+      applyStudioDraftSnapshot(studioState, cached);
+    }
     sync3DCameraWith2DView();
     renderAtlasSurface();
+  } else {
+    syncStudioStatusDom();
   }
 }
 
-function syncStudioCardPreviewDom() {
-  const titleEl = document.querySelector<HTMLElement>("#studio-preview-title");
-  if (titleEl) {
-    titleEl.textContent = studioState.title.trim() || "未命名知识档案";
+function syncStudioStatusDom() {
+  const statusEl = document.querySelector<HTMLElement>("#studio-save-status");
+  if (statusEl) {
+    statusEl.innerHTML = renderStudioSaveStatusMarkup(studioState);
   }
-  const summaryEl = document.querySelector<HTMLElement>(
-    "#studio-preview-summary",
+  const dockCode = studioState.isNew
+    ? "NEW"
+    : studioState.lockedCode || "T-001";
+  const dockCodeEl = document.querySelector<HTMLElement>("#studio-dock-code");
+  if (dockCodeEl) {
+    dockCodeEl.textContent = dockCode;
+  }
+  const dockSubEl = document.querySelector<HTMLElement>(
+    "#studio-dock-subtitle",
   );
-  if (summaryEl) {
-    summaryEl.textContent =
-      studioState.summary.trim() ||
-      "在左侧填写一句话摘要后，将在此处及 3D 详情面板『01 // 概述与摘要』中同步展示。";
+  if (dockSubEl) {
+    dockSubEl.textContent = studioState.isNew
+      ? "空白身份 · 待归档"
+      : "当前档案";
   }
-  const tagsEl = document.querySelector<HTMLElement>("#studio-preview-tags");
-  if (tagsEl) {
-    const tags = studioState.tags
-      .split(/[,，]/)
-      .map((t) => t.trim())
-      .filter(Boolean);
-    tagsEl.innerHTML =
-      tags.length > 0
-        ? tags.map((t) => `<span>#${escapeHtml(t)}</span>`).join("")
-        : `<span>#${escapeHtml(studioState.category)}</span>`;
+  const nameplateNoEl = document.querySelector<HTMLElement>(
+    "#studio-nameplate-no",
+  );
+  if (nameplateNoEl) {
+    nameplateNoEl.textContent = studioState.isNew
+      ? "NEW"
+      : `NO.${dockCode.replace(/^[A-Z]-/, "")}`;
   }
+  const targetPath = computeStudioTargetPath(studioState);
   const pathEl = document.querySelector<HTMLElement>("#studio-target-path");
   if (pathEl) {
-    const stem =
-      studioState.fileSlug.trim() ||
-      studioState.title
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9\u4e00-\u9fa5_-]+/g, "-")
-        .replace(/^-+|-+$/g, "") ||
-      "new-specimen";
-    pathEl.textContent = `content/${studioState.category}/${stem}.md`;
+    pathEl.textContent = targetPath;
+  }
+  const dockFootEl = document.querySelector<HTMLElement>(".studio-dock-foot");
+  if (dockFootEl) {
+    dockFootEl.title = targetPath;
+  }
+  const contactLampEl = document.querySelector<HTMLElement>(
+    "#studio-bay-contact-lamp",
+  );
+  if (contactLampEl) {
+    contactLampEl.classList.toggle(
+      "is-saved-glow",
+      !studioState.dirty && Boolean(studioState.lastSavedAt),
+    );
+  }
+  const saveBtn = document.querySelector<HTMLButtonElement>(
+    ".studio-top-bar .studio-primary-save-btn",
+  );
+  if (saveBtn) {
+    saveBtn.disabled = studioState.saving || studioState.loading;
+  }
+  const bottomRightSpan = document.querySelector<HTMLElement>(
+    ".studio-bottom-right span",
+  );
+  if (bottomRightSpan) {
+    const lineCount = studioState.body
+      ? studioState.body.split("\n").length
+      : 1;
+    const charCount = studioState.body.length;
+    bottomRightSpan.textContent = `${lineCount} 行 · ${charCount} 字`;
   }
 }
 
-async function saveStudioDraftToDisk() {
-  if (studioState.saving) return;
+function markStudioDirty() {
+  studioEditRevision++;
+  studioState.dirty = true;
+  studioState.saveError = "";
+  studioDraftCache.set(
+    studioCacheKey(studioState.originalSlug, studioState.isNew),
+    snapshotStudioDraft(studioState),
+  );
+  syncStudioStatusDom();
+}
+
+function exportStudioMarkdown() {
+  const title = studioState.title.trim() || "未命名知识档案";
+  const stem =
+    studioState.fileSlug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5_-]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "new-specimen";
+  const slug = `${studioState.category}/${stem}`;
+  const tagsList = studioState.tags
+    .split(/[,，]/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const sourcesList = studioState.source_urls
+    .split(/[,，]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const today = new Date().toISOString().slice(0, 10);
+  const yaml = [
+    "---",
+    `title: "${title.replace(/"/g, '\\"')}"`,
+    `slug: "${slug}"`,
+    `category: "${studioState.category}"`,
+    `subcategory: "${studioState.subcategory || "general"}"`,
+    `type: "${studioState.type}"`,
+    `status: "${studioState.status}"`,
+    `tags: [${tagsList.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(", ")}]`,
+    `summary: "${studioState.summary.trim().replace(/"/g, '\\"')}"`,
+    `created: "${studioState.created || today}"`,
+    `updated: "${today}"`,
+    `version_scope: "${studioState.version_scope.trim() || "通用版本"}"`,
+    `source_urls: [${sourcesList.map((u) => `"${u.replace(/"/g, '\\"')}"`).join(", ")}]`,
+    "---",
+    "",
+    `# ${title}`,
+    "",
+    studioState.body.trim(),
+    "",
+  ].join("\n");
+
+  const blob = new Blob([yaml], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${stem}.md`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  audio.play("confirm");
+  notify(`✓ 已导出 Markdown：${stem}.md`);
+}
+
+function discardStudioDraftChanges() {
+  const key = studioCacheKey(studioState.originalSlug, studioState.isNew);
+  studioDraftCache.delete(key);
+  const baseline = studioSavedBaseline.get(studioState.originalSlug);
+  if (!studioState.isNew && baseline) {
+    applyStudioDraftSnapshot(studioState, baseline);
+    studioState.dirty = false;
+  } else {
+    const origin = studioState.entryOrigin;
+    Object.assign(
+      studioState,
+      createDefaultStudioDraft(studioState.category, origin),
+    );
+  }
+  studioState.openDropdown = null;
+  void scheduleStudioLivePreview(true);
+  renderAtlasSurface();
+  audio.play("ui-tick");
+  notify("已放弃未保存修改，恢复上次保存版本");
+}
+
+function setStudioEditorTab(tab: "edit" | "preview") {
+  if (studioState.activeTab === tab) return;
+  studioState.activeTab = tab;
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-studio-tab]")
+    .forEach((btn) => {
+      const active = btn.dataset.studioTab === tab;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-selected", String(active));
+    });
+  const previewPane = document.getElementById("studio-preview-pane");
+  const textarea = document.querySelector<HTMLTextAreaElement>(
+    "#studio-input-body",
+  );
+  if (!textarea || !previewPane) {
+    renderAtlasSurface(true);
+    return;
+  }
+  if (tab === "preview") {
+    void scheduleStudioLivePreview(true);
+    const maxEdit = Math.max(
+      1,
+      textarea.scrollHeight - textarea.clientHeight,
+    );
+    const scrollRatio = textarea.scrollTop / maxEdit;
+    textarea.hidden = true;
+    previewPane.hidden = false;
+    requestAnimationFrame(() => {
+      const maxPrev = Math.max(
+        0,
+        previewPane.scrollHeight - previewPane.clientHeight,
+      );
+      previewPane.scrollTop = Math.round(scrollRatio * maxPrev);
+    });
+    if (motionActive("surfaceTransitions")) {
+      previewPane.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 140,
+        easing: "ease-out",
+      });
+    }
+  } else {
+    previewPane.hidden = true;
+    textarea.hidden = false;
+    if (motionActive("surfaceTransitions")) {
+      textarea.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 140,
+        easing: "ease-out",
+      });
+    }
+    requestAnimationFrame(() => {
+      textarea.focus({ preventScroll: true });
+    });
+  }
+  audio.play("ui-tick");
+}
+
+async function saveStudioDraftToDisk(andReturn = false) {
+  if (studioState.saving || studioState.loading) return;
   const title = studioState.title.trim();
   if (!title) {
-    notify("请先填写档案中文标题（SPECIMEN TITLE）");
+    notify("请先填写档案标题");
     document.querySelector<HTMLInputElement>("#studio-input-title")?.focus();
     return;
   }
 
+  if (!studioState.localDiskAvailable) {
+    exportStudioMarkdown();
+    return;
+  }
+
+  const requestRevision = studioEditRevision;
+  const prevCacheKey = studioCacheKey(
+    studioState.originalSlug,
+    studioState.isNew,
+  );
   studioState.saving = true;
-  renderAtlasSurface(true);
+  studioState.saveError = "";
+  syncStudioStatusDom();
 
   try {
     const res = await fetch("/__atlas_api/save", {
@@ -1506,30 +1885,58 @@ async function saveStudioDraftToDisk() {
       throw new Error(data.error || "保存失败");
     }
 
+    if (data.snapshot) {
+      applyHotSnapshot(data.snapshot, true);
+    }
+
+    const savedEntry = knowledgeRepository.bySlug(data.slug);
     studioState.saving = false;
     studioState.isNew = false;
     studioState.originalSlug = data.slug;
     studioState.fileSlug = String(data.slug).split("/").slice(1).join("/");
-    studioState.lastSavedAt = new Date().toLocaleTimeString("en-GB");
+    studioState.lockedCode =
+      savedEntry?.visualCode ||
+      (studioState.lockedCode !== "NEW" ? studioState.lockedCode : "T-001");
+    studioState.updated = new Date().toISOString().slice(0, 10);
+    studioState.lastSavedAt = new Date().toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    if (data.snapshot) {
-      applyHotSnapshot(data.snapshot, true);
+    const modifiedDuringSave = studioEditRevision !== requestRevision;
+    studioState.dirty = modifiedDuringSave;
+
+    studioSavedBaseline.set(
+      data.slug,
+      snapshotStudioDraft({ ...studioState, dirty: false }),
+    );
+    studioDraftCache.delete(prevCacheKey);
+    if (modifiedDuringSave) {
+      studioDraftCache.set(data.slug, snapshotStudioDraft(studioState));
+    } else {
+      studioDraftCache.delete(data.slug);
     }
 
     const nextHash = buildStudioHash(data.slug);
     if (location.hash !== nextHash) {
       history.replaceState(null, "", nextHash);
     }
+
+    scene?.pulseStudioSaveContact();
     sync3DCameraWith2DView();
-    renderAtlasSurface(true);
+    syncStudioStatusDom();
     audio.play("confirm");
-    notify(`✓ 已写入本地磁盘：${data.relPath}`);
+    notify(`✓ 已保存并归档：${data.relPath}`);
+
+    if (andReturn && !modifiedDuringSave) {
+      exitStudioToOrigin();
+    }
   } catch (err) {
     studioState.saving = false;
-    renderAtlasSurface(true);
-    notify(
-      `保存失败：${err instanceof Error ? err.message : "请确认使用本地 npm run dev 启动"}`,
-    );
+    studioState.saveError =
+      err instanceof Error ? err.message : "请确认使用本地 npm run dev 启动";
+    syncStudioStatusDom();
+    notify(`保存失败：${studioState.saveError}`);
   }
 }
 
@@ -1540,22 +1947,27 @@ async function deleteStudioEntryFromDisk() {
   );
   if (!confirmed) return;
 
+  const deletedSlug = studioState.originalSlug;
   try {
     const res = await fetch("/__atlas_api/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slug: studioState.originalSlug }),
+      body: JSON.stringify({ slug: deletedSlug }),
     });
     const data = await res.json();
     if (!res.ok || !data.ok) {
       throw new Error(data.error || "删除失败");
     }
+    studioDraftCache.delete(deletedSlug);
+    studioSavedBaseline.delete(deletedSlug);
     if (data.snapshot) {
       applyHotSnapshot(data.snapshot, true);
     }
-    Object.assign(studioState, createDefaultStudioDraft("tools"));
+    const origin = studioState.entryOrigin;
+    Object.assign(studioState, createDefaultStudioDraft("tools", origin));
     await scheduleStudioLivePreview(true);
     history.replaceState(null, "", "#/studio");
+    sync3DCameraWith2DView();
     renderAtlasSurface();
     audio.play("back");
     notify("档案已从本地知识库中删除");
@@ -1564,16 +1976,62 @@ async function deleteStudioEntryFromDisk() {
   }
 }
 
+function applyAiCandidateToStudio(
+  candidate: StudioAiCandidate,
+  mode: "replace" | "append",
+) {
+  studioState.aiPreImportBackup = snapshotStudioDraft(studioState);
+  if (mode === "replace" || !studioState.title.trim()) {
+    if (candidate.title) studioState.title = candidate.title;
+  }
+  if (mode === "replace") {
+    if (candidate.category) studioState.category = candidate.category;
+    if (candidate.fileSlug) studioState.fileSlug = candidate.fileSlug;
+    if (candidate.subcategory) studioState.subcategory = candidate.subcategory;
+    if (candidate.type) studioState.type = candidate.type;
+    if (candidate.status) studioState.status = candidate.status;
+    if (candidate.tags) studioState.tags = candidate.tags;
+    if (candidate.summary) studioState.summary = candidate.summary;
+    if (candidate.version_scope)
+      studioState.version_scope = candidate.version_scope;
+    if (candidate.source_urls) studioState.source_urls = candidate.source_urls;
+    studioState.body = candidate.body;
+    studioState.previewHtml = candidate.previewHtml;
+  } else {
+    const sep = studioState.body.trim() ? "\n\n---\n\n" : "";
+    studioState.body = `${studioState.body.trim()}${sep}${candidate.body}`;
+    if (!studioState.summary.trim() && candidate.summary) {
+      studioState.summary = candidate.summary;
+    }
+    if (!studioState.tags.trim() && candidate.tags) {
+      studioState.tags = candidate.tags;
+    }
+  }
+  studioState.aiPendingCandidate = null;
+  studioState.aiPasteOpen = false;
+  studioState.aiRawInput = "";
+  markStudioDirty();
+  void scheduleStudioLivePreview(true);
+  renderAtlasSurface();
+  audio.play("confirm");
+  notify(
+    mode === "append"
+      ? "✓ AI 笔记已追加到正文末尾（可随时在 AI 导入抽屉恢复导入前副本）"
+      : "✓ AI 笔记已填入当前草稿，检查无误后点击『保存并归档』",
+  );
+}
+
 async function parseAiMarkdownIntoStudio() {
   const rawInput = document.querySelector<HTMLTextAreaElement>(
     "#studio-ai-raw-input",
   );
-  const rawVal = rawInput?.value.trim() || "";
+  const rawVal = (rawInput?.value ?? studioState.aiRawInput).trim();
   if (!rawVal) {
     notify("请先在输入框中粘贴 AI 生成的 Markdown 文本");
     rawInput?.focus();
     return;
   }
+  studioState.aiRawInput = rawVal;
 
   // Strip outer ```markdown ... ``` wrapper if the user copied the outer fence too
   const unwrapped = rawVal
@@ -1594,58 +2052,64 @@ async function parseAiMarkdownIntoStudio() {
     const h1Match = bodyText.match(/^#\s+(.+)$/m);
     const inferredTitle = h1Match ? h1Match[1].trim() : "";
 
-    if (fm.title || inferredTitle) {
-      studioState.title = String(fm.title || inferredTitle).trim();
-    }
-    if (fm.category) {
-      studioState.category = String(fm.category).trim();
-    }
+    let parsedCategory = fm.category ? String(fm.category).trim() : undefined;
+    let parsedFileSlug: string | undefined;
     if (fm.slug) {
       const parts = String(fm.slug).trim().split("/");
       if (parts.length >= 2) {
-        studioState.category = parts[0];
-        studioState.fileSlug = parts.slice(1).join("/");
+        parsedCategory = parts[0];
+        parsedFileSlug = parts.slice(1).join("/");
       } else {
-        studioState.fileSlug = parts[0];
+        parsedFileSlug = parts[0];
       }
     }
-    if (fm.subcategory) {
-      studioState.subcategory = String(fm.subcategory).trim();
-    }
-    if (fm.type) {
-      studioState.type = String(fm.type).trim() as EntryType;
-    }
-    if (fm.status) {
-      studioState.status = String(fm.status).trim() as EntryStatus;
-    }
-    if (Array.isArray(fm.tags)) {
-      studioState.tags = fm.tags.join(", ");
-    }
-    if (fm.summary) {
-      studioState.summary = String(fm.summary).trim();
-    }
-    if (fm.version_scope) {
-      studioState.version_scope = String(fm.version_scope).trim();
-    }
-    if (Array.isArray(fm.source_urls)) {
-      studioState.source_urls = fm.source_urls.join(", ");
-    }
 
-    studioState.body = bodyText.replace(/^#\s+.+\n+/, "").trim();
-    studioState.previewHtml = hydrateEntryHtmlImages(data.html || "");
-    studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
-      data.quickstartHtml || "",
-    );
-    studioState.aiPasteOpen = false;
-    renderAtlasSurface();
-    audio.play("confirm");
-    notify("⚡ AI 笔记已自动拆解填入！检查无误后点击 SAVE TO DISK 即可归档");
+    const candidate: StudioAiCandidate = {
+      title:
+        fm.title || inferredTitle
+          ? String(fm.title || inferredTitle).trim()
+          : studioState.title,
+      category: parsedCategory || studioState.category,
+      fileSlug: parsedFileSlug || studioState.fileSlug,
+      subcategory: fm.subcategory
+        ? String(fm.subcategory).trim()
+        : studioState.subcategory,
+      type: fm.type
+        ? (String(fm.type).trim() as EntryType)
+        : studioState.type,
+      status: fm.status
+        ? (String(fm.status).trim() as EntryStatus)
+        : studioState.status,
+      tags: Array.isArray(fm.tags) ? fm.tags.join(", ") : studioState.tags,
+      summary: fm.summary ? String(fm.summary).trim() : studioState.summary,
+      version_scope: fm.version_scope
+        ? String(fm.version_scope).trim()
+        : studioState.version_scope,
+      source_urls: Array.isArray(fm.source_urls)
+        ? fm.source_urls.join(", ")
+        : studioState.source_urls,
+      body: bodyText.replace(/^#\s+.+\n+/, "").trim(),
+      previewHtml: hydrateEntryHtmlImages(data.html || ""),
+    };
+
+    const hasExistingBody = studioState.body.trim().length > 0;
+    if (hasExistingBody) {
+      studioState.aiPendingCandidate = candidate;
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      notify("检测到当前草稿已有正文，请选择『插入到正文末尾』或『替换当前草稿』");
+    } else {
+      applyAiCandidateToStudio(candidate, "replace");
+    }
   } catch (err) {
     notify(`解析失败：${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
 function insertStudioSnippet(kind: string) {
+  if (studioState.activeTab !== "edit") {
+    setStudioEditorTab("edit");
+  }
   const textarea = document.querySelector<HTMLTextAreaElement>(
     "#studio-input-body",
   );
@@ -1667,6 +2131,10 @@ function insertStudioSnippet(kind: string) {
   textarea.value =
     textarea.value.slice(0, start) + snippet + textarea.value.slice(end);
   studioState.body = textarea.value;
+  studioState.openDropdown = null;
+  const insertMenu = document.querySelector<HTMLElement>(".studio-insert-menu");
+  if (insertMenu) insertMenu.hidden = true;
+  markStudioDirty();
   textarea.focus();
   const nextCursor = start + snippet.length;
   textarea.setSelectionRange(nextCursor, nextCursor);
@@ -1707,6 +2175,7 @@ async function uploadStudioImageFile(file: File) {
     } else {
       studioState.body += mdImage;
     }
+    markStudioDirty();
     void scheduleStudioLivePreview(true);
     audio.play("confirm");
     notify(`图片已存入 content/${studioState.category}/assets/${data.fileName}`);
@@ -2191,20 +2660,60 @@ document.addEventListener("input", (e) => {
   const targetId = (e.target as HTMLElement).id;
   if (targetId === "studio-input-title") {
     studioState.title = (e.target as HTMLInputElement).value;
-    syncStudioCardPreviewDom();
+    if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-slug") {
     studioState.fileSlug = (e.target as HTMLInputElement).value;
-    syncStudioCardPreviewDom();
+    if (!studioComposing) markStudioDirty();
+  } else if (targetId === "studio-input-subcategory") {
+    studioState.subcategory = (e.target as HTMLInputElement).value;
+    if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-summary") {
-    studioState.summary = (e.target as HTMLInputElement).value;
-    syncStudioCardPreviewDom();
+    studioState.summary = (e.target as HTMLTextAreaElement).value;
+    if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-tags") {
     studioState.tags = (e.target as HTMLInputElement).value;
-    syncStudioCardPreviewDom();
+    if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-version") {
     studioState.version_scope = (e.target as HTMLInputElement).value;
+    if (!studioComposing) markStudioDirty();
+  } else if (targetId === "studio-input-sources") {
+    studioState.source_urls = (e.target as HTMLInputElement).value;
+    if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-body") {
     studioState.body = (e.target as HTMLTextAreaElement).value;
+    if (!studioComposing) {
+      markStudioDirty();
+      void scheduleStudioLivePreview(false);
+    }
+  } else if (targetId === "studio-ai-raw-input") {
+    studioState.aiRawInput = (e.target as HTMLTextAreaElement).value;
+  }
+});
+document.addEventListener("compositionstart", (e) => {
+  if (
+    atlasView === "studio" &&
+    (e.target as HTMLElement)?.closest(".sliding-studio-tray")
+  ) {
+    studioComposing = true;
+  }
+});
+document.addEventListener("compositionend", (e) => {
+  if (!studioComposing) return;
+  studioComposing = false;
+  const target = e.target as HTMLElement | null;
+  if (!target || atlasView !== "studio") return;
+  if (
+    target.id === "studio-input-title" ||
+    target.id === "studio-input-slug" ||
+    target.id === "studio-input-subcategory" ||
+    target.id === "studio-input-summary" ||
+    target.id === "studio-input-tags" ||
+    target.id === "studio-input-version" ||
+    target.id === "studio-input-sources"
+  ) {
+    markStudioDirty();
+  } else if (target.id === "studio-input-body") {
+    markStudioDirty();
     void scheduleStudioLivePreview(false);
   }
 });
@@ -2550,6 +3059,47 @@ document.addEventListener("click", (e) => {
     audio.play("column");
     return;
   }
+  if (atlasView === "studio") {
+    const clickedDropdown = Boolean(
+      (e.target as Element).closest(".studio-dropdown-wrap"),
+    );
+    if (studioState.openDropdown && !clickedDropdown) {
+      studioState.openDropdown = null;
+      document
+        .querySelectorAll<HTMLElement>(".studio-dropdown-menu")
+        .forEach((m) => (m.hidden = true));
+      document
+        .querySelectorAll<HTMLElement>("[data-studio-dropdown]")
+        .forEach((b) => {
+          b.classList.remove("open", "active");
+          b.setAttribute("aria-expanded", "false");
+        });
+    }
+  }
+  const studioDropdownBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-dropdown]",
+  );
+  if (studioDropdownBtn) {
+    const kind = (studioDropdownBtn.dataset.studioDropdown ?? "category") as
+      | "category"
+      | "type"
+      | "status"
+      | "insert"
+      | "top-more";
+    studioState.openDropdown =
+      studioState.openDropdown === kind ? null : kind;
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
+  const studioTabBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-tab]",
+  );
+  if (studioTabBtn) {
+    const nextTab = studioTabBtn.dataset.studioTab === "preview" ? "preview" : "edit";
+    setStudioEditorTab(nextTab);
+    return;
+  }
   const studioFilterBtn = (e.target as Element).closest<HTMLButtonElement>(
     "[data-studio-filter]",
   );
@@ -2567,6 +3117,8 @@ document.addEventListener("click", (e) => {
     if (studioState.category === "inbox") {
       studioState.status = "draft";
     }
+    studioState.openDropdown = null;
+    markStudioDirty();
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -2577,6 +3129,8 @@ document.addEventListener("click", (e) => {
   if (studioTypeBtn) {
     studioState.type = (studioTypeBtn.dataset.studioSetType ??
       "skill") as EntryType;
+    studioState.openDropdown = null;
+    markStudioDirty();
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -2587,6 +3141,8 @@ document.addEventListener("click", (e) => {
   if (studioStatusBtn) {
     studioState.status = (studioStatusBtn.dataset.studioSetStatus ??
       "learning") as EntryStatus;
+    studioState.openDropdown = null;
+    markStudioDirty();
     renderAtlasSurface(true);
     audio.play("ui-tick");
     return;
@@ -2603,21 +3159,127 @@ document.addEventListener("click", (e) => {
   );
   if (studioActBtn) {
     const sAct = studioActBtn.dataset.studioAction;
+    if (
+      sAct === "return-origin" ||
+      sAct === "exit-studio" ||
+      sAct === "return-keep-draft"
+    ) {
+      exitStudioToOrigin();
+      return;
+    }
+    if (sAct === "save-and-return") {
+      studioState.openDropdown = null;
+      void saveStudioDraftToDisk(true);
+      return;
+    }
+    if (sAct === "export-markdown") {
+      studioState.openDropdown = null;
+      exportStudioMarkdown();
+      renderAtlasSurface(true);
+      return;
+    }
+    if (sAct === "discard-draft" || sAct === "discard-changes") {
+      discardStudioDraftChanges();
+      return;
+    }
+    if (sAct === "toggle-more-drawer") {
+      studioState.moreDrawerOpen = !studioState.moreDrawerOpen;
+      if (studioState.moreDrawerOpen) {
+        studioState.aiPasteOpen = false;
+      }
+      studioState.openDropdown = null;
+      renderAtlasSurface(true);
+      if (studioState.moreDrawerOpen) {
+        requestAnimationFrame(() =>
+          document
+            .querySelector<HTMLTextAreaElement>("#studio-input-summary")
+            ?.focus(),
+        );
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "close-more-drawer") {
+      studioState.moreDrawerOpen = false;
+      renderAtlasSurface(true);
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(
+            '[data-studio-action="toggle-more-drawer"]',
+          )
+          ?.focus({ preventScroll: true }),
+      );
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "close-ai-drawer") {
+      studioState.aiPasteOpen = false;
+      studioState.aiPendingCandidate = null;
+      renderAtlasSurface(true);
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>('[data-studio-action="toggle-ai-import"]')
+          ?.focus({ preventScroll: true }),
+      );
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "confirm-ai-append") {
+      if (studioState.aiPendingCandidate) {
+        applyAiCandidateToStudio(studioState.aiPendingCandidate, "append");
+      }
+      return;
+    }
+    if (sAct === "confirm-ai-replace") {
+      if (studioState.aiPendingCandidate) {
+        applyAiCandidateToStudio(studioState.aiPendingCandidate, "replace");
+      }
+      return;
+    }
+    if (sAct === "cancel-ai-candidate") {
+      studioState.aiPendingCandidate = null;
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "restore-ai-backup") {
+      if (studioState.aiPreImportBackup) {
+        applyStudioDraftSnapshot(studioState, studioState.aiPreImportBackup);
+        studioState.aiPreImportBackup = null;
+        studioState.aiPendingCandidate = null;
+        markStudioDirty();
+        void scheduleStudioLivePreview(true);
+        renderAtlasSurface(true);
+        audio.play("confirm");
+        notify("↺ 已恢复导入前的草稿副本");
+      }
+      return;
+    }
     if (sAct === "new-blank") {
+      if (studioState.dirty) {
+        studioDraftCache.set(
+          studioCacheKey(studioState.originalSlug, studioState.isNew),
+          snapshotStudioDraft(studioState),
+        );
+      }
+      const origin = studioState.entryOrigin;
       Object.assign(
         studioState,
         createDefaultStudioDraft(
-          studioState.filterCategory !== "all"
-            ? studioState.filterCategory
-            : "tools",
+          studioState.category || "tools",
+          origin,
         ),
       );
+      studioDraftCache.delete("__new__");
       void scheduleStudioLivePreview(true);
       if (location.hash !== "#/studio") {
         history.replaceState(null, "", "#/studio");
       }
       sync3DCameraWith2DView();
       renderAtlasSurface();
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLInputElement>("#studio-input-title")?.focus(),
+      );
       audio.play("ui-tick");
       return;
     }
@@ -2631,6 +3293,12 @@ document.addEventListener("click", (e) => {
     }
     if (sAct === "toggle-ai-import") {
       studioState.aiPasteOpen = !studioState.aiPasteOpen;
+      if (studioState.aiPasteOpen) {
+        studioState.moreDrawerOpen = false;
+      } else {
+        studioState.aiPendingCandidate = null;
+      }
+      studioState.openDropdown = null;
       renderAtlasSurface(true);
       if (studioState.aiPasteOpen) {
         requestAnimationFrame(() =>
@@ -2647,7 +3315,7 @@ document.addEventListener("click", (e) => {
       return;
     }
     if (sAct === "save-entry") {
-      void saveStudioDraftToDisk();
+      void saveStudioDraftToDisk(false);
       return;
     }
     if (sAct === "delete-entry") {
@@ -3173,12 +3841,24 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (modal) closeModal();
     else if (atlasView === "studio") {
-      if (studioState.aiPasteOpen) {
+      if (studioState.openDropdown) {
+        studioState.openDropdown = null;
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
+      } else if (studioState.aiPendingCandidate) {
+        studioState.aiPendingCandidate = null;
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
+      } else if (studioState.aiPasteOpen) {
         studioState.aiPasteOpen = false;
         renderAtlasSurface(true);
+        audio.play("ui-tick");
+      } else if (studioState.moreDrawerOpen) {
+        studioState.moreDrawerOpen = false;
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
       } else {
-        navigateAtlas("#/library");
-        audio.play("back");
+        exitStudioToOrigin();
       }
     } else if (atlasView === "reader") {
       const tocDrawer = document.getElementById("optical-toc-drawer");
@@ -3544,6 +4224,13 @@ function frame(ms: number) {
     $("#atlas-surface").dataset.deskBridgeHold === "true"
   ) {
     syncIndexDeskDom();
+  }
+  if (
+    atlasView === "studio" ||
+    scene?.studioActiveOrTransitioning ||
+    $("#atlas-surface").dataset.studioTrayHold === "true"
+  ) {
+    syncStudioTrayDom();
   }
   viewer?.update(time);
   if (threeState === "closing" && scene?.presentationHidden) releaseThree();

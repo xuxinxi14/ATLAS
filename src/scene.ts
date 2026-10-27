@@ -64,6 +64,13 @@ import {
   INDEX_DESK_TIMELINE_DURATION,
   type IndexDeskTimelineFrame,
 } from "./index-desk-rig";
+import {
+  StudioTrayRig,
+  evaluateStudioTrayTimeline,
+  studioTimelineDuration,
+  type StudioEntrySource,
+  type StudioTrayTimelineFrame,
+} from "./studio-tray-rig";
 
 const READER_LIFT = 5.35;
 
@@ -276,6 +283,14 @@ export class ArchiveScene {
   private indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
   private lastIndexDeskFrame: IndexDeskTimelineFrame =
     evaluateIndexDeskTimeline(INDEX_DESK_TIMELINE_DURATION);
+  private studioTrayRig = new StudioTrayRig();
+  private targetStudio = false;
+  private studioSource: StudioEntrySource = "library";
+  private studioHasTarget = true;
+  private studioSeconds = 0;
+  private studioSavePulse = 0;
+  private lastStudioFrame: StudioTrayTimelineFrame =
+    evaluateStudioTrayTimeline(0);
   onReaderActivationSound?: () => void;
   onSelect?: (index: number, cell?: ArchiveCell) => void;
   onHover?: (index: number | null) => void;
@@ -343,6 +358,7 @@ export class ArchiveScene {
     this.scene.add(floor);
     this.scene.add(this.readerRig.group);
     this.scene.add(this.indexDeskRig.group);
+    this.scene.add(this.studioTrayRig.group);
     this.camera.position.set(-62.26, 35.98, 43.28);
     this.cameraAim.set(-0.5, 1.1, 0.4);
     this.camera.fov = 6.15;
@@ -740,6 +756,81 @@ export class ArchiveScene {
       this.indexDeskSeconds < INDEX_DESK_TIMELINE_DURATION - 0.002
     );
   }
+  setStudioMode(
+    active: boolean,
+    options?: {
+      source?: StudioEntrySource;
+      hasPhysicalCassette?: boolean;
+      immediate?: boolean;
+    },
+  ) {
+    this.cancelPointer();
+    this.setHover(null);
+    this.lastInteraction = this.clock;
+    if (options?.source) {
+      const prevDur = studioTimelineDuration(this.studioSource);
+      const nextDur = studioTimelineDuration(options.source);
+      if (this.studioSeconds > 0.001 && prevDur > 0) {
+        this.studioSeconds = (this.studioSeconds / prevDur) * nextDur;
+      }
+      this.studioSource = options.source;
+    }
+    if (options?.hasPhysicalCassette !== undefined) {
+      this.studioHasTarget = options.hasPhysicalCassette;
+    }
+    const reduced = this.reduced || !this.motion.surfaceTransitions;
+    const maxSec = reduced ? 0.16 : studioTimelineDuration(this.studioSource);
+    this.targetStudio = active;
+    if (active) {
+      this.looping = true;
+      this.targetReveal = 1;
+      this.targetRotation = 0;
+      this.returnY = null;
+      if (this.studioHasTarget) {
+        this.decryption.enter(true);
+      }
+      // If entering from 3D detail where the cassette already has vertical clearance,
+      // start past the initial vertical lift so we don't redundantly re-lift it.
+      if (
+        this.studioSource !== "library" &&
+        this.studioSeconds < 0.05 &&
+        this.lift.value >= INSPECTION_LIFT - 0.35 &&
+        !reduced &&
+        !options?.immediate
+      ) {
+        this.studioSeconds = 0.48;
+      }
+      if (options?.immediate || reduced) {
+        this.studioSeconds = maxSec;
+      }
+    } else if (options?.immediate || reduced) {
+      this.studioSeconds = 0;
+    }
+    this.lastStudioFrame = evaluateStudioTrayTimeline(
+      this.studioSeconds,
+      this.studioSource,
+      reduced,
+    );
+    this.renderState.invalidate();
+  }
+  setStudioHasTarget(valid: boolean) {
+    if (this.studioHasTarget === valid) return;
+    this.studioHasTarget = valid;
+    if (valid && this.targetStudio) {
+      this.decryption.enter(true);
+    }
+    this.renderState.invalidate();
+  }
+  pulseStudioSaveContact() {
+    this.studioSavePulse = 1;
+    this.renderState.invalidate();
+  }
+  get studioTrayFrame(): StudioTrayTimelineFrame {
+    return this.lastStudioFrame;
+  }
+  get studioActiveOrTransitioning(): boolean {
+    return this.targetStudio || this.studioSeconds > 0.002;
+  }
   // Legacy review pages use the old whole-scene toggle.
   setReduced(value: boolean) { this.setMotion(value ? reducedMotion() : fullMotion()); }
   setMotion(value: MotionPreferences) {
@@ -1013,6 +1104,8 @@ export class ArchiveScene {
     return (
       this.presenceTarget === 1 &&
       this.looping &&
+      !this.targetStudio &&
+      this.studioSeconds < 0.02 &&
       !this.targetIndexDesk &&
       this.indexDeskSeconds >= INDEX_DESK_TIMELINE_DURATION - 0.05 &&
       !this.targetDetail &&
@@ -1564,12 +1657,38 @@ export class ArchiveScene {
           this.indexDeskSeconds + dt * (reducedReader ? 14 : 1),
         );
       }
+      const maxStudioSec = reducedReader
+        ? 0.16
+        : studioTimelineDuration(this.studioSource);
+      if (this.targetStudio) {
+        this.studioSeconds = Math.min(
+          maxStudioSec,
+          this.studioSeconds + dt,
+        );
+      } else if (this.studioSeconds > 0) {
+        this.studioSeconds = Math.max(
+          0,
+          this.studioSeconds - dt * (reducedReader ? 12 : 1.18),
+        );
+      }
+      if (this.studioSavePulse > 0) {
+        this.studioSavePulse = Math.max(0, this.studioSavePulse - dt / 0.65);
+      }
     } else {
       this.readerSeconds = 0;
       this.readerShortPulse = 0;
       this.readerReceded = 0;
       this.indexDeskSeconds = INDEX_DESK_TIMELINE_DURATION;
+      this.studioSeconds = 0;
+      this.studioSavePulse = 0;
     }
+    const studioFrame = evaluateStudioTrayTimeline(
+      this.studioSeconds,
+      this.studioSource,
+      reducedReader,
+    );
+    this.lastStudioFrame = studioFrame;
+    const studioHold = this.targetStudio || this.studioSeconds > 0.02;
     const indexDeskFrame = evaluateIndexDeskTimeline(
       this.indexDeskSeconds,
       reducedReader,
@@ -1591,7 +1710,12 @@ export class ArchiveScene {
     }
     const readerHold = this.targetReader || this.readerSeconds > 0.08;
     if (!cinematic) {
-      if (this.returnY !== null && this.rotation !== 0 && !readerHold) {
+      if (
+        this.returnY !== null &&
+        this.rotation !== 0 &&
+        !readerHold &&
+        !studioHold
+      ) {
         this.lift.value = this.returnY - selectedBase;
         this.lift.velocity = 0;
       } else {
@@ -1606,23 +1730,31 @@ export class ArchiveScene {
                 READER_LIFT,
                 readerFrame.verticalLift,
               )
-            : this.targetDetail
-              ? INSPECTION_LIFT
-              : this.outgoing.some(
-                    (o) =>
-                      o.returnY !== null &&
-                      o.cell.lane === selectedLane &&
-                      Math.abs(o.cell.row - selectedRow) < 5,
+            : studioHold
+              ? this.studioHasTarget
+                ? THREE.MathUtils.lerp(
+                    0.4 * this.targetReveal * (1 - this.flatMix),
+                    INSPECTION_LIFT,
+                    studioFrame.verticalClearance,
                   )
-                ? 0
-                : 0.4 *
-                  this.targetReveal *
-                  (1 - this.flatMix) *
-                  (bridgeMix > 0.05 && !this.indexDeskHasTarget ? 0 : 1),
+                : 0
+              : this.targetDetail
+                ? INSPECTION_LIFT
+                : this.outgoing.some(
+                      (o) =>
+                        o.returnY !== null &&
+                        o.cell.lane === selectedLane &&
+                        Math.abs(o.cell.row - selectedRow) < 5,
+                    )
+                  ? 0
+                  : 0.4 *
+                    this.targetReveal *
+                    (1 - this.flatMix) *
+                    (bridgeMix > 0.05 && !this.indexDeskHasTarget ? 0 : 1),
           !this.motion.detailTransition
             ? 35
-            : readerHold
-              ? 6.2
+            : readerHold || studioHold
+              ? 6.4
               : this.deferSelectionPulse &&
                   !this.targetDetail &&
                   this.lift.value < 0.4
@@ -1633,7 +1765,7 @@ export class ArchiveScene {
       }
     }
     const cameraTarget =
-      this.targetDetail || readerHold
+      this.targetDetail || readerHold || (studioHold && this.studioHasTarget)
         ? ease((this.lift.value - 0.8) / 2.4)
         : this.returnY !== null
           ? this.detail
@@ -1816,6 +1948,15 @@ export class ArchiveScene {
           )
           .normalize();
       }
+      if (studioFrame.cameraFrame > 0.0001) {
+        // Near-orthographic gentle top-front view for stable studio writing
+        viewDirection
+          .lerp(
+            new THREE.Vector3(-0.08, 0.24, 0.967),
+            studioFrame.cameraFrame,
+          )
+          .normalize();
+      }
     }
     if (cinematic) {
       const pan = ease((shot - 25.4) / 0.95);
@@ -1929,6 +2070,40 @@ export class ArchiveScene {
         );
         cameraAim.lerp(bridgeAim, bridgeMix * (1 - readerCamMix));
       }
+      if (studioFrame.cameraFrame > 0.0001) {
+        const studioAim = baseModelPos
+          .clone()
+          .add(new THREE.Vector3(2.95, 1.48, 0.2));
+        cameraAim.lerp(studioAim, studioFrame.cameraFrame);
+      }
+      if (studioHold && this.studioHasTarget && studioFrame.cassetteTransfer > 0.0001) {
+        const isNarrow =
+          framing.portrait ||
+          this.container.closest<HTMLElement>("[data-layout]")?.dataset.layout === "compact";
+        const dockedPose = this.studioTrayRig.getDockedCassettePose(
+          cameraAim,
+          viewDirection,
+          isNarrow,
+        );
+        const arrayQuat = this.model.quaternion.clone();
+        this.model.position.lerp(
+          dockedPose.position,
+          studioFrame.cassetteTransfer,
+        );
+        this.model.quaternion.slerpQuaternions(
+          arrayQuat,
+          dockedPose.quaternion,
+          studioFrame.cassetteTransfer,
+        );
+      }
+      this.studioTrayRig.update(
+        studioFrame,
+        cameraAim,
+        viewDirection,
+        this.studioHasTarget,
+        this.studioSavePulse,
+        this.themeAmount,
+      );
     }
     const cameraPosition = cameraAim
       .clone()
@@ -1937,10 +2112,13 @@ export class ArchiveScene {
       !cinematic &&
       this.motion.pointerParallax &&
       !this.uiOnlyParallax &&
-      readerCamMix < 0.5
+      readerCamMix < 0.5 &&
+      studioFrame.cameraFrame < 0.25
     ) {
-      cameraPosition.x += this.pointer.x * 0.12 * (1 - readerCamMix);
-      cameraPosition.y -= this.pointer.y * 0.12 * (1 - readerCamMix);
+      const parallaxScale =
+        (1 - readerCamMix) * (1 - studioFrame.cameraFrame);
+      cameraPosition.x += this.pointer.x * 0.12 * parallaxScale;
+      cameraPosition.y -= this.pointer.y * 0.12 * parallaxScale;
     }
     const cameraTransition = this.targetDetail || this.detail > 0.01 || readerHold
       ? this.motion.detailTransition
@@ -2077,6 +2255,7 @@ export class ArchiveScene {
         fog.near, fog.far, this.themeAmount, this.subduedIndex.value,
         this.readerSeconds, this.readerShortPulse, this.readerReceded,
         this.indexDeskSeconds, Number(this.indexDeskHasTarget),
+        this.studioSeconds, this.studioSavePulse, Number(this.studioHasTarget),
         bokehUniforms.focus.value, bokehUniforms.aperture.value);
       this.scene.traverse(object => {
         state.add(object.id, Number(object.visible));

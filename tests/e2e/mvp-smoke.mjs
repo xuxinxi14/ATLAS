@@ -7,9 +7,12 @@ import { renderLibraryViewMarkup } from "../../src/library/library-view.ts";
 import { renderReaderViewMarkup } from "../../src/reader/reader-view.ts";
 import { evaluateOpticalReaderTimeline } from "../../src/optical-reader-rig.ts";
 import { evaluateIndexDeskTimeline } from "../../src/index-desk-rig.ts";
+import { evaluateStudioTrayTimeline } from "../../src/studio-tray-rig.ts";
 import {
   renderStudioViewMarkup,
   createDefaultStudioDraft,
+  snapshotStudioDraft,
+  applyStudioDraftSnapshot,
 } from "../../src/studio/studio-view.ts";
 import { parseHashRoute, buildStudioHash } from "../../src/app/router.ts";
 import { knowledgeRepository } from "../../src/knowledge/repository.ts";
@@ -254,4 +257,120 @@ test("Glass Index Desk (检索桥) layout & 1.25s bidirectional transition timel
   assert.ok(deskHtml.includes("直接阅读"), "Secondary action renders in context bar");
   assert.ok(deskHtml.includes("进入三维档案室 ↗"), "Primary 3D bridge action renders");
   assert.ok(deskHtml.includes("ARCHIVE ARRAY"), "Under-desk 3D array window label renders");
+});
+
+test("Sliding Studio Tray (录入工作台) layout & dual-source transition timelines (1.30s 2D / 1.80s 3D)", () => {
+  // 1. 1.30s Transition from 2D Glass Index Desk (source = "library")
+  const s0 = evaluateStudioTrayTimeline(0, "library", false);
+  assert.equal(s0.duration, 1.3);
+  assert.equal(s0.traySlide, 0);
+  assert.equal(s0.cassetteDock, 0);
+
+  // 02 托盘展开 (0.35s): index bridge retreating, studio tray sliding forward, vertical clearance active
+  const s350 = evaluateStudioTrayTimeline(0.35, "library", false);
+  assert.equal(s350.responseAck, 1, "Response ack completed by 160ms");
+  assert.ok(
+    s350.indexBridgeRetreat > 0.8,
+    "Glass Index Bridge retreating at 350ms",
+  );
+  assert.ok(
+    s350.traySlide > 0.03 && s350.traySlide < 0.5,
+    "Sliding Studio Tray extending along side rails at 350ms",
+  );
+  assert.ok(
+    s350.verticalClearance > 0.3,
+    "Cassette rising vertically for clearance at 350ms",
+  );
+
+  // 03 档案停靠 (0.85s): cassette docking into left bay, tray fully extended
+  const s850 = evaluateStudioTrayTimeline(0.85, "library", false);
+  assert.equal(s850.traySlide, 1, "Tray fully extended by 800ms");
+  assert.equal(s850.verticalClearance, 1, "Cassette vertical clearance complete");
+  assert.ok(
+    s850.cassetteTransfer > 0.6 && s850.cassetteDock > 0.25,
+    "Cassette transferring and docking into left bay at 850ms",
+  );
+
+  // 04 编辑接管 (1.30s): near-orthographic camera settled, writing surface ready
+  const s1300 = evaluateStudioTrayTimeline(1.3, "library", false);
+  assert.equal(s1300.cassetteDock, 1);
+  assert.equal(s1300.contactGlow, 1);
+  assert.equal(s1300.editorReveal, 1);
+  assert.equal(s1300.cameraFrame, 1);
+  assert.equal(s1300.progress, 1);
+  assert.equal(s1300.settled, true);
+
+  // 2. 1.80s Transition from 3D Archive Hall (source = "archive")
+  const a500 = evaluateStudioTrayTimeline(0.5, "archive", false);
+  assert.equal(a500.duration, 1.8);
+  assert.ok(
+    a500.verticalClearance > 0.8,
+    "Cassette rising vertically for clearance at 500ms",
+  );
+  assert.equal(
+    a500.cassetteTransfer,
+    0,
+    "Cassette strictly waits for vertical clearance before lateral transfer (<540ms)",
+  );
+
+  const a1150 = evaluateStudioTrayTimeline(1.15, "archive", false);
+  assert.equal(a1150.verticalClearance, 1, "Vertical clearance reached by 600ms");
+  assert.ok(
+    a1150.cassetteTransfer > 0.7 && a1150.cassetteDock > 0.25,
+    "Cassette turning and docking into left bay at 1150ms",
+  );
+
+  const a1800 = evaluateStudioTrayTimeline(1.8, "archive", false);
+  assert.equal(a1800.cassetteDock, 1);
+  assert.equal(a1800.editorReveal, 1);
+  assert.equal(a1800.cameraFrame, 1);
+  assert.equal(a1800.settled, true);
+
+  // 3. Verify Sliding Studio Tray DOM structure & state snapshot isolation
+  const newDraft = createDefaultStudioDraft("tools", "library");
+  const newHtml = renderStudioViewMarkup(newDraft, true);
+  assert.ok(newHtml.includes("ATLAS / STUDIO"), "Top bar studio kicker renders");
+  assert.ok(newHtml.includes("返回索引"), "Dynamic return label reflects library origin");
+  assert.ok(newHtml.includes("保存并归档"), "Primary save button renders");
+  assert.ok(newHtml.includes('id="studio-dock-code">NEW<'), "New draft displays NEW on dock without pre-allocating fake number");
+  assert.ok(newHtml.includes("更多信息"), "More info drawer trigger renders");
+  assert.ok(newHtml.includes("插入结构"), "Single insert structure menu trigger renders");
+  assert.ok(newHtml.includes("AI 导入"), "AI import drawer trigger renders");
+
+  // Existing archive from 3D hall with dirty state & AI conflict candidate
+  const editDraft = createDefaultStudioDraft("tools", "archive");
+  editDraft.isNew = false;
+  editDraft.originalSlug = "tools/aegisub";
+  editDraft.lockedCode = "T-001";
+  editDraft.title = "Aegisub 字幕时间轴与样式基础";
+  editDraft.dirty = true;
+  editDraft.aiPasteOpen = true;
+  editDraft.aiPendingCandidate = {
+    title: "FFmpeg 常用转码与抽帧速查",
+    category: "tools",
+    fileSlug: "ffmpeg-cli",
+    subcategory: "video",
+    type: "skill",
+    status: "learning",
+    tags: "ffmpeg, video",
+    summary: "FFmpeg 无损重封装与字幕烧录命令。",
+    version_scope: "FFmpeg 7.0",
+    source_urls: "",
+    body: "## 快速复习\n- 核心命令",
+    previewHtml: "<h2>快速复习</h2>",
+  };
+  const editHtml = renderStudioViewMarkup(editDraft, true);
+  assert.ok(editHtml.includes("返回档案室"), "Dynamic return label reflects archive hall origin");
+  assert.ok(editHtml.includes('id="studio-dock-code">T-001<'), "Locked code T-001 renders on left cassette dock");
+  assert.ok(editHtml.includes("未保存"), "Dirty state pill renders");
+  assert.ok(editHtml.includes("插入到正文末尾"), "AI conflict append button renders");
+  assert.ok(editHtml.includes("替换当前草稿"), "AI conflict replace button renders");
+
+  // Verify snapshot & restore helper
+  const snap = snapshotStudioDraft(editDraft);
+  const restored = createDefaultStudioDraft("coding", "reader");
+  applyStudioDraftSnapshot(restored, snap);
+  assert.equal(restored.lockedCode, "T-001");
+  assert.equal(restored.title, "Aegisub 字幕时间轴与样式基础");
+  assert.equal(restored.dirty, true);
 });

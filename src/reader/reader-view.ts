@@ -1,5 +1,6 @@
 import { assetUrl } from "../asset-url.ts";
 import { escapeHtml } from "../html.ts";
+import { publicReadOnly } from "../public-mode.ts";
 import {
   knowledgeRepository,
   statusMeta,
@@ -59,6 +60,7 @@ export function renderReaderViewMarkup(
   savedIds: Set<string>,
   hasWebGL = true,
   origin = { hash: "#/archive", label: "档案大厅" },
+  readOnly = publicReadOnly,
 ): string {
   const entry =
     knowledgeRepository.bySlug(slugOrId) ?? knowledgeRepository.byId(slugOrId);
@@ -321,10 +323,10 @@ export function renderReaderViewMarkup(
 
           <!-- More Actions Menu Popover -->
           <div class="optical-more-menu" id="optical-more-menu" hidden>
-            <a href="${buildStudioHash(entry.slug)}" class="optical-menu-item">
+            ${readOnly ? "" : `<a href="${buildStudioHash(entry.slug)}" class="optical-menu-item">
               <span>✎ 编辑档案</span>
               <kbd>E</kbd>
-            </a>
+            </a>`}
             <button
               type="button"
               class="optical-menu-item"

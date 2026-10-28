@@ -3,6 +3,10 @@
 > **基于 [LBEILC/RhineLabUI](https://github.com/LBEILC/RhineLabUI) 派生的个人知识档案系统**  
 > 以本地 **Markdown 文件**为唯一权威内容源，融合**三维档案大厅交互（3D Archive）**与**二维高效知识阅读器（2D Library & Reader）**，用于长期、低阻力地积累个人技能、科研实验方法、学科知识与排错经验。
 
+- **公开网站**：[ATLAS 知识档案](https://xuxinxi14.github.io/ATLAS/)（只读展示）。
+- **更新网站**：保存本地笔记后，双击项目根目录的 [`更新网站.cmd`](更新网站.cmd)。脚本会校验内容、提交笔记并推送，GitHub Actions 随后自动构建和发布；脚本会在有 GitHub CLI 登录时等待部署结果。需要本机安装 Git 和 Node.js 22.12 或更高版本，并保持 GitHub 登录。详见 [GitHub Pages 发布与更新](docs/GITHUB-PAGES.md)。
+- **公开范围**：此 GitHub 仓库为公开仓库，提交的 Markdown、附件和草稿箱内容都可被任何人查看。请只放入准备公开的资料。
+
 - **项目规划与文档**：
   - [ATLAS 个人知识库开发规划书](ATLAS%20个人知识库开发规划书.md)
   - [技术架构与 M0 基线核查报告](docs/ARCHITECTURE.md)

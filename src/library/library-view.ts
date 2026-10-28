@@ -10,6 +10,7 @@ import type {
 } from "../knowledge/types.ts";
 import { buildEntryHash, buildStudioHash } from "../app/router.ts";
 import { normalizeSearchText } from "../search/search-engine.ts";
+import { publicReadOnly } from "../public-mode.ts";
 
 export interface LibraryState {
   category: string;
@@ -142,6 +143,7 @@ export function renderLibraryViewMarkup(
   state: LibraryState,
   savedIds: Set<string>,
   hasWebGL = true,
+  readOnly = publicReadOnly,
 ): string {
   const portals = knowledgeRepository.portals();
   const telemetry = knowledgeRepository.telemetry();
@@ -288,11 +290,11 @@ export function renderLibraryViewMarkup(
                       data-atlas-action="toggle-save"
                       data-entry-id="${escapeHtml(entry.id)}"
                     >${isSaved ? "★ 已收藏" : "＋ 收藏"}</button>
-                    <a
+                    ${readOnly ? "" : `<a
                       href="${buildStudioHash(entry.slug)}"
                       role="menuitem"
                       class="desk-row-menu-item"
-                    >✎ 编辑档案</a>
+                    >✎ 编辑档案</a>`}
                     <button
                       type="button"
                       role="menuitem"
@@ -347,7 +349,7 @@ export function renderLibraryViewMarkup(
       : "";
 
   const primaryActionHtml = isSelectedDraft && selectedEntry
-    ? `<a href="${buildStudioHash(selectedEntry.slug)}" class="desk-act-primary">继续编撰草稿 ↗</a>`
+    ? readOnly ? "" : `<a href="${buildStudioHash(selectedEntry.slug)}" class="desk-act-primary">继续编撰草稿 ↗</a>`
     : hasWebGL
       ? `<button
           type="button"
@@ -472,12 +474,12 @@ export function renderLibraryViewMarkup(
                 </div>
               </div>
 
-              <span class="desk-top-divider" aria-hidden="true">|</span>
+              ${readOnly ? "" : `<span class="desk-top-divider" aria-hidden="true">|</span>
 
               <a href="${buildStudioHash()}" class="desk-new-btn" title="新建档案 [N]">
                 <span aria-hidden="true">＋</span>
                 <span>新建</span>
-              </a>
+              </a>`}
             </div>
           </header>
 

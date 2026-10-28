@@ -5,8 +5,9 @@ import {
   typeMeta,
 } from "../knowledge/repository.ts";
 import { buildEntryHash, buildLibraryHash } from "./router.ts";
+import { publicReadOnly } from "../public-mode.ts";
 
-export function renderTelemetryHomeMarkup(hasWebGL = true): string {
+export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicReadOnly): string {
   const telemetry = knowledgeRepository.telemetry();
   const allPublished = knowledgeRepository.all(false);
   const total = Math.max(1, telemetry.totalEntries);
@@ -230,19 +231,22 @@ export function renderTelemetryHomeMarkup(hasWebGL = true): string {
             </div>
           </section>
 
-          <section class="rhine-protocol-section" data-stagger="3" aria-label="零阻力归档协议">
+          <section class="rhine-protocol-section" data-stagger="3" aria-label="${readOnly ? "档案浏览指引" : "零阻力归档协议"}">
             <div class="rhine-subhead">
-              <span>02 // AUTHORING PROTOCOL · 零阻力记录协议</span>
-              <small>WEB STUDIO + AI</small>
+              <span>${readOnly ? "02 // READING PROTOCOL · 档案浏览指引" : "02 // AUTHORING PROTOCOL · 零阻力记录协议"}</span>
+              <small>${readOnly ? "2D INDEX + 3D ARCHIVE" : "WEB STUDIO + AI"}</small>
             </div>
             <ol class="rhine-protocol-list">
-              <li><span>01</span><div><strong>WebUI 内置编撰台 [N]</strong> — 无需打开外部软件，直接在浏览器可视化创建、编辑笔记与粘贴截图，实时写入 <code>content/</code>。</div></li>
-              <li><span>02</span><div><strong>AI 对话一键导入</strong> — 在编撰台点击「复制 AI 提示词」发给任意 AI，将生成的 Markdown 一键解析并归档入库。</div></li>
+              ${readOnly
+                ? `<li><span>01</span><div><strong>二维知识索引</strong> — 按领域、状态或关键词检索，选择档案后展开全文。</div></li>
+                   <li><span>02</span><div><strong>三维档案大厅</strong> — 在玻璃档案阵列中浏览，进入详情并阅读完整内容。</div></li>`
+                : `<li><span>01</span><div><strong>WebUI 内置编撰台 [N]</strong> — 无需打开外部软件，直接在浏览器可视化创建、编辑笔记与粘贴截图，实时写入 <code>content/</code>。</div></li>
+                   <li><span>02</span><div><strong>AI 对话一键导入</strong> — 在编撰台点击「复制 AI 提示词」发给任意 AI，将生成的 Markdown 一键解析并归档入库。</div></li>`}
             </ol>
             <div class="rhine-primary-actions">
-              <a href="#/studio" class="solid-button">
+              ${readOnly ? "" : `<a href="#/studio" class="solid-button">
                 ARCHIVE STUDIO ✎<span>新建或编辑笔记 [N]</span>
-              </a>
+              </a>`}
               <a href="#/library" class="solid-button secondary-solid">
                 2D LIBRARY ↗<span>二维知识索引 (${telemetry.totalEntries})</span>
               </a>

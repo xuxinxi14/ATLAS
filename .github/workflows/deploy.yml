@@ -45,6 +45,7 @@ jobs:
       - name: Build production static bundle
         env:
           ATLAS_BASE: ${{ steps.pages.outputs.base_path }}/
+          ATLAS_PUBLIC: "1"
         run: npm run build
 
       - name: Upload Pages artifact

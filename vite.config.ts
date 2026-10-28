@@ -538,6 +538,7 @@ function atlasStudioPlugin(): Plugin {
 export default defineConfig(({ mode }) => ({
   base: mode === "wallpaper" ? "./" : process.env.ATLAS_BASE || "/",
   define: {
+    __ATLAS_PUBLIC__: JSON.stringify(process.env.ATLAS_PUBLIC === "1"),
     __RHINE_MODELS__: JSON.stringify(
       Object.fromEntries(models.map((model) => [model.key, model.fileName])),
     ),

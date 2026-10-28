@@ -20,6 +20,7 @@ import "./styles/atlas-views.css";
 import "./styles/home-transit.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
+import { publicReadOnly } from "./public-mode";
 import { initPwa, pwaSettingsMarkup } from "./pwa";
 import {
   createRollingNumber,
@@ -128,7 +129,7 @@ $("#stage").innerHTML = `
     <button class="nav-mode-btn" data-action="nav-home" title="遥测中枢概览 (#/home)">TELEMETRY <span class="key">H</span></button>
     <button class="nav-mode-btn" data-action="nav-library" title="二维知识索引目录 (#/library)">2D LIBRARY <span class="key">L</span></button>
     <button class="nav-mode-btn active" data-action="nav-archive" title="三维档案大厅 (#/archive)">3D ARCHIVE</button>
-    <button class="nav-mode-btn" data-action="nav-studio" title="内置档案编撰台 (#/studio)">✎ STUDIO <span class="key">N</span></button>
+    ${publicReadOnly ? "" : '<button class="nav-mode-btn" data-action="nav-studio" title="内置档案编撰台 (#/studio)">✎ STUDIO <span class="key">N</span></button>'}
     <button data-action="search"><span class="nav-glyph">⌕</span> ARCHIVE INDEX <span class="key">/</span></button>
     <button data-action="saved" aria-label="查看收藏档案" title="收藏档案">＋ SAVED <span id="saved-count">00</span></button>
     <button class="settings-button" data-action="settings" aria-label="系统设置" title="系统设置"><span class="settings-glyph" aria-hidden="true">◷</span><span class="settings-label">设置</span></button>
@@ -1042,6 +1043,7 @@ function syncHomeTransitDom(ms = performance.now()) {
 }
 
 function loadStudioEditorModule() {
+  if (publicReadOnly) return Promise.reject(new Error("Public reading mode"));
   return studioEditorLoading ??= import("./studio/live-editor").then((module) => {
     studioEditorModule = module;
     return module;
@@ -1640,7 +1642,11 @@ function studioEditableBody(body: string) {
 }
 
 function syncHashRoute() {
-  const parsed = parseHashRoute(location.hash);
+  let parsed = parseHashRoute(location.hash);
+  if (publicReadOnly && parsed?.view === "studio") {
+    history.replaceState(null, "", "#/library");
+    parsed = parseHashRoute(location.hash);
+  }
   const nextView = parsed?.view ?? (scene ? "archive" : "home");
   const nextHash = location.hash || "#/archive";
   const routeChanged = nextHash !== currentRouteHash;
@@ -3005,7 +3011,7 @@ function renderDetail() {
   <dl class="metadata"><div><dt>DEPARTMENT / 所属领域</dt><dd>${escapeHtml(r.department)}</dd></div><div><dt>COLLECTION / 适用与更新</dt><dd>${escapeHtml(r.date)}</dd></div><div><dt>TYPE / 词条类型</dt><dd>${escapeHtml(tMeta.label)} · ${escapeHtml(r.lead)}</dd></div><div><dt>STATUS / 掌握状态</dt><dd><i data-status="${escapeHtml(r.status)}"></i>${escapeHtml(sMeta.label)} · ${escapeHtml(sMeta.en)}</dd></div></dl>
   <div class="detail-tabs" role="tablist"><button id="tab-overview" class="active" role="tab" aria-controls="tab-panel" aria-selected="true" data-tab="overview">01 <span>概述与摘要</span></button><button id="tab-notes" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="notes">02 <span>核心要点</span></button><button id="tab-history" role="tab" aria-controls="tab-panel" aria-selected="false" data-tab="history">03 <span>归档溯源</span></button><i class="tab-indicator" aria-hidden="true"></i></div>
   <div id="tab-panel" class="tab-panel" role="tabpanel">${overview()}</div>
-  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button><button class="solid-button secondary-solid" data-action="edit-studio" data-entry-slug="${escapeHtml(r.slug)}">EDIT FILE ✎<span>编辑档案</span></button><button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
+  <div class="detail-actions"><button class="solid-button" data-action="open-reader" data-entry-slug="${escapeHtml(r.slug)}">READ ARTICLE ↗<span>展开全文</span></button>${publicReadOnly ? "" : `<button class="solid-button secondary-solid" data-action="edit-studio" data-entry-slug="${escapeHtml(r.slug)}">EDIT FILE ✎<span>编辑档案</span></button>`}<button class="solid-button secondary-solid" data-action="bookmark">${isSaved ? "− SAVED" : "＋ SAVE"}<span>${isSaved ? "已收藏" : "收藏档案"}</span></button><a class="export-button" href="${assetUrl(`archives/ATLAS-${r.entryId}.txt`)}" download="ATLAS-${r.entryId}.txt" aria-label="导出 ${r.id} 档案">EXPORT <span>↓</span></a></div>
   <div class="detail-footnote"><a href="${escapeHtml(buildEntryHash(r.slug))}">OPEN IN 2D READER (${r.readingMinutes} MIN) ↗</a><span>${String(selected + 1).padStart(3, "0")} / ${String(records.length).padStart(3, "0")}</span></div>`;
   $("#detail-content").setAttribute("tabindex", "-1");
   $('[data-action="bookmark"]').setAttribute("aria-pressed", String(isSaved));
@@ -4547,7 +4553,7 @@ document.addEventListener("keydown", (e) => {
   if (typing || modal || !ready) return;
   if (atlasView === "reader" && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const lower = e.key.toLowerCase();
-    if (lower === "e") {
+    if (lower === "e" && !publicReadOnly) {
       e.preventDefault();
       navigateAtlas(buildStudioHash(activeReaderSlug));
       audio.play("open");
@@ -4615,7 +4621,7 @@ document.addEventListener("keydown", (e) => {
     navigateAtlas("#/library");
     return;
   }
-  if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "n") {
+  if (!publicReadOnly && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "n") {
     e.preventDefault();
     if (mode === "boot") setMode("archive");
     navigateAtlas("#/studio");

@@ -13,6 +13,8 @@
   2. **本地 WebUI 实时预览**：双击 [`启动终端.cmd`](启动终端.cmd) 或运行 `npm run dev`，浏览器打开 `http://127.0.0.1:5173/`。
   3. **桌面独立终端窗口（PWA）**：在 Chrome / Edge 打开页面后点击地址栏右侧「安装应用」，即可在桌面生成无边框独立终端图标并支持离线查阅。
 
+在 **STUDIO** 可切换实时编辑、源码和阅读模式；支持常用 Markdown、表格、任务清单、公式、代码高亮及 `[[内部链接]]`。`Ctrl/Cmd+E` 切换阅读，`Ctrl/Cmd+S` 保存。通过本地服务打开时可写入 `content/`；静态或离线页面提供 Markdown 导出，不会直接修改本地文件。支持范围与性能测试见 [工作台验证](verification/STUDIO-MARKDOWN.md)。
+
 ---
 
 ## 上游基线说明（RHINE LAB · ANALYSIS OS）
@@ -296,6 +298,7 @@ node scripts/check-quality.mjs
 
 - **MiSans**：使用小米官方字体文件，保留[字体许可](public/fonts/MiSans-license.pdf)及字体目录内的版权说明，设置页也提供署名与许可入口。
 - **Rolling Number**：用于编号和文字滚动，许可见 [`public/licenses/rolling-number.txt`](public/licenses/rolling-number.txt)。
+- **Markdown 编辑器**：CodeMirror、Lezer、Marked、DOMPurify、KaTeX、highlight.js 及其依赖的版本与许可见 [`public/licenses/markdown-editor.txt`](public/licenses/markdown-editor.txt)。
 - **声音**：三轨配乐为本项目程序编配；逐字输入使用原 PV 的三个 38ms 短音，来源与处理记录见 [音频说明](public/audio/README.md)。原片短音及其衍生片段不纳入原创配乐的 MIT 授权声明。
 - **其他依赖**：各自遵循其原有许可。源码公开不改变第三方资源的权利。
 

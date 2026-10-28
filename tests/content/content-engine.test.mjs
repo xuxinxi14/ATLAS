@@ -11,6 +11,41 @@ import {
 
 const categoriesPath = path.resolve("content/categories.json");
 
+test("Markdown parsing always advances past tags, deep headings, and malformed fences", () => {
+  const result = renderMarkdownDocument("#tag\n\n##### 五级标题\n\n###### 六级标题\n\n```invalid language with spaces\n接下来的正文\n");
+  assert.match(result.html, /#tag/);
+  assert.match(result.html, /<h5[^>]*>.*五级标题<\/h5>/);
+  assert.match(result.html, /<h6[^>]*>.*六级标题<\/h6>/);
+  assert.match(result.html, /invalid language with spaces/);
+  assert.match(result.html, /接下来的正文/);
+});
+
+test("Obsidian links and inline emphasis remain readable after publishing", () => {
+  const rendered = renderMarkdownDocument("[[Reference#Section|显示名称]]、[[missing]]、~~删除~~、==重点==", {
+    resolveWiki: (target) => target === "Reference#Section"
+      ? { href: "#/entry/tools/reference#section", entrySlug: "tools/reference" }
+      : undefined,
+  });
+  assert.match(rendered.html, /href="#\/entry\/tools\/reference#section"[^>]*>显示名称<\/a>/);
+  assert.match(rendered.html, /class="atlas-unresolved-link">missing<\/span>/);
+  assert.match(rendered.html, /<del>删除<\/del>/);
+  assert.match(rendered.html, /<mark>重点<\/mark>/);
+});
+
+test("nested ordered, unordered, and task lists keep their hierarchy", () => {
+  const rendered = renderMarkdownDocument("- parent\n  - child\n    2. numbered\n- [ ] task\n+ sibling");
+  assert.match(rendered.html, /<li>parent<ul class="atlas-list"><li>child<ol class="atlas-list" start="2"><li>numbered<\/li><\/ol><\/li><\/ul><\/li>/);
+  assert.match(rendered.html, /class="atlas-task-item"/);
+  assert.match(rendered.html, /<li>sibling<\/li><\/ul>/);
+});
+
+test("front matter round-trips quoted commas, quotes, and backslashes", () => {
+  const parsed = parseFrontMatter('---\ntitle: "带 \\\"引号\\\" 的笔记"\ntags: ["one,two", "simple"]\nversion_scope: "C:\\\\Work"\n---\n正文');
+  assert.equal(parsed.data.title, '带 "引号" 的笔记');
+  assert.deepEqual(parsed.data.tags, ["one,two", "simple"]);
+  assert.equal(parsed.data.version_scope, "C:\\Work");
+});
+
 async function makeTempContent(filesMap) {
   const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "atlas-test-"));
   const contentDir = path.join(tmpRoot, "content");
@@ -31,6 +66,22 @@ async function makeTempContent(filesMap) {
     cleanup: () => fs.rm(tmpRoot, { recursive: true, force: true }),
   };
 }
+
+test("published wiki links resolve titles, headings and unresolved notes without failing the build", async () => {
+  const env = await makeTempContent({
+    "tools/reference.md": "---\ntitle: 参考笔记\nslug: tools/reference\n---\n# 参考笔记\n\n## 更多内容\n正文。",
+    "tools/links.md": "---\ntitle: 链接测试\nslug: tools/links\n---\n# 链接测试\n\n[[参考笔记#更多内容|跳转]]、[[暂不存在]]。",
+  });
+  try {
+    const result = await buildKnowledgeBase({ repoRoot: env.tmpRoot, contentDir: env.contentDir, publicDir: env.publicDir, copyAssets: false });
+    const html = result.entries.find((entry) => entry.slug === "tools/links").html;
+    assert.match(html, /href="#\/entry\/tools\/reference#%E6%9B%B4%E5%A4%9A%E5%86%85%E5%AE%B9"/);
+    assert.match(html, /class="atlas-unresolved-link">暂不存在<\/span>/);
+    assert.match(result.entries.find((entry) => entry.slug === "tools/links").markdown, /\[\[参考笔记#更多内容\|跳转\]\]/);
+  } finally {
+    await env.cleanup();
+  }
+});
 
 test("real repository content validates, resolves co-located assets, and infers zero-front-matter notes", async () => {
   const result = await buildKnowledgeBase({

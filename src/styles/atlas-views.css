@@ -1546,6 +1546,11 @@ i[data-status="draft"] {
   transition: opacity 220ms ease;
 }
 
+/* The enlarged screen occupies the same corner as the instrument signature. */
+.optical-reader-stage[data-receded="true"] .optical-stage-signature {
+  visibility: hidden;
+}
+
 .optical-stage-signature i {
   display: block;
   width: 34px;
@@ -4740,6 +4745,11 @@ i[data-status="draft"] {
   z-index: 1;
 }
 
+/* The filter belongs to the header; keep that entire stacking context above rows. */
+.desk-surface-plate > .desk-top-bar {
+  z-index: 3;
+}
+
 [data-dark-surface="true"] .desk-surface-plate {
   background:
     linear-gradient(
@@ -4940,11 +4950,9 @@ i[data-status="draft"] {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 340px;
+  width: min(340px, calc(100vw - 32px));
   padding: 16px 18px;
-  background: rgba(250, 248, 243, 0.88);
-  backdrop-filter: blur(18px) saturate(1.1);
-  -webkit-backdrop-filter: blur(18px) saturate(1.1);
+  background: #faf8f3;
   border: 1px solid rgba(255, 255, 255, 0.88);
   box-shadow:
     0 18px 38px rgba(15, 16, 14, 0.16),
@@ -4956,13 +4964,21 @@ i[data-status="draft"] {
 }
 
 [data-dark-surface="true"] .desk-filter-popover {
-  background: rgba(30, 41, 46, 0.88);
+  background: #1e292e;
   border-color: rgba(140, 160, 168, 0.42);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
 }
 
 .desk-filter-popover[hidden] {
   display: none !important;
+}
+
+@media (max-height: 620px) {
+  .desk-filter-popover {
+    max-height: max(90px, calc(100dvh - 240px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .desk-filter-section {

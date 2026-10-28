@@ -242,6 +242,13 @@ const studioSavedBaseline = new Map<string, StudioDraftSnapshot>();
 let studioEditRevision = 0;
 let studioComposing = false;
 let studioPreviewTimer: ReturnType<typeof setTimeout> | undefined;
+let studioEditorModule: typeof import("./studio/live-editor") | undefined;
+let studioEditorLoading: Promise<typeof import("./studio/live-editor")> | undefined;
+let studioDiskProbe: Promise<boolean> | undefined;
+let studioBodyLineCount: number | undefined;
+let studioBodyLineCountFor = "";
+let studioStatusFrame = 0;
+let studioPreviousEditTab: "edit" | "source" = "edit";
 let transitTimer: ReturnType<typeof setTimeout> | undefined;
 const reviewParams = new URLSearchParams(location.search);
 let frozenTime =
@@ -695,24 +702,32 @@ function syncNavButtons(animated = true) {
 let previousReaderSlug = "";
 let manualReaderRecede: boolean | null = null;
 
+function setStageVariable(stage: HTMLElement, name: string, value: string) {
+  if (stage.style.getPropertyValue(name) !== value) stage.style.setProperty(name, value);
+}
+
+function setInertIfChanged(element: HTMLElement, value: boolean) {
+  if (element.inert !== value) element.inert = value;
+}
+
 function syncOpticalReaderDom() {
   const stage = $("#stage");
   if (!scene || !motionActive("surfaceTransitions")) {
-    stage.style.setProperty("--optical-dock", "1");
-    stage.style.setProperty("--optical-contact", "1");
-    stage.style.setProperty("--optical-sweep", "0");
-    stage.style.setProperty("--optical-active", "1");
-    stage.style.setProperty("--optical-title-reveal", "1");
-    stage.style.setProperty("--optical-body-reveal", "1");
+    setStageVariable(stage, "--optical-dock", "1");
+    setStageVariable(stage, "--optical-contact", "1");
+    setStageVariable(stage, "--optical-sweep", "0");
+    setStageVariable(stage, "--optical-active", "1");
+    setStageVariable(stage, "--optical-title-reveal", "1");
+    setStageVariable(stage, "--optical-body-reveal", "1");
     return;
   }
   const f = scene.opticalReaderFrame;
-  stage.style.setProperty("--optical-dock", f.rigDock.toFixed(4));
-  stage.style.setProperty("--optical-contact", f.contactGlow.toFixed(4));
-  stage.style.setProperty("--optical-sweep", f.amberSweep.toFixed(4));
-  stage.style.setProperty("--optical-active", f.screenActive.toFixed(4));
-  stage.style.setProperty("--optical-title-reveal", f.titleReveal.toFixed(4));
-  stage.style.setProperty("--optical-body-reveal", f.bodyReveal.toFixed(4));
+  setStageVariable(stage, "--optical-dock", f.rigDock.toFixed(4));
+  setStageVariable(stage, "--optical-contact", f.contactGlow.toFixed(4));
+  setStageVariable(stage, "--optical-sweep", f.amberSweep.toFixed(4));
+  setStageVariable(stage, "--optical-active", f.screenActive.toFixed(4));
+  setStageVariable(stage, "--optical-title-reveal", f.titleReveal.toFixed(4));
+  setStageVariable(stage, "--optical-body-reveal", f.bodyReveal.toFixed(4));
 }
 
 function syncIndexDeskDom() {
@@ -720,27 +735,27 @@ function syncIndexDeskDom() {
   const surface = $("#atlas-surface");
   if (!scene || !motionActive("surfaceTransitions")) {
     const active = atlasView === "library";
-    stage.style.setProperty("--desk-ack", active ? "0" : "1");
-    stage.style.setProperty("--desk-dir-opacity", active ? "1" : "0");
-    stage.style.setProperty("--desk-anchor-opacity", "0");
-    stage.style.setProperty("--desk-retreat", active ? "0" : "1");
-    stage.style.setProperty("--desk-dive", active ? "0" : "1");
-    stage.style.setProperty("--desk-hud-handover", "1");
-    stage.dataset.deskTransitioning = "false";
+    setStageVariable(stage, "--desk-ack", active ? "0" : "1");
+    setStageVariable(stage, "--desk-dir-opacity", active ? "1" : "0");
+    setStageVariable(stage, "--desk-anchor-opacity", "0");
+    setStageVariable(stage, "--desk-retreat", active ? "0" : "1");
+    setStageVariable(stage, "--desk-dive", active ? "0" : "1");
+    setStageVariable(stage, "--desk-hud-handover", "1");
+    if (stage.dataset.deskTransitioning !== "false") stage.dataset.deskTransitioning = "false";
     return;
   }
   const f = scene.indexDeskFrame;
-  stage.style.setProperty("--desk-ack", f.responseAck.toFixed(4));
-  stage.style.setProperty("--desk-dir-opacity", f.directoryOpacity.toFixed(4));
-  stage.style.setProperty(
+  setStageVariable(stage, "--desk-ack", f.responseAck.toFixed(4));
+  setStageVariable(stage, "--desk-dir-opacity", f.directoryOpacity.toFixed(4));
+  setStageVariable(stage,
     "--desk-anchor-opacity",
     f.selectedAnchorOpacity.toFixed(4),
   );
-  stage.style.setProperty("--desk-retreat", f.deskRetreat.toFixed(4));
-  stage.style.setProperty("--desk-dive", f.cameraDive.toFixed(4));
-  stage.style.setProperty("--desk-hud-handover", f.hudHandover.toFixed(4));
+  setStageVariable(stage, "--desk-retreat", f.deskRetreat.toFixed(4));
+  setStageVariable(stage, "--desk-dive", f.cameraDive.toFixed(4));
+  setStageVariable(stage, "--desk-hud-handover", f.hudHandover.toFixed(4));
   const isMidTransition = f.time > 0.008 && f.time < 1.242;
-  stage.dataset.deskTransitioning = String(isMidTransition);
+  if (stage.dataset.deskTransitioning !== String(isMidTransition)) stage.dataset.deskTransitioning = String(isMidTransition);
   if (
     atlasView === "archive" &&
     surface.dataset.deskBridgeHold === "true" &&
@@ -757,25 +772,25 @@ function syncStudioTrayDom() {
   const surface = $("#atlas-surface");
   if (!scene || !motionActive("surfaceTransitions")) {
     const active = atlasView === "studio";
-    stage.style.setProperty("--studio-slide", active ? "1" : "0");
-    stage.style.setProperty("--studio-editor-reveal", active ? "1" : "0");
-    stage.style.setProperty("--studio-contact-glow", active ? "0.74" : "0");
-    stage.style.setProperty("--studio-bridge-retreat", active ? "1" : "0");
-    stage.style.setProperty("--studio-dock", active ? "1" : "0");
-    stage.dataset.studioTransitioning = "false";
+    setStageVariable(stage, "--studio-slide", active ? "1" : "0");
+    setStageVariable(stage, "--studio-editor-reveal", active ? "1" : "0");
+    setStageVariable(stage, "--studio-contact-glow", active ? "0.74" : "0");
+    setStageVariable(stage, "--studio-bridge-retreat", active ? "1" : "0");
+    setStageVariable(stage, "--studio-dock", active ? "1" : "0");
+    if (stage.dataset.studioTransitioning !== "false") stage.dataset.studioTransitioning = "false";
     return;
   }
   const f = scene.studioTrayFrame;
-  stage.style.setProperty("--studio-slide", f.traySlide.toFixed(4));
-  stage.style.setProperty("--studio-editor-reveal", f.editorReveal.toFixed(4));
-  stage.style.setProperty("--studio-contact-glow", f.contactGlow.toFixed(4));
-  stage.style.setProperty(
+  setStageVariable(stage, "--studio-slide", f.traySlide.toFixed(4));
+  setStageVariable(stage, "--studio-editor-reveal", f.editorReveal.toFixed(4));
+  setStageVariable(stage, "--studio-contact-glow", f.contactGlow.toFixed(4));
+  setStageVariable(stage,
     "--studio-bridge-retreat",
     f.indexBridgeRetreat.toFixed(4),
   );
-  stage.style.setProperty("--studio-dock", f.cassetteDock.toFixed(4));
+  setStageVariable(stage, "--studio-dock", f.cassetteDock.toFixed(4));
   const isMidTransition = f.time > 0.008 && f.time < f.duration - 0.012;
-  stage.dataset.studioTransitioning = String(isMidTransition);
+  if (stage.dataset.studioTransitioning !== String(isMidTransition)) stage.dataset.studioTransitioning = String(isMidTransition);
   if (
     atlasView !== "studio" &&
     surface.dataset.studioTrayHold === "true" &&
@@ -854,6 +869,7 @@ function rememberSurfaceState() {
     ".desk-dir-list",
     "#atlas-reader-scroll",
     "#studio-input-body",
+    ".studio-editor-host .cm-scroller",
     "#studio-preview-pane",
   ];
   const scrolls = selectors.flatMap((selector) => {
@@ -911,7 +927,7 @@ function restoreSurfaceState(focus = false) {
   ) {
     const selector = studioState.isNew
       ? "#studio-input-title"
-      : "#studio-input-body";
+      : "#studio-cm-body, #studio-input-body:not([hidden])";
     document
       .querySelector<HTMLElement>(selector)
       ?.focus({ preventScroll: true });
@@ -1000,21 +1016,21 @@ function syncHomeTransitDom(ms = performance.now()) {
       scene.indexDeskFrame.time > 0.015,
     );
   const blocked = Boolean(modal) || modalClosing || Boolean(viewer?.isOpen);
-  $("#atlas-surface").inert =
-    blocked || homeTransit.active || studioBusy || deskBusy;
-  $("#archive-ui").inert =
+  setInertIfChanged($("#atlas-surface"),
+    blocked || homeTransit.active || studioBusy || deskBusy);
+  setInertIfChanged($("#archive-ui"),
     blocked ||
     homeTransit.active ||
     atlasView !== "archive" ||
     mode !== "archive" ||
     Boolean(workbench?.enabled) ||
     $("#atlas-surface").dataset.deskBridgeHold === "true" ||
-    $("#atlas-surface").dataset.studioTrayHold === "true";
-  $("#detail-ui").inert =
+    $("#atlas-surface").dataset.studioTrayHold === "true");
+  setInertIfChanged($("#detail-ui"),
     blocked ||
     homeTransit.active ||
     atlasView !== "archive" ||
-    mode !== "detail";
+    mode !== "detail");
   if (!homeTransit.active) {
     outgoingSurface?.remove();
     outgoingSurface = null;
@@ -1023,6 +1039,121 @@ function syncHomeTransitDom(ms = performance.now()) {
       restoreSurfaceState(true);
     }
   }
+}
+
+function loadStudioEditorModule() {
+  return studioEditorLoading ??= import("./studio/live-editor").then((module) => {
+    studioEditorModule = module;
+    return module;
+  }).catch((error) => {
+    studioEditorLoading = undefined;
+    throw error;
+  });
+}
+
+function probeStudioDisk() {
+  if (studioDiskProbe) return studioDiskProbe;
+  const request = fetch("/__atlas_api/ping", { cache: "no-store" })
+    .then(async (response) => {
+      if (!response.ok) return false;
+      const data = await response.json();
+      return data.ok === true && data.localDisk === true;
+    }).catch(() => false);
+  studioDiskProbe = request;
+  void request.then(() => {
+    if (studioDiskProbe === request) studioDiskProbe = undefined;
+  });
+  return request;
+}
+
+function enhanceReaderMath(surface: HTMLElement) {
+  const equations = Array.from(surface.querySelectorAll<HTMLElement>(".atlas-math-inline[data-latex], .atlas-math-block[data-latex]"));
+  if (!equations.length) return;
+  void Promise.all([import("katex"), import("katex/dist/katex.min.css")]).then(([{ default: katex }]) => {
+    for (const equation of equations) {
+      if (!equation.isConnected) continue;
+      katex.render(equation.dataset.latex ?? "", equation, {
+        displayMode: equation.classList.contains("atlas-math-block"),
+        throwOnError: false,
+        trust: false,
+      });
+    }
+  }).catch((error) => console.error("Unable to typeset equations", error));
+}
+
+function studioMarkdownContext() {
+  const entry = knowledgeRepository.bySlug(studioState.originalSlug);
+  const category = studioState.category;
+  return {
+    resolveImage(src: string) {
+      if (!src || /^(?:javascript|vbscript|data):/i.test(src.trim())) return "";
+      if (/^(?:https?:|\/)/i.test(src)) return src;
+      const clean = src.replace(/^\.\//, "");
+      if (clean.startsWith("media/")) return assetUrl(clean);
+      const filename = clean.split("/").pop() ?? "";
+      const existing = entry?.images.find((image) => image.endsWith(`/${filename}`));
+      const env = (import.meta as { env?: { DEV?: boolean } }).env;
+      if (env?.DEV) {
+        const directory = entry?.relPath.replace(/[^/]+$/, "") || `content/${category}/`;
+        return assetUrl(`${directory}${clean}`);
+      }
+      return existing ? assetUrl(existing) : entry ? assetUrl(`media/entries/${entry.id}/${filename}`) : "";
+    },
+    resolveWiki(target: string) {
+      const [name, anchor] = target.split("#");
+      const key = name.replace(/\.md$/i, "").trim().toLocaleLowerCase();
+      const section = anchor ? studioEditorModule?.studioHeadingId(anchor) ?? anchor : "";
+      if (!key && section) return `#${encodeURIComponent(section)}`;
+      const match = key
+        ? knowledgeRepository.all(true).find((item) =>
+            [item.title, item.slug, item.id, item.slug.split("/").at(-1) ?? "", ...item.aliases].some((value) => value.toLocaleLowerCase() === key),
+          )
+        : entry;
+      return match ? `${buildEntryHash(match.slug)}${section ? `#${encodeURIComponent(section)}` : ""}` : undefined;
+    },
+  };
+}
+
+function mountStudioMarkdownEditor() {
+  const host = document.querySelector<HTMLElement>("#studio-editor-host");
+  const fallback = document.querySelector<HTMLTextAreaElement>("#studio-input-body");
+  if (!host || !fallback) return;
+  void loadStudioEditorModule().then((editor) => {
+    if (atlasView !== "studio" || !host.isConnected || document.querySelector("#studio-editor-host") !== host) return;
+    const hadFocus = document.activeElement === fallback;
+    const start = fallback.selectionStart;
+    const end = fallback.selectionEnd;
+    const scrollTop = fallback.scrollTop;
+    editor.mountStudioEditor({
+      host,
+      key: studioCacheKey(studioState.originalSlug, studioState.isNew),
+      body: studioState.body,
+      mode: studioState.activeTab,
+      readOnly: studioState.loading,
+      context: studioMarkdownContext(),
+      onChange(value, lines) {
+        studioState.body = value;
+        studioBodyLineCount = lines;
+        studioBodyLineCountFor = value;
+        markStudioDirty();
+      },
+      onSave: () => void saveStudioDraftToDisk(),
+      onToggleRead: () => setStudioEditorTab(studioState.activeTab === "preview" ? studioPreviousEditTab : "preview"),
+      initialSelection: hadFocus ? { from: start, to: end, scrollTop } : undefined,
+    });
+    fallback.hidden = true;
+    host.hidden = studioState.activeTab === "preview";
+    editor.studioEditorScrollElement()?.addEventListener("scroll", (event) => {
+      const scroller = event.currentTarget as HTMLElement;
+      const pos = document.getElementById("studio-body-scroll-pos");
+      if (!pos) return;
+      const max = scroller.scrollHeight - scroller.clientHeight;
+      pos.textContent = max <= 12 ? "正文就绪" : `阅读进度 ${Math.round(scroller.scrollTop / max * 100)}%`;
+    }, { passive: true });
+    if (hadFocus) editor.focusStudioEditor();
+  }).catch((error) => {
+    console.error("Unable to load Markdown editor", error);
+  });
 }
 
 function renderAtlasSurface(preserveLibraryInputFocus = false) {
@@ -1176,6 +1307,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
               readerOrigin,
             );
 
+  studioEditorModule?.unmountStudioEditor();
   surface.innerHTML = `<div id="atlas-surface-body" class="atlas-surface-body">${bodyHtml}</div>`;
   surface.hidden = false;
   surface.inert = Boolean(modal);
@@ -1190,6 +1322,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
 
   if (atlasView === "reader") {
     syncOpticalReaderDom();
+    enhanceReaderMath(surface);
     const readerScroll = surface.querySelector<HTMLElement>(
       "#atlas-reader-scroll",
     );
@@ -1259,6 +1392,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
         { passive: true },
       );
     }
+    mountStudioMarkdownEditor();
   } else if (
     viewChanged &&
     previousView !== "home" &&
@@ -1498,6 +1632,13 @@ function studioCacheKey(slug: string, isNew: boolean): string {
   return isNew || !slug ? "__new__" : slug;
 }
 
+function studioEditableBody(body: string) {
+  const normalized = body.replace(/\r\n/g, "\n");
+  // The title has its own field. Remove only the leading title and its normal
+  // separator; retain the rest of the Markdown, including trailing newlines.
+  return normalized.replace(/^\n*#[ \t]+[^\n]+(?:\n(?:\n)?|$)/, "");
+}
+
 function syncHashRoute() {
   const parsed = parseHashRoute(location.hash);
   const nextView = parsed?.view ?? (scene ? "archive" : "home");
@@ -1631,6 +1772,12 @@ function syncHashRoute() {
               : "library";
     }
     atlasView = "studio";
+    void probeStudioDisk().then((available) => {
+      if (atlasView === "studio") {
+        studioState.localDiskAvailable = available;
+        syncStudioStatusDom();
+      }
+    });
     previousReaderSlug = "";
     const targetSlug = (parsed.slug || "").replace(/^\/+|\/+$/g, "");
 
@@ -1763,40 +1910,32 @@ function applyHotSnapshot(
 async function scheduleStudioLivePreview(immediate = false) {
   clearTimeout(studioPreviewTimer);
   const request = ++studioPreviewRevision;
+  // Reading mode can contain thousands of DOM nodes; do not build it while
+  // the virtualized editor is visible or on every incoming draft.
+  if (studioState.activeTab !== "preview") {
+    studioState.previewHtml = "";
+    return;
+  }
   const body = studioState.body;
+  const context = studioMarkdownContext();
   const runPreview = async () => {
     try {
-      const res = await fetch("/__atlas_api/preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
-      });
-      if (!res.ok) {
-        if ([404, 405, 501].includes(res.status)) throw new Error("Studio API unavailable");
-        return;
-      }
-      const data = await res.json();
+      const editor = await loadStudioEditorModule();
       if (request !== studioPreviewRevision || body !== studioState.body)
         return;
-      if (!data.ok) return;
-      studioState.previewHtml = hydrateEntryHtmlImages(data.html || "");
-      studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
-        data.quickstartHtml || "",
-      );
+      studioState.previewHtml = editor.renderStudioMarkdown(body, context);
       const bodyContainer = document.querySelector<HTMLElement>(
         "#studio-preview-body",
       );
       if (bodyContainer) {
         bodyContainer.innerHTML =
           studioState.previewHtml ||
-          '<p class="studio-preview-placeholder">暂无正文内容，切回「编辑」输入 Markdown 后即可在此检视排版效果。</p>';
+          '<p class="studio-preview-placeholder">暂无正文内容，切回「实时编辑」开始撰写。</p>';
       }
-    } catch {
+    } catch (error) {
       if (request !== studioPreviewRevision || body !== studioState.body)
         return;
-      // Fallback client-side minimal preview when running in static mode
-      studioState.localDiskAvailable = false;
-      syncStudioStatusDom();
+      console.error("Unable to render Markdown", error);
       const bodyContainer = document.querySelector<HTMLElement>(
         "#studio-preview-body",
       );
@@ -1888,9 +2027,7 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
             entry?.updated ||
             studioState.created,
         );
-        studioState.body = String(data.body || "")
-          .replace(/^#\s+.+\n+/, "")
-          .trim();
+        studioState.body = studioEditableBody(String(data.body ?? ""));
         studioState.dirty = false;
         studioState.loading = false;
         studioState.localDiskAvailable = true;
@@ -1932,7 +2069,7 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
     studioState.source_urls = fallbackEntry.source_urls.join(", ");
     studioState.created = fallbackEntry.created;
     studioState.updated = fallbackEntry.updated;
-    studioState.body = fallbackEntry.plainText;
+    studioState.body = studioEditableBody(fallbackEntry.markdown ?? fallbackEntry.plainText);
     studioState.dirty = false;
     studioState.previewHtml = hydrateEntryHtmlImages(fallbackEntry.html);
     studioState.previewQuickstartHtml = hydrateEntryHtmlImages(
@@ -2011,9 +2148,11 @@ function syncStudioStatusDom() {
     ".studio-bottom-right span",
   );
   if (bottomRightSpan) {
-    const lineCount = studioState.body
-      ? studioState.body.split("\n").length
-      : 1;
+    if (studioBodyLineCountFor !== studioState.body || studioBodyLineCount === undefined) {
+      studioBodyLineCount = studioState.body ? studioState.body.split("\n").length : 1;
+      studioBodyLineCountFor = studioState.body;
+    }
+    const lineCount = studioBodyLineCount;
     const charCount = studioState.body.length;
     bottomRightSpan.textContent = `${lineCount} 行 · ${charCount} 字`;
   }
@@ -2027,46 +2166,58 @@ function markStudioDirty() {
     studioCacheKey(studioState.originalSlug, studioState.isNew),
     snapshotStudioDraft(studioState),
   );
-  syncStudioStatusDom();
+  if (!studioStatusFrame) {
+    studioStatusFrame = requestAnimationFrame(() => {
+      studioStatusFrame = 0;
+      syncStudioStatusDom();
+    });
+  }
 }
 
 function exportStudioMarkdown() {
   const title = studioState.title.trim() || "未命名知识档案";
+  const original = !studioState.isNew ? knowledgeRepository.bySlug(studioState.originalSlug) : undefined;
   const stem =
     (studioState.fileSlug.trim() || title)
       .toLowerCase()
       .replace(/[^a-z0-9\u4e00-\u9fa5_-]+/g, "-")
       .replace(/^-+|-+$/g, "") || "new-specimen";
   const slug = `${studioState.category}/${stem}`;
-  const tagsList = studioState.tags
+  const tagsList = original && studioState.tags === original.tags.join(", ") ? original.tags : studioState.tags
     .split(/[,，]/)
     .map((t) => t.trim())
     .filter(Boolean);
-  const sourcesList = studioState.source_urls
+  const sourcesList = original && studioState.source_urls === original.source_urls.join(", ") ? original.source_urls : studioState.source_urls
     .split(/[,，]/)
     .map((s) => s.trim())
     .filter(Boolean);
   const today = new Date().toISOString().slice(0, 10);
+  const body = studioState.body.startsWith("# ")
+    ? studioState.body
+    : `# ${title}\n\n${studioState.body}`;
   const yaml = [
     "---",
-    `title: "${title.replace(/"/g, '\\"')}"`,
-    `slug: "${slug}"`,
-    `category: "${studioState.category}"`,
-    `subcategory: "${studioState.subcategory || "general"}"`,
-    `type: "${studioState.type}"`,
-    `status: "${studioState.status}"`,
-    `tags: [${tagsList.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(", ")}]`,
-    `summary: "${studioState.summary.trim().replace(/"/g, '\\"')}"`,
-    `created: "${studioState.created || today}"`,
-    `updated: "${today}"`,
-    `version_scope: "${studioState.version_scope.trim() || "通用版本"}"`,
-    `source_urls: [${sourcesList.map((u) => `"${u.replace(/"/g, '\\"')}"`).join(", ")}]`,
+    ...(original ? [`id: ${JSON.stringify(original.id)}`] : []),
+    `title: ${JSON.stringify(title)}`,
+    `slug: ${JSON.stringify(slug)}`,
+    `category: ${JSON.stringify(studioState.category)}`,
+    `subcategory: ${JSON.stringify(studioState.subcategory || "general")}`,
+    `type: ${JSON.stringify(studioState.type)}`,
+    `status: ${JSON.stringify(studioState.status)}`,
+    `tags: ${JSON.stringify(tagsList)}`,
+    `summary: ${JSON.stringify(studioState.summary.trim())}`,
+    `created: ${JSON.stringify(studioState.created || today)}`,
+    `updated: ${JSON.stringify(today)}`,
+    `version_scope: ${JSON.stringify(studioState.version_scope.trim() || "通用版本")}`,
+    `source_urls: ${JSON.stringify(sourcesList)}`,
+    ...(original ? [
+      `prerequisites: ${JSON.stringify(original.prerequisites)}`,
+      `related: ${JSON.stringify(original.related)}`,
+      `aliases: ${JSON.stringify(original.aliases)}`,
+    ] : []),
     "---",
     "",
-    `# ${title}`,
-    "",
-    studioState.body.trim(),
-    "",
+    body,
   ].join("\n");
 
   const blob = new Blob([yaml], { type: "text/markdown;charset=utf-8" });
@@ -2101,8 +2252,10 @@ function discardStudioDraftChanges() {
   notify("已放弃未保存修改，恢复上次保存版本");
 }
 
-function setStudioEditorTab(tab: "edit" | "preview") {
+function setStudioEditorTab(tab: "edit" | "source" | "preview") {
   if (studioState.activeTab === tab) return;
+  if (tab === "preview" && studioState.activeTab !== "preview") studioPreviousEditTab = studioState.activeTab;
+  else if (tab !== "preview") studioPreviousEditTab = tab;
   studioState.activeTab = tab;
   document
     .querySelectorAll<HTMLButtonElement>("[data-studio-tab]")
@@ -2112,17 +2265,22 @@ function setStudioEditorTab(tab: "edit" | "preview") {
       btn.setAttribute("aria-selected", String(active));
     });
   const previewPane = document.getElementById("studio-preview-pane");
+  const host = document.getElementById("studio-editor-host");
   const textarea =
     document.querySelector<HTMLTextAreaElement>("#studio-input-body");
-  if (!textarea || !previewPane) {
+  if (!textarea || !previewPane || !host) {
     renderAtlasSurface(true);
     return;
   }
+  const editorScroll = studioEditorModule?.studioEditorScrollElement();
+  studioEditorModule?.setStudioEditorMode(tab);
   if (tab === "preview") {
     void scheduleStudioLivePreview(true);
-    const maxEdit = Math.max(1, textarea.scrollHeight - textarea.clientHeight);
-    const scrollRatio = textarea.scrollTop / maxEdit;
+    const scroller = editorScroll || textarea;
+    const maxEdit = Math.max(1, scroller.scrollHeight - scroller.clientHeight);
+    const scrollRatio = scroller.scrollTop / maxEdit;
     textarea.hidden = true;
+    host.hidden = true;
     previewPane.hidden = false;
     requestAnimationFrame(() => {
       const maxPrev = Math.max(
@@ -2139,15 +2297,18 @@ function setStudioEditorTab(tab: "edit" | "preview") {
     }
   } else {
     previewPane.hidden = true;
-    textarea.hidden = false;
+    host.hidden = !editorScroll;
+    textarea.hidden = Boolean(editorScroll);
+    const visibleEditor = editorScroll ? host : textarea;
     if (motionActive("surfaceTransitions")) {
-      textarea.animate([{ opacity: 0 }, { opacity: 1 }], {
+      visibleEditor.animate([{ opacity: 0 }, { opacity: 1 }], {
         duration: 140,
         easing: "ease-out",
       });
     }
     requestAnimationFrame(() => {
-      textarea.focus({ preventScroll: true });
+      if (editorScroll) studioEditorModule?.focusStudioEditor();
+      else textarea.focus({ preventScroll: true });
     });
   }
   audio.play("ui-tick");
@@ -2155,6 +2316,11 @@ function setStudioEditorTab(tab: "edit" | "preview") {
 
 async function saveStudioDraftToDisk(andReturn = false) {
   if (studioState.saving || studioState.loading) return;
+  const probeRevision = studioLoadRevision;
+  const available = await probeStudioDisk();
+  if (atlasView !== "studio" || probeRevision !== studioLoadRevision || studioState.saving || studioState.loading) return;
+  studioState.localDiskAvailable = available;
+  syncStudioStatusDom();
   const title = studioState.title.trim();
   if (!title) {
     notify("请先填写档案标题");
@@ -2170,6 +2336,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
   const requestRevision = studioEditRevision;
   const requestContext = studioLoadRevision;
   const requestDraft = snapshotStudioDraft(studioState);
+  const originalEntry = !studioState.isNew ? knowledgeRepository.bySlug(studioState.originalSlug) : undefined;
   const prevCacheKey = studioCacheKey(
     studioState.originalSlug,
     studioState.isNew,
@@ -2190,10 +2357,10 @@ async function saveStudioDraftToDisk(andReturn = false) {
         subcategory: studioState.subcategory,
         type: studioState.type,
         status: studioState.status,
-        tags: studioState.tags,
+        tags: originalEntry && studioState.tags === originalEntry.tags.join(", ") ? originalEntry.tags : studioState.tags,
         summary: studioState.summary.trim(),
         version_scope: studioState.version_scope.trim(),
-        source_urls: studioState.source_urls,
+        source_urls: originalEntry && studioState.source_urls === originalEntry.source_urls.join(", ") ? originalEntry.source_urls : studioState.source_urls,
         created: studioState.created,
         body: studioState.body,
       }),
@@ -2270,6 +2437,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
     studioState.saving = false;
     studioState.isNew = false;
     studioState.originalSlug = data.slug;
+    studioEditorModule?.rekeyStudioEditor(prevCacheKey, data.slug);
     studioState.fileSlug = String(data.slug).split("/").slice(1).join("/");
     studioState.lockedCode =
       savedEntry?.visualCode ||
@@ -2485,7 +2653,7 @@ async function parseAiMarkdownIntoStudio() {
 }
 
 function insertStudioSnippet(kind: string) {
-  if (studioState.activeTab !== "edit") {
+  if (studioState.activeTab === "preview") {
     setStudioEditorTab("edit");
   }
   const textarea =
@@ -2503,36 +2671,38 @@ function insertStudioSnippet(kind: string) {
   const snippet = snippets[kind];
   if (!snippet) return;
 
-  const start = textarea.selectionStart ?? textarea.value.length;
-  const end = textarea.selectionEnd ?? textarea.value.length;
-  textarea.value =
-    textarea.value.slice(0, start) + snippet + textarea.value.slice(end);
-  studioState.body = textarea.value;
+  const inserted = studioEditorModule?.insertStudioEditorText(snippet) ?? false;
+  if (!inserted) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? textarea.value.length;
+    textarea.value = textarea.value.slice(0, start) + snippet + textarea.value.slice(end);
+    studioState.body = textarea.value;
+    markStudioDirty();
+    textarea.focus();
+    textarea.setSelectionRange(start + snippet.length, start + snippet.length);
+  }
   studioState.openDropdown = null;
   const insertMenu = document.querySelector<HTMLElement>(".studio-insert-menu");
   if (insertMenu) insertMenu.hidden = true;
-  markStudioDirty();
-  textarea.focus();
-  const nextCursor = start + snippet.length;
-  textarea.setSelectionRange(nextCursor, nextCursor);
-  void scheduleStudioLivePreview();
   audio.play("ui-tick");
 }
 
 async function uploadStudioImageFile(file: File) {
-  const reader = new FileReader();
-  const base64Data = await new Promise<string>((resolve, reject) => {
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
+  const category = studioState.category;
+  const draftKey = studioCacheKey(studioState.originalSlug, studioState.isNew);
+  const loadRevision = studioLoadRevision;
   try {
+    const reader = new FileReader();
+    const base64Data = await new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
     const res = await fetch("/__atlas_api/upload-asset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        category: studioState.category,
+        category,
         fileName: file.name || "screenshot.png",
         base64Data,
       }),
@@ -2540,22 +2710,31 @@ async function uploadStudioImageFile(file: File) {
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || "上传失败");
 
+    if (atlasView !== "studio" || studioLoadRevision !== loadRevision ||
+        studioCacheKey(studioState.originalSlug, studioState.isNew) !== draftKey) {
+      notify(`图片已存入 content/${category}/assets/${data.fileName}；原草稿已切换，请手动插入`);
+      return;
+    }
+
     const mdImage = `\n![${file.name.replace(/\.[^.]+$/, "") || "截图说明"}](${data.markdownPath})\n`;
     const textarea =
       document.querySelector<HTMLTextAreaElement>("#studio-input-body");
-    if (textarea) {
+    if (studioEditorModule?.insertStudioEditorText(mdImage)) {
+      // The editor's transaction updates the draft and undo history.
+    } else if (textarea) {
       const pos = textarea.selectionStart ?? textarea.value.length;
       textarea.value =
         textarea.value.slice(0, pos) + mdImage + textarea.value.slice(pos);
       studioState.body = textarea.value;
+      markStudioDirty();
     } else {
       studioState.body += mdImage;
+      markStudioDirty();
     }
-    markStudioDirty();
-    void scheduleStudioLivePreview(true);
+    if (studioState.activeTab === "preview") void scheduleStudioLivePreview(true);
     audio.play("confirm");
     notify(
-      `图片已存入 content/${studioState.category}/assets/${data.fileName}`,
+      `图片已存入 content/${category}/assets/${data.fileName}`,
     );
   } catch (err) {
     notify(`图片上传失败：${err instanceof Error ? err.message : String(err)}`);
@@ -3103,7 +3282,8 @@ document.addEventListener("compositionend", (e) => {
 document.addEventListener("paste", (e) => {
   if (
     atlasView !== "studio" ||
-    (e.target as HTMLElement)?.id !== "studio-input-body"
+    ((e.target as HTMLElement)?.id !== "studio-input-body" &&
+      !(e.target as HTMLElement)?.closest(".studio-editor-host .cm-editor"))
   ) {
     return;
   }
@@ -3205,6 +3385,18 @@ document.addEventListener("change", (e) => {
   }
 });
 document.addEventListener("click", (e) => {
+  const previewAnchor = atlasView === "studio"
+    ? (e.target as Element).closest<HTMLAnchorElement>('#studio-preview-body a[href^="#"]')
+    : null;
+  const localHash = previewAnchor?.getAttribute("href") ?? "";
+  if (previewAnchor && localHash.length > 1 && !localHash.startsWith("#/")) {
+    e.preventDefault();
+    let heading = localHash.slice(1);
+    try { heading = decodeURIComponent(heading); } catch { /* retain the literal anchor */ }
+    document.querySelector<HTMLElement>(`#studio-preview-body [id="${CSS.escape(heading)}"]`)
+      ?.scrollIntoView({ behavior: motionActive("surfaceTransitions") ? "smooth" : "auto", block: "start" });
+    return;
+  }
   // A deliberate portal click starts a fresh domain search. Browser Back and
   // the global library shortcut instead restore the user's existing filters.
   const homeLibraryLink = atlasView === "home" && e.button === 0 &&
@@ -3489,7 +3681,7 @@ document.addEventListener("click", (e) => {
     "[data-studio-tab]",
   );
   if (studioTabBtn) {
-    const nextTab = studioTabBtn.dataset.studioTab === "preview" ? "preview" : "edit";
+    const nextTab = studioTabBtn.dataset.studioTab === "preview" ? "preview" : studioTabBtn.dataset.studioTab === "source" ? "source" : "edit";
     setStudioEditorTab(nextTab);
     return;
   }
@@ -4179,7 +4371,7 @@ document.addEventListener("click", (e) => {
   }
 });
 document.addEventListener("keydown", (e) => {
-  if (e.isComposing) return;
+  if (e.defaultPrevented || e.isComposing) return;
   if (!started) return;
   if (viewer?.isOpen) return;
   if (
@@ -4189,6 +4381,11 @@ document.addEventListener("keydown", (e) => {
   ) {
     e.preventDefault();
     void saveStudioDraftToDisk();
+    return;
+  }
+  if (atlasView === "studio" && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+    e.preventDefault();
+    setStudioEditorTab(studioState.activeTab === "preview" ? studioPreviousEditTab : "preview");
     return;
   }
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -4222,7 +4419,8 @@ document.addEventListener("keydown", (e) => {
   const typing =
     e.target instanceof HTMLInputElement ||
     e.target instanceof HTMLSelectElement ||
-    e.target instanceof HTMLTextAreaElement;
+    e.target instanceof HTMLTextAreaElement ||
+    (e.target instanceof HTMLElement && e.target.isContentEditable);
   if (e.key === "Escape") {
     if (!modal && homeTransit.active) {
       e.preventDefault();
@@ -4647,7 +4845,7 @@ function frame(ms: number) {
       pendingDetailFocus = false;
     }
   }
-  $("#stage").style.setProperty(
+  setStageVariable($("#stage"),
     "--detail-shade",
     String(mode === "boot" ? 0 : (scene?.detailVisibility ?? 0)),
   );

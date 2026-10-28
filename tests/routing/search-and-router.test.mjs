@@ -6,7 +6,7 @@ import {
   buildLibraryHash,
   parseHashRoute,
 } from "../../src/app/router.ts";
-import { knowledgeRepository } from "../../src/knowledge/repository.ts";
+import { hotReloadRepositoryData, knowledgeRepository } from "../../src/knowledge/repository.ts";
 
 test("mixed Chinese, English, and case-insensitive search ranks title matches first", () => {
   const res1 = searchKnowledge("aegisub 字幕");
@@ -43,10 +43,15 @@ test("hash router parses home, archive, library, entry, and alias slugs accurate
     anchor: undefined,
   });
 
-  // Verify alias lookup in repository ("tools/ppt-workflow" -> "tools-ppt-master-workflow")
-  const aliased = knowledgeRepository.bySlug("tools/ppt-workflow");
-  assert.ok(aliased);
-  assert.equal(aliased.id, "tools-ppt-master-workflow");
+  // Test alias lookup with an isolated fixture; notes can change their own aliases.
+  const original = [...knowledgeRepository.all(true)];
+  const fixture = { ...original[0], aliases: ["test/alias"] };
+  try {
+    hotReloadRepositoryData({ entries: [fixture] });
+    assert.equal(knowledgeRepository.bySlug("test/alias")?.id, fixture.id);
+  } finally {
+    hotReloadRepositoryData({ entries: original });
+  }
 
   assert.equal(buildEntryHash("tools/aegisub"), "#/entry/tools/aegisub");
   assert.equal(buildLibraryHash("research"), "#/library/research");

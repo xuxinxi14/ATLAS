@@ -268,12 +268,12 @@ try {
         );
         await page.locator("#studio-input-title").fill("临时浏览器草稿");
         await page
-          .locator("#studio-input-body")
+          .locator("#studio-cm-body")
           .fill("## 浏览器草稿\n这段内容仅在隔离浏览器内。");
-        await page.locator("#studio-input-body").evaluate((el) => {
-          el.focus();
-          el.setSelectionRange(3, 8);
-        });
+        await page.locator("#studio-cm-body").press("Control+Home");
+        for (let i = 0; i < 3; i++) await page.keyboard.press("ArrowRight");
+        for (let i = 0; i < 5; i++) await page.keyboard.press("Shift+ArrowRight");
+        assert.equal(await page.evaluate(() => window.getSelection().toString()), "浏览器草稿");
         await nav(page, "#/home", "home");
         await page.locator('[data-action="nav-studio"]').click();
         await settle(page, "studio");
@@ -281,16 +281,9 @@ try {
           await page.locator("#studio-input-title").inputValue(),
           "临时浏览器草稿",
         );
-        assert.match(
-          await page.locator("#studio-input-body").inputValue(),
-          /浏览器草稿/,
-        );
-        assert.deepEqual(
-          await page
-            .locator("#studio-input-body")
-            .evaluate((el) => [el.selectionStart, el.selectionEnd]),
-          [3, 8],
-        );
+        await page.locator("#studio-cm-body").waitFor({ state: "visible" });
+        assert.match(await page.locator("#studio-cm-body").innerText(), /浏览器草稿/);
+        assert.equal(await page.evaluate(() => window.getSelection().toString()), "浏览器草稿");
         await page.screenshot({ path: dir + "/studio.png" });
       },
     );
@@ -323,27 +316,18 @@ try {
       },
     );
     await record(
-      "late preview cannot replace the current body preview",
+      "local preview immediately reflects the latest body without a server request",
       async () => {
+        let previewRequests = 0;
         await page.route("**/__atlas_api/preview", async (route) => {
-          const { body } = route.request().postDataJSON();
-          if (body.includes("preview_old"))
-            await new Promise((r) => setTimeout(r, 800));
-          const html =
-            "<p>" +
-            body.replaceAll("&", "&amp;").replaceAll("<", "&lt;") +
-            "</p>";
-          await route.fulfill({ json: { ok: true, html, quickstartHtml: "" } });
+          previewRequests++;
+          await route.abort();
         });
-        await page.locator("#studio-input-body").fill("preview_old");
-        await page.waitForTimeout(220);
-        await page.locator("#studio-input-body").fill("preview_current");
-        await page.waitForTimeout(1100);
+        await page.locator("#studio-cm-body").fill("preview_old");
+        await page.locator("#studio-cm-body").fill("preview_current");
         await page.locator('[data-studio-tab="preview"]').click();
-        assert.match(
-          await page.locator("#studio-preview-body").innerText(),
-          /preview_current/,
-        );
+        await page.locator("#studio-preview-body").getByText("preview_current").waitFor();
+        assert.equal(previewRequests, 0);
         await page.locator('[data-studio-tab="edit"]').click();
         await page.unroute("**/__atlas_api/preview");
       },
@@ -351,7 +335,10 @@ try {
     await record(
       "save completion for a departed note cannot rewrite another editor or route",
       async () => {
+        let started;
+        const saveStarted = new Promise((resolve) => { started = resolve; });
         await page.route("**/__atlas_api/save", async (route) => {
+          started();
           await new Promise((r) => setTimeout(r, 700));
           await route.fulfill({
             json: {
@@ -363,6 +350,7 @@ try {
         });
         await page.locator("#studio-input-title").fill("MOCK_SAVE_OBSIDIAN");
         await page.locator('[data-studio-action="save-entry"]').first().click();
+        await saveStarted;
         await page.evaluate(() =>
           window.rhine.navigate("#/studio/tools/aegisub"),
         );
@@ -379,7 +367,10 @@ try {
     await record(
       "discard after editing during save restores the submitted version",
       async () => {
+        let started;
+        const saveStarted = new Promise((resolve) => { started = resolve; });
         await page.route("**/__atlas_api/save", async (route) => {
+          started();
           await new Promise((r) => setTimeout(r, 550));
           await route.fulfill({
             json: {
@@ -389,9 +380,10 @@ try {
             },
           });
         });
-        await page.locator("#studio-input-body").fill("submitted_version");
+        await page.locator("#studio-cm-body").fill("submitted_version");
         await page.locator('[data-studio-action="save-entry"]').first().click();
-        await page.locator("#studio-input-body").fill("later_unsaved_version");
+        await saveStarted;
+        await page.locator("#studio-cm-body").fill("later_unsaved_version");
         await page.waitForTimeout(900);
         assert.match(
           await page.locator("#studio-save-status").innerText(),
@@ -400,7 +392,7 @@ try {
         await page.locator('[data-studio-dropdown="top-more"]').click();
         await page.locator('[data-studio-action="discard-draft"]').click();
         assert.equal(
-          await page.locator("#studio-input-body").inputValue(),
+          await page.locator("#studio-cm-body").innerText(),
           "submitted_version",
         );
         await page.unroute("**/__atlas_api/save");
@@ -473,9 +465,9 @@ try {
           .boundingBox();
         assert.ok(save.width >= 80 && save.height <= 48, "save label squeezed");
         await p
-          .locator("#studio-input-body")
+          .locator("#studio-cm-body")
           .evaluate((el) => el.scrollIntoView({ block: "nearest" }));
-        const body = await p.locator("#studio-input-body").boundingBox();
+        const body = await p.locator("#studio-cm-body").boundingBox();
         assert.ok(
           body.height >= 100 && body.y >= 0 && body.y < config.height,
           "editor inaccessible",

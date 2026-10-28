@@ -245,7 +245,7 @@ function atlasStudioPlugin(): Plugin {
               relPath,
               entry: found ?? null,
               frontMatter: parsed.data,
-              body: parsed.body.trim(),
+              body: parsed.body,
               raw,
             });
             return;
@@ -286,6 +286,24 @@ function atlasStudioPlugin(): Plugin {
 
           if (pathname === "/__atlas_api/save" && req.method === "POST") {
             const payload = await readJsonBody(req);
+            const originalSlug = String(payload.originalSlug || "").trim();
+            const oldSnapshot = originalSlug ? await loadCompiledSnapshot(repoRoot) : null;
+            const oldEntry = oldSnapshot?.manifest?.entries?.find(
+              (entry: any) => entry.slug === originalSlug || entry.id === originalSlug || entry.aliases?.includes(originalSlug),
+            );
+            let oldAbs: string | undefined;
+            let oldRaw: string | undefined;
+            let oldFrontMatter: Record<string, any> = {};
+            if (originalSlug) {
+              const candidate = path.resolve(repoRoot, oldEntry?.relPath || `content/${originalSlug}.md`);
+              if (!isInsideDir(contentDir, candidate) || !existsSync(candidate)) {
+                sendJson(res, 404, { ok: false, error: "原笔记不存在，请重新载入后再保存" });
+                return;
+              }
+              oldAbs = candidate;
+              oldRaw = await fs.readFile(candidate, "utf8");
+              oldFrontMatter = parseFrontMatter(oldRaw, candidate).data;
+            }
             const category = VALID_CATEGORIES.has(String(payload.category))
               ? String(payload.category)
               : "tools";
@@ -297,7 +315,7 @@ function atlasStudioPlugin(): Plugin {
             );
             const slug = `${category}/${fileStem}`;
             const id =
-              String(payload.id || "").trim() ||
+              String(oldFrontMatter.id || oldEntry?.id || payload.id || "").trim() ||
               `${category}-${fileStem}`.toLowerCase();
             const type = VALID_TYPES.has(String(payload.type))
               ? String(payload.type)
@@ -333,12 +351,16 @@ function atlasStudioPlugin(): Plugin {
 
             const aliases = Array.isArray(payload.aliases)
               ? payload.aliases
-              : String(payload.aliases || "")
+              : payload.aliases === undefined
+                ? (Array.isArray(oldFrontMatter.aliases) ? oldFrontMatter.aliases : oldEntry?.aliases || [])
+                : String(payload.aliases || "")
                   .split(/[,，]/)
                   .map((s) => s.trim())
                   .filter(Boolean);
+            const retainedArray = (name: string) =>
+              Array.isArray(oldFrontMatter[name]) ? oldFrontMatter[name] : oldEntry?.[name] || [];
 
-            let bodyContent = String(payload.body || "").trim();
+            let bodyContent = String(payload.body ?? "").replace(/\r\n/g, "\n");
             if (!bodyContent.startsWith("# ")) {
               bodyContent = `# ${rawTitle}\n\n${bodyContent}`;
             }
@@ -363,15 +385,17 @@ function atlasStudioPlugin(): Plugin {
               `updated: ${updated}`,
               `version_scope: ${quoteYamlScalar(versionScope)}`,
               `source_urls: ${formatYamlArray(sourceUrls)}`,
-              `prerequisites: []`,
-              `related: []`,
+              `prerequisites: ${formatYamlArray(retainedArray("prerequisites"))}`,
+              `related: ${formatYamlArray(retainedArray("related"))}`,
               ...(aliases.length > 0
                 ? [`aliases: ${formatYamlArray(aliases)}`]
                 : []),
+              ...Object.entries(oldFrontMatter)
+                .filter(([key]) => !["id", "title", "slug", "type", "category", "subcategory", "status", "tags", "summary", "created", "updated", "version_scope", "source_urls", "prerequisites", "related", "aliases"].includes(key))
+                .map(([key, value]) => `${key}: ${Array.isArray(value) ? formatYamlArray(value) : quoteYamlScalar(String(value ?? ""))}`),
               "---",
               "",
               bodyContent,
-              "",
             ];
 
             const targetDir = path.join(contentDir, category);
@@ -381,34 +405,44 @@ function atlasStudioPlugin(): Plugin {
               return;
             }
 
+            const samePath = Boolean(oldAbs && (path.resolve(oldAbs) === path.resolve(targetFile) ||
+              (process.platform === "win32" && path.resolve(oldAbs).toLowerCase() === path.resolve(targetFile).toLowerCase())));
+            if (existsSync(targetFile) && !samePath) {
+              sendJson(res, 409, { ok: false, error: "目标文件已存在，请更换文件名，避免覆盖其他笔记" });
+              return;
+            }
+
             suppressWatcherUntil = Date.now() + 1500;
             await fs.mkdir(targetDir, { recursive: true });
             await fs.mkdir(path.join(targetDir, "assets"), { recursive: true });
-            await fs.writeFile(targetFile, yamlLines.join("\n"), "utf8");
-
-            // If renaming/moving an existing entry, remove old file if path changed
-            const originalSlug = String(payload.originalSlug || "").trim();
-            if (originalSlug && originalSlug !== slug) {
-              const oldSnapshot = await loadCompiledSnapshot(repoRoot).catch(
-                () => null,
-              );
-              const oldEntry = oldSnapshot?.manifest?.entries?.find(
-                (e: any) => e.slug === originalSlug || e.id === originalSlug,
-              );
-              if (oldEntry?.relPath) {
-                const oldAbs = path.resolve(repoRoot, oldEntry.relPath);
-                if (
-                  isInsideDir(contentDir, oldAbs) &&
-                  oldAbs !== targetFile &&
-                  existsSync(oldAbs)
-                ) {
-                  await fs.rm(oldAbs, { force: true });
+            const newRaw = yamlLines.join("\n");
+            let wroteTarget = false;
+            let removedOriginal = false;
+            let snapshot;
+            try {
+              await fs.writeFile(targetFile, newRaw, { encoding: "utf8", flag: samePath ? "w" : "wx" });
+              wroteTarget = true;
+              if (oldAbs && !samePath) {
+                await fs.rm(oldAbs);
+                removedOriginal = true;
+              }
+              await syncContentFiles(repoRoot);
+              snapshot = await broadcastContentUpdate();
+            } catch (error) {
+              if (wroteTarget) {
+                const current = await fs.readFile(targetFile, "utf8").catch(() => "");
+                // Do not overwrite an external edit that arrived during the failed save.
+                if (current === newRaw) {
+                  if (samePath && oldRaw !== undefined) await fs.writeFile(targetFile, oldRaw, "utf8");
+                  else await fs.rm(targetFile, { force: true });
                 }
               }
+              if (removedOriginal && oldAbs && oldRaw !== undefined && !existsSync(oldAbs)) {
+                await fs.writeFile(oldAbs, oldRaw, "utf8");
+              }
+              await syncContentFiles(repoRoot).catch((restoreError) => console.error("[ATLAS] 恢复索引失败", restoreError));
+              throw error;
             }
-
-            await syncContentFiles(repoRoot);
-            const snapshot = await broadcastContentUpdate();
             sendJson(res, 200, {
               ok: true,
               slug,

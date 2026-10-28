@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { readFile } from "node:fs/promises";
 const { chromium } = createRequire(import.meta.url)(
   process.env.PLAYWRIGHT_MODULE || "playwright",
 );
@@ -50,8 +51,13 @@ try {
   assert.match(await page.locator(".studio-top-bar").innerText(), /返回主页/);
   await page.locator("#studio-input-title").fill("ATLAS static smoke");
   await page
-    .locator("#studio-input-body")
-    .fill("## Static preview\nExport only.");
+    .locator("#studio-cm-body")
+    .fill("## Static preview\n\n**Offline Markdown** and export.");
+  await context.setOffline(true);
+  await page.locator('[data-studio-tab="preview"]').click();
+  await page.locator("#studio-preview-body strong").waitFor();
+  assert.equal(await page.locator("#studio-preview-body strong").innerText(), "Offline Markdown");
+  await context.setOffline(false);
   const downloadPromise = page.waitForEvent("download");
   await page
     .locator('.studio-top-bar [data-studio-action="save-entry"]')
@@ -74,6 +80,21 @@ try {
       window.rhine.stats().atlasView === "home" &&
       !window.rhine.stats().homeTransit.active,
   );
+  await context.setOffline(true);
+  await page.evaluate(() => window.rhine.navigate("#/studio/tools/aegisub"));
+  await page.waitForFunction(() => document.querySelector("#studio-input-title")?.value.includes("Aegisub"));
+  await page.locator('[data-studio-tab="source"]').click();
+  assert.match(await page.locator("#studio-cm-body").innerText(), /\*\*开启频谱视图\*\*/);
+  const existingDownload = page.waitForEvent("download");
+  await page.locator('.studio-top-bar [data-studio-action="save-entry"]').click();
+  const existingMarkdown = await readFile(await (await existingDownload).path(), "utf8");
+  assert.match(existingMarkdown, /id: "tool-aegisub"/);
+  assert.match(existingMarkdown, /related: \["tools-ppt-master-workflow"\]/);
+  assert.match(existingMarkdown, /\*\*开启频谱视图\*\*/);
+  assert.equal((existingMarkdown.match(/^# Aegisub 字幕时间轴与样式基础$/gm) || []).length, 1);
+  await page.evaluate(() => window.rhine.navigate("#/entry/academics/enzyme-kinetics"));
+  await page.locator("#atlas-reader-scroll .atlas-math-block .katex").first().waitFor({ timeout: 15000 });
+  await context.setOffline(false);
   assert.deepEqual(errors, []);
   console.log(
     "PASS production static entry, export and return without local disk API.",

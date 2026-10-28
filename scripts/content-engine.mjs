@@ -74,12 +74,7 @@ export function parseFrontMatter(rawContent, fileLabel = "unknown.md") {
       currentListKey = key;
     } else if (rest.startsWith("[") && rest.endsWith("]")) {
       const inner = rest.slice(1, -1).trim();
-      data[key] = inner
-        ? inner
-            .split(",")
-            .map((part) => unquoteYamlValue(part.trim()))
-            .filter((part) => part.length > 0)
-        : [];
+      data[key] = inner ? splitInlineYamlArray(inner).map((part) => unquoteYamlValue(part.trim())).filter(Boolean) : [];
     } else {
       data[key] = unquoteYamlValue(rest);
     }
@@ -88,13 +83,26 @@ export function parseFrontMatter(rawContent, fileLabel = "unknown.md") {
   return { data, body, hasFrontMatter: true };
 }
 
-function unquoteYamlValue(val) {
-  if (
-    (val.startsWith('"') && val.endsWith('"')) ||
-    (val.startsWith("'") && val.endsWith("'"))
-  ) {
-    return val.slice(1, -1);
+function splitInlineYamlArray(inner) {
+  const values = [];
+  let start = 0, quote = "", escaped = false;
+  for (let i = 0; i < inner.length; i++) {
+    const char = inner[i];
+    if (escaped) { escaped = false; continue; }
+    if (quote === '"' && char === "\\") { escaped = true; continue; }
+    if (quote && char === quote) { quote = ""; continue; }
+    if (!quote && (char === '"' || char === "'")) { quote = char; continue; }
+    if (!quote && char === ",") { values.push(inner.slice(start, i)); start = i + 1; }
   }
+  values.push(inner.slice(start));
+  return values;
+}
+
+function unquoteYamlValue(val) {
+  if (val.startsWith('"') && val.endsWith('"')) {
+    try { return JSON.parse(val); } catch { return val.slice(1, -1); }
+  }
+  if (val.startsWith("'") && val.endsWith("'")) return val.slice(1, -1).replace(/''/g, "'");
   return val;
 }
 
@@ -150,12 +158,15 @@ export function slugifyHeading(text, seen = new Map()) {
 
 export function stripMarkdownInline(text) {
   return text
+    .replace(/!?\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => label || target)
     .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/\$\$?([^$]+)\$\$?/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .replace(/==([^=]+)==/g, "$1")
     .replace(/^#+\s+/gm, "")
     .trim();
 }
@@ -234,6 +245,19 @@ export function renderInlineMarkdown(text, context) {
     stash(renderMathToHtml(math, false)),
   );
 
+  // Obsidian-style internal links and image embeds keep their Markdown source.
+  working = working.replace(/(!?)\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, embed, target, alias) => {
+    const label = alias || target;
+    if (embed && /\.(?:png|jpe?g|gif|webp|svg|avif)$/i.test(target)) {
+      const src = context.resolveImage ? context.resolveImage(target, label) : target;
+      return stash(`<figure class="atlas-figure"><img src="${escapeHtml(src)}" alt="${escapeHtml(label)}" loading="lazy" data-atlas-image="${escapeHtml(src)}" /></figure>`);
+    }
+    const resolved = context.resolveWiki?.(target);
+    return resolved
+      ? stash(`<a href="${escapeHtml(resolved.href)}" class="atlas-int-link" data-entry-link="${escapeHtml(resolved.entrySlug || "")}">${escapeHtml(label)}</a>`)
+      : stash(`<span class="atlas-unresolved-link">${escapeHtml(label)}</span>`);
+  });
+
   // 3. Images ![alt](src)
   working = working.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, rawSrc) => {
     const resolvedSrc = context.resolveImage
@@ -267,6 +291,8 @@ export function renderInlineMarkdown(text, context) {
   // 6. Bold & Italic
   working = working.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   working = working.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  working = working.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  working = working.replace(/==([^=]+)==/g, "<mark>$1</mark>");
 
   // 7. Restore stashed tokens
   return working.replace(/\u0000P(\d+)\u0000/g, (_, idx) => placeholders[Number(idx)]);
@@ -350,7 +376,7 @@ export function renderMarkdownDocument(body, context = {}) {
     }
 
     // Headings
-    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
       const rawHeading = headingMatch[2].trim();
@@ -439,31 +465,42 @@ export function renderMarkdownDocument(body, context = {}) {
     }
 
     // Lists (unordered / ordered / task list)
-    if (/^([-*]|\d+\.)\s+/.test(trimmed)) {
-      const orderedMatch = trimmed.match(/^(\d+)\.\s+/);
-      const isOrdered = Boolean(orderedMatch);
-      const startNum = orderedMatch ? Number(orderedMatch[1]) : 1;
-      const listTag = isOrdered ? "ol" : "ul";
-      const startAttr =
-        isOrdered && startNum > 1 ? ` start="${startNum}"` : "";
-      const items = [];
-      while (i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
-        const itemRaw = lines[i].replace(/^\s*([-*]|\d+\.)\s+/, "").trim();
-        const taskMatch = itemRaw.match(/^\[([ xX])\]\s+(.+)$/);
+    if (/^([-+*]|\d+[.)])\s+/.test(trimmed)) {
+      const fragments = [];
+      const stack = [];
+      while (i < lines.length && /^\s*([-+*]|\d+[.)])\s+/.test(lines[i])) {
+        const match = lines[i].match(/^(\s*)([-+*]|\d+[.)])\s+(.*)$/);
+        const indent = match[1].replace(/\t/g, "    ").length;
+        const marker = match[2];
+        const tag = /\d/.test(marker[0]) ? "ol" : "ul";
+        while (stack.length && (indent < stack.at(-1).indent || (indent === stack.at(-1).indent && tag !== stack.at(-1).tag))) {
+          fragments.push(`</li></${stack.pop().tag}>`);
+        }
+        if (!stack.length || indent > stack.at(-1).indent) {
+          const startNum = tag === "ol" ? Number.parseInt(marker, 10) : 1;
+          const startAttr = startNum > 1 ? ` start="${startNum}"` : "";
+          fragments.push(`<${tag} class="atlas-list"${startAttr}>`);
+          stack.push({ indent, tag });
+        } else {
+          fragments.push("</li>");
+        }
+        const itemRaw = match[3].trim();
+        const taskMatch = itemRaw.match(/^\[([ xX])\](?:\s+(.*))?$/);
         if (taskMatch) {
           const checked = taskMatch[1].toLowerCase() === "x";
-          const itemText = taskMatch[2];
-          items.push(
-            `<li class="atlas-task-item"><input type="checkbox" disabled ${checked ? "checked" : ""} /><span>${renderInlineMarkdown(itemText, context)}</span></li>`,
+          const itemText = taskMatch[2] || "";
+          fragments.push(
+            `<li class="atlas-task-item"><input type="checkbox" disabled ${checked ? "checked" : ""} /><span>${renderInlineMarkdown(itemText, context)}</span>`,
           );
-          if (findings.length < 6) findings.push(stripMarkdownInline(itemText));
+          if (findings.length < 6 && itemText) findings.push(stripMarkdownInline(itemText));
         } else {
-          items.push(`<li>${renderInlineMarkdown(itemRaw, context)}</li>`);
+          fragments.push(`<li>${renderInlineMarkdown(itemRaw, context)}`);
           if (findings.length < 6) findings.push(stripMarkdownInline(itemRaw));
         }
         i++;
       }
-      const listHtml = `<${listTag} class="atlas-list"${startAttr}>${items.join("")}</${listTag}>`;
+      while (stack.length) fragments.push(`</li></${stack.pop().tag}>`);
+      const listHtml = fragments.join("");
       htmlBlocks.push(listHtml);
       if (inQuickstart) quickstartBlocks.push(listHtml);
       continue;
@@ -474,11 +511,11 @@ export function renderMarkdownDocument(body, context = {}) {
     while (
       i < lines.length &&
       lines[i].trim() &&
-      !lines[i].trim().startsWith("#") &&
+      !/^#{1,6}\s+/.test(lines[i].trim()) &&
       !/^(`{3,}|~{3,})/.test(lines[i].trim()) &&
       !lines[i].trim().startsWith("$$") &&
       !lines[i].trim().startsWith(">") &&
-      !/^([-*]|\d+\.)\s+/.test(lines[i].trim()) &&
+      !/^([-+*]|\d+[.)])\s+/.test(lines[i].trim()) &&
       !(
         lines[i].trim().includes("|") &&
         i + 1 < lines.length &&
@@ -488,6 +525,9 @@ export function renderMarkdownDocument(body, context = {}) {
       paraLines.push(lines[i].trim());
       i++;
     }
+    // A malformed block opener is still text; always consume it so content
+    // compilation cannot get stuck on a line the block parsers did not accept.
+    if (paraLines.length === 0) paraLines.push(lines[i++].trim());
     const rawPara = paraLines.join(" ");
     const paraHtml = `<p>${renderInlineMarkdown(rawPara, context)}</p>`;
     htmlBlocks.push(paraHtml);
@@ -869,6 +909,20 @@ export async function buildKnowledgeBase(options = {}) {
     const rendered = renderMarkdownDocument(entry.body, {
       resolveImage,
       resolveLink,
+      resolveWiki(rawTarget) {
+        const [name, anchor] = rawTarget.split("#");
+        const key = name.replace(/\.md$/i, "").trim().toLowerCase();
+        const target = key
+          ? rawEntries.find((candidate) =>
+              [candidate.title, candidate.slug, candidate.id, candidate.slug.split("/").at(-1) ?? "", ...candidate.aliases]
+                .some((value) => value.toLowerCase() === key),
+            )
+          : entry;
+        return target ? {
+          href: `#/entry/${target.slug}${anchor ? `#${encodeURIComponent(slugifyHeading(anchor))}` : ""}`,
+          entrySlug: target.slug,
+        } : undefined;
+      },
     });
 
     if (copyAssets && errors.length === 0) {
@@ -914,6 +968,7 @@ export async function buildKnowledgeBase(options = {}) {
       findings:
         rendered.findings.length > 0 ? rendered.findings : [entry.summary],
       plainText: plainBody,
+      markdown: entry.body,
     });
   }
 

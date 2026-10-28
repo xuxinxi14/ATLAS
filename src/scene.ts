@@ -1469,7 +1469,9 @@ export class ArchiveScene {
     this.flushHover();
     const step = !this.motion.surfaceTransitions ? 1 : Math.min(elapsed, .25) / 1.1;
     this.presence += Math.sign(this.presenceTarget - this.presence) * Math.min(step, Math.abs(this.presenceTarget - this.presence));
-    this.renderer.domElement.style.opacity = String(THREE.MathUtils.clamp(this.presence / .16, 0, 1));
+    const canvasOpacity = String(THREE.MathUtils.clamp(this.presence / .16, 0, 1));
+    if (this.renderer.domElement.style.opacity !== canvasOpacity)
+      this.renderer.domElement.style.opacity = canvasOpacity;
     this.theme.beginFrame();
     themeEnvironment(this.scene, this.renderer, this.themeAmount);
     const blend = 1 - Math.exp(-dt * (this.motion.selectionTransition ? 2.8 : 35));

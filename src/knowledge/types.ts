@@ -47,6 +47,8 @@ export interface KnowledgeEntry {
   html: string;
   findings: string[];
   plainText: string;
+  /** Original Markdown for editing when the local disk API is unavailable. */
+  markdown?: string;
 }
 
 export interface PortalTelemetryStat {

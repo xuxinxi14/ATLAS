@@ -59,8 +59,8 @@ export interface StudioDraftState {
   updated: string;
   body: string;
   filterCategory: string;
-  /** Active mode on the writing surface: "edit" (default) or "preview" (in-place single column) */
-  activeTab: "edit" | "preview";
+  /** Live Markdown, raw source, or reading mode on the same writing surface. */
+  activeTab: "edit" | "source" | "preview";
   /** Which lightweight dropdown is currently open ("category" | "type" | "status" | "insert" | "top-more" | null) */
   openDropdown: "category" | "type" | "status" | "insert" | "top-more" | null;
   /** Right-side 350px local drawer for advanced metadata ("更多信息") */
@@ -599,23 +599,30 @@ export function renderStudioViewMarkup(
               </button>
             </div>
 
-            <!-- 编辑工具行：编辑 / 预览两个页签；插入结构、插入图片、AI 导入轻量入口 -->
+            <!-- Live preview, source and reading share the same underlying Markdown. -->
             <div class="studio-tool-row">
-              <div class="studio-mode-tabs" role="tablist" aria-label="编辑与预览切换">
+              <div class="studio-mode-tabs" role="tablist" aria-label="正文显示模式">
                 <button
                   type="button"
                   role="tab"
                   aria-selected="${state.activeTab === "edit"}"
                   class="studio-mode-tab ${state.activeTab === "edit" ? "active" : ""}"
                   data-studio-tab="edit"
-                >编辑</button>
+                >实时编辑</button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected="${state.activeTab === "source"}"
+                  class="studio-mode-tab ${state.activeTab === "source" ? "active" : ""}"
+                  data-studio-tab="source"
+                >源码</button>
                 <button
                   type="button"
                   role="tab"
                   aria-selected="${state.activeTab === "preview"}"
                   class="studio-mode-tab ${state.activeTab === "preview" ? "active" : ""}"
                   data-studio-tab="preview"
-                >预览</button>
+                >阅读</button>
               </div>
 
               <div class="studio-assist-tools">
@@ -675,7 +682,7 @@ export function renderStudioViewMarkup(
               </div>
             </div>
 
-            <!-- 正文区：单列 Markdown 输入，独立滚动；预览复用同一主体区域，保留 textarea 选区/光标/撤销历史/滚动 -->
+            <!-- The textarea remains usable if the editor module cannot be loaded. -->
             <div class="studio-body-zone">
               <textarea
                 id="studio-input-body"
@@ -685,6 +692,8 @@ export function renderStudioViewMarkup(
                 ${state.loading ? "disabled" : ""}
               >${escapeHtml(state.body)}</textarea>
 
+              <div id="studio-editor-host" class="studio-editor-host" hidden></div>
+
               <div
                 id="studio-preview-pane"
                 class="studio-preview-pane"
@@ -692,7 +701,7 @@ export function renderStudioViewMarkup(
               >
                 <div
                   id="studio-preview-body"
-                  class="studio-preview-markdown optical-markdown-body"
+                  class="studio-preview-markdown studio-markdown-content"
                 >${
                   state.previewHtml ||
                   '<p class="studio-preview-placeholder">暂无正文内容，切回「编辑」开始撰写。</p>'

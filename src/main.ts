@@ -18,6 +18,7 @@ import "./quality-settings.css";
 import "./responsive.css";
 import "./styles/atlas-views.css";
 import "./styles/home-transit.css";
+import "./styles/mobile-refinement.css";
 import { viewportLayout, openingLayout } from "./viewport-layout";
 import { assetUrl } from "./asset-url";
 import { publicReadOnly } from "./public-mode";
@@ -369,6 +370,37 @@ const selectionTitle = createRollingText($("#selected-title"), {
   ...textOptions,
   text: $("#selected-title").textContent ?? "",
 });
+// A rolling title is a single measured line. Keep the rolling effect when it
+// fits; on narrow phones, let long titles wrap instead of leaving the viewport.
+function syncMobileSelectionTitle() {
+  const title = $("#selected-title");
+  const measure = title.querySelector<HTMLElement>(".rn-measure");
+  const available = $(".file-summary").clientWidth;
+  if (!available) return;
+  const wasWrapped = title.classList.contains("mobile-wrapped");
+  if (wasWrapped) title.classList.remove("mobile-wrapped");
+  // With reduced motion the rolling library uses plain text and leaves its
+  // measurement node empty, so read the title's natural width in that case.
+  const natural = measure?.getBoundingClientRect().width || title.getBoundingClientRect().width;
+  if (!natural) {
+    title.classList.toggle("mobile-wrapped", wasWrapped);
+    return;
+  }
+  title.classList.toggle(
+    "mobile-wrapped",
+    $("#stage").dataset.layout === "portrait" && window.innerWidth <= 520 && natural > available,
+  );
+}
+const titleMeasure = $("#selected-title").querySelector<HTMLElement>(".rn-measure");
+const titleValue = $("#selected-title").querySelector<HTMLElement>(".rn-value");
+if (titleMeasure && "ResizeObserver" in window) {
+  const observer = new ResizeObserver(syncMobileSelectionTitle);
+  observer.observe(titleMeasure);
+  observer.observe($(".file-summary"));
+}
+if (titleValue) {
+  new MutationObserver(syncMobileSelectionTitle).observe(titleValue, { childList: true, characterData: true, subtree: true });
+}
 const columnTitle = createRollingText($("#column-name"), {
   ...textOptions,
   text: $("#column-name").textContent ?? "",
@@ -585,6 +617,7 @@ function fit() {
     if (tab && indicator)
       indicator.style.transform = `translateX(${tab.offsetLeft}px) scaleX(${tab.offsetWidth})`;
     syncNavButtons(false);
+    syncMobileSelectionTitle();
   });
 }
 window.addEventListener("resize", fit);

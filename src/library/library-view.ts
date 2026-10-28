@@ -274,6 +274,7 @@ export function renderLibraryViewMarkup(
                     class="desk-row-menu"
                     role="menu"
                     data-row-menu-for="${escapeHtml(entry.id)}"
+                    data-menu-label="${escapeHtml(displayCode)} · ${escapeHtml(entry.title)}"
                     ${isMenuOpen ? "" : "hidden"}
                   >
                     <a

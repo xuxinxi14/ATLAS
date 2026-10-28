@@ -180,7 +180,7 @@ export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicRead
 
             <div class="rhine-kpi-column">
               <div class="rhine-giant-kpi">
-                <span class="kpi-eyebrow">ARCHIVED SPECIMENS / 正式档案</span>
+                <span class="kpi-eyebrow"><span class="kpi-label-en">ARCHIVED SPECIMENS / </span>正式档案</span>
                 <div class="kpi-giant-row">
                   <strong>${String(telemetry.totalEntries).padStart(3, "0")}</strong>
                   <span>+${String(telemetry.inboxCount).padStart(2, "0")} INBOX</span>
@@ -189,15 +189,15 @@ export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicRead
 
               <div class="rhine-mini-kpis">
                 <div>
-                  <dt>PROFICIENT / 已掌握</dt>
+                  <dt><span class="kpi-label-en">PROFICIENT / </span>已掌握</dt>
                   <dd>${String(telemetry.statusCounts.proficient).padStart(2, "0")}</dd>
                 </div>
                 <div>
-                  <dt>ACTIVE / 解析与待办</dt>
+                  <dt><span class="kpi-label-en">ACTIVE / </span>解析与待办</dt>
                   <dd>${String(telemetry.statusCounts.learning + telemetry.statusCounts.todo).padStart(2, "0")}</dd>
                 </div>
                 <div>
-                  <dt>SNIPPETS / 速查微卡</dt>
+                  <dt><span class="kpi-label-en">SNIPPETS / </span>速查微卡</dt>
                   <dd>${String(telemetry.typeCounts.snippet).padStart(2, "0")}</dd>
                 </div>
               </div>

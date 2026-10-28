@@ -43,6 +43,8 @@ try {
 
   await page.evaluate(() => window.rhine.navigate("#/archive"));
   await settle("archive");
+  await page.keyboard.press("ArrowLeft");
+  assert.doesNotMatch(await page.locator(".archive-hint").innerText(), /编撰台/);
   await page.locator('[data-action="open"]').first().click();
   await page.waitForFunction(() => window.rhine.stats().mode === "detail");
   assert.equal(await page.locator('[data-action="edit-studio"]').count(), 0);

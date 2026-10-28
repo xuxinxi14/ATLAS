@@ -5276,7 +5276,7 @@ if (isWallpaper) {
 void start();
 enableGamepad();
 const ARCHIVE_HINT: Record<"keyboard" | "gamepad", string> = {
-  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取 <span>／</span> <kbd>H</kbd> 遥测 <kbd>L</kbd> 索引 <kbd>N</kbd> 编撰台`,
+  keyboard: `<kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取 <span>／</span> <kbd>H</kbd> 遥测 <kbd>L</kbd> 索引${publicReadOnly ? "" : " <kbd>N</kbd> 编撰台"}`,
   gamepad: `<kbd>LS</kbd> <kbd>DP</kbd> 切换列 / 前后档案 <span>／</span> <kbd>A</kbd> 读取`,
 };
 onInputDevice((device) => {

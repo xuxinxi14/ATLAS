@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE T-003 (tools-gpt-sovits-voice-cloning) / GPT-SoVITS 本地语音克隆与音质优化操作手册
+FILE T-006 (tools-gpt-sovits-voice-cloning) / GPT-SoVITS 本地语音克隆与音质优化操作手册
 TOOLS & WORKFLOW · SKILL · STATUS: LEARNING
 
 所属领域：软件与工具 (tools)
@@ -29,9 +29,9 @@ GPT-SoVITS 本地语音克隆与音质优化操作手册
 
 在 GPT-SoVITS 整合包的解压根目录打开 PowerShell，执行：
 
-~~~powershell
+~powershell
 .\go-webui.bat
-~~~
+~
 
 预期结果：启动 GPT-SoVITS WebUI，之后在 TTS 页签开启推理服务。
 

@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE T-001 (tool-aegisub) / Aegisub 字幕时间轴与样式基础
+FILE T-004 (tool-aegisub) / Aegisub 字幕时间轴与样式基础
 TOOLS & WORKFLOW · SKILL · STATUS: PROFICIENT
 
 所属领域：软件与工具 (tools)

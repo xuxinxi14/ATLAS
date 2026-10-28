@@ -1,20 +1,19 @@
 ---
 id: tools-ppt-master-workflow
-title: "PPT Master：环境配置与演示文稿制作流程"
+title: PPT Master：环境配置与演示文稿制作流程
 slug: tools/ppt-master-workflow
 type: skill
 category: tools
 subcategory: presentation-workflow
-status: learning
+status: proficient
 tags: [ppt-master, AI辅助制作, PowerPoint, 组会汇报, 演示文稿]
-summary: "使用 PPT Master 配合具备文件读写与命令执行能力的 AI Agent，将参考文档、现有演示文稿与模板整理为风格统一的可编辑 PPT，并通过逐页检查完成交付。"
+summary: 使用 PPT Master 配合具备文件读写与命令执行能力的 AI Agent，将参考文档、现有演示文稿与模板整理为风格统一的可编辑 PPT，并通过逐页检查完成交付。
 created: 2026-10-16
-updated: 2026-10-16
-version_scope: "Windows / PowerShell / Python 3.10及以上；具体依赖以所下载版本的仓库说明为准"
-source_urls: ["https://github.com/hugohe3/ppt-master", "https://github.com/hugohe3/ppt-master/releases"]
+updated: 2026-10-28
+version_scope: Windows / PowerShell / Python 3.10及以上；具体依赖以所下载版本的仓库说明为准
+source_urls: [https://github.com/hugohe3/ppt-master, https://github.com/hugohe3/ppt-master/releases]
 prerequisites: []
 related: []
-aliases: [tools/ppt-master, tools/ppt-workflow]
 ---
 
 # PPT Master：环境配置与演示文稿制作流程

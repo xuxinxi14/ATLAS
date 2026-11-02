@@ -2,7 +2,13 @@ import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import hljs from "highlight.js/lib/common";
+import dos from "highlight.js/lib/languages/dos";
+import powershell from "highlight.js/lib/languages/powershell";
 import { escapeHtml } from "../src/html.ts";
+
+hljs.registerLanguage("powershell", powershell);
+hljs.registerLanguage("dos", dos);
 
 const VALID_TYPES = new Set(["concept", "skill", "troubleshooting", "snippet"]);
 const VALID_STATUSES = new Set([
@@ -343,7 +349,25 @@ export function renderMarkdownDocument(body, context = {}) {
       }
       if (i < lines.length) i++; // skip closing fence
       const rawCode = codeLines.join("\n");
-      const blockHtml = `<div class="atlas-code-block" data-lang="${escapeHtml(lang)}"><div class="atlas-code-header"><span class="atlas-code-lang">${escapeHtml(lang.toUpperCase())}</span><button type="button" class="atlas-code-copy" data-copy-code="${escapeHtml(rawCode)}">COPY</button></div><pre><code>${escapeHtml(rawCode)}</code></pre></div>`;
+      const normLang = lang.trim().toLowerCase();
+      const hasHighlightLang = Boolean(
+        normLang &&
+          normLang !== "text" &&
+          normLang !== "plaintext" &&
+          hljs.getLanguage(normLang),
+      );
+      const highlightedCode = hasHighlightLang
+        ? hljs.highlight(rawCode, {
+            language: normLang,
+            ignoreIllegals: true,
+          }).value
+        : escapeHtml(rawCode);
+      const codeClassAttr = hasHighlightLang
+        ? ` class="hljs language-${escapeHtml(normLang)}"`
+        : normLang
+          ? ` class="language-${escapeHtml(normLang)}"`
+          : "";
+      const blockHtml = `<div class="atlas-code-block" data-lang="${escapeHtml(lang)}"><div class="atlas-code-header"><span class="atlas-code-lang">${escapeHtml(lang.toUpperCase())}</span><button type="button" class="atlas-code-copy" data-copy-code="${escapeHtml(rawCode)}">COPY</button></div><pre><code${codeClassAttr}>${highlightedCode}</code></pre></div>`;
       htmlBlocks.push(blockHtml);
       if (inQuickstart) quickstartBlocks.push(blockHtml);
       continue;
@@ -437,7 +461,7 @@ export function renderMarkdownDocument(body, context = {}) {
       continue;
     }
 
-    // Blockquote & GitHub Callout (> [!NOTE], > [!TIP], > [!IMPORTANT], > [!WARNING], > [!CAUTION])
+    // Blockquote & GitHub/Obsidian Callout (> [!NOTE], > [!TIP] 自定义标题, etc.)
     if (trimmed.startsWith(">")) {
       const quoteLines = [];
       while (i < lines.length && lines[i].trim().startsWith(">")) {
@@ -445,19 +469,34 @@ export function renderMarkdownDocument(body, context = {}) {
         i++;
       }
       const calloutMatch = quoteLines[0]?.match(
-        /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$/i,
+        /^\[!([a-z-]+)\][+-]?(?:[ \t]+(.*))?$/i,
       );
       if (calloutMatch) {
         const calloutType = calloutMatch[1].toUpperCase();
-        const firstRest = calloutMatch[2].trim();
-        const bodyLines = firstRest
-          ? [firstRest, ...quoteLines.slice(1)]
-          : quoteLines.slice(1);
-        const calloutHtml = `<blockquote class="atlas-blockquote atlas-callout" data-callout="${calloutType.toLowerCase()}"><strong class="atlas-callout-badge">${calloutType}</strong><p>${renderInlineMarkdown(bodyLines.join(" "), context)}</p></blockquote>`;
+        const firstRest = (calloutMatch[2] ?? "").trim();
+        let badgeHtml;
+        let bodyMarkdown;
+        if (quoteLines.length > 1) {
+          badgeHtml = firstRest
+            ? renderInlineMarkdown(firstRest, context)
+            : escapeHtml(calloutType);
+          bodyMarkdown = quoteLines.slice(1).join("\n");
+        } else {
+          badgeHtml = escapeHtml(calloutType);
+          bodyMarkdown = firstRest;
+        }
+        const innerHtml = bodyMarkdown.trim()
+          ? renderMarkdownDocument(bodyMarkdown, context).html
+          : "";
+        const calloutHtml = `<blockquote class="atlas-blockquote atlas-callout" data-callout="${escapeHtml(calloutType.toLowerCase())}"><strong class="atlas-callout-badge">${badgeHtml}</strong>${innerHtml}</blockquote>`;
         htmlBlocks.push(calloutHtml);
         if (inQuickstart) quickstartBlocks.push(calloutHtml);
       } else {
-        const quoteHtml = `<blockquote class="atlas-blockquote"><p>${renderInlineMarkdown(quoteLines.join(" "), context)}</p></blockquote>`;
+        const innerHtml = renderMarkdownDocument(
+          quoteLines.join("\n"),
+          context,
+        ).html;
+        const quoteHtml = `<blockquote class="atlas-blockquote">${innerHtml}</blockquote>`;
         htmlBlocks.push(quoteHtml);
         if (inQuickstart) quickstartBlocks.push(quoteHtml);
       }
@@ -574,7 +613,7 @@ export async function buildKnowledgeBase(options = {}) {
     options.contentDir ?? path.join(repoRoot, "content");
   const publicDir = options.publicDir ?? path.join(repoRoot, "public");
   const copyAssets = options.copyAssets ?? false;
-  const nowDate = options.nowDate ?? "2026-10-16";
+  const nowDate = options.nowDate ?? new Date().toISOString().slice(0, 10);
 
   const categoriesPath =
     options.categoriesPath ?? path.join(contentDir, "categories.json");
@@ -1024,7 +1063,10 @@ export async function buildKnowledgeBase(options = {}) {
     activityByDate[entry.updated] = (activityByDate[entry.updated] ?? 0) + 1;
 
     const updatedMs = Date.parse(`${entry.updated}T00:00:00Z`);
-    const daysSinceUpdate = Math.floor((nowMs - updatedMs) / 86_400_000);
+    const daysSinceUpdate = Math.max(
+      0,
+      Math.floor((nowMs - updatedMs) / 86_400_000),
+    );
     if (
       entry.status === "review" ||
       (entry.category !== "inbox" && daysSinceUpdate >= 180)

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16",
+  "generatedAt": "2026-11-02",
   "totalEntries": 17,
   "inboxCount": 1,
   "statusCounts": {
@@ -85,7 +85,7 @@
       "category": "research",
       "categoryTitle": "科研与实验",
       "updated": "2026-03-15",
-      "daysSinceUpdate": 215,
+      "daysSinceUpdate": 232,
       "reason": "已标记为需校准 (review)"
     }
   ],

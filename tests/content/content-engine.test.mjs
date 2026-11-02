@@ -39,6 +39,25 @@ test("nested ordered, unordered, and task lists keep their hierarchy", () => {
   assert.match(rendered.html, /<li>sibling<\/li><\/ul>/);
 });
 
+test("fenced code blocks highlight syntax tokens and preserve raw copy text, and callouts support custom titles and multi-block bodies", () => {
+  const rendered = renderMarkdownDocument(
+    [
+      "~~~powershell",
+      "Get-ChildItem -Path .\\content -Recurse",
+      "~~~",
+      "",
+      "> [!TIP]+ 实用提示",
+      "> 第一段说明",
+      "> - 列表项 A",
+      "> - 列表项 B",
+    ].join("\n"),
+  );
+  assert.match(rendered.html, /<code class="hljs language-powershell">[\s\S]*hljs-/);
+  assert.match(rendered.html, /data-copy-code="Get-ChildItem -Path \.\\content -Recurse"/);
+  assert.match(rendered.html, /data-callout="tip"[\s\S]*<strong class="atlas-callout-badge">实用提示<\/strong>/);
+  assert.match(rendered.html, /<p>第一段说明<\/p>[\s\S]*<ul class="atlas-list"><li>列表项 A<\/li><li>列表项 B<\/li><\/ul>/);
+});
+
 test("front matter round-trips quoted commas, quotes, and backslashes", () => {
   const parsed = parseFrontMatter('---\ntitle: "带 \\\"引号\\\" 的笔记"\ntags: ["one,two", "simple"]\nversion_scope: "C:\\\\Work"\n---\n正文');
   assert.equal(parsed.data.title, '带 "引号" 的笔记');
@@ -114,7 +133,14 @@ test("real repository content validates, resolves co-located assets, and infers 
   assert.ok(draft);
   assert.equal(draft.status, "draft");
 
-  // Verify review queue detection
+  // Verify telemetry date and review queue detection
+  assert.equal(
+    result.telemetry.generatedAt,
+    new Date().toISOString().slice(0, 10),
+  );
+  assert.ok(
+    result.telemetry.reviewQueue.every((r) => r.daysSinceUpdate >= 0),
+  );
   assert.ok(
     result.telemetry.reviewQueue.some(
       (r) => r.id === "skill-molecular-docking",

@@ -2208,6 +2208,23 @@ i[data-status="draft"] {
   line-height: 1.65;
 }
 
+.atlas-code-block :is(.hljs-keyword, .hljs-selector-tag, .hljs-literal) {
+  color: #efae82;
+}
+
+.atlas-code-block :is(.hljs-string, .hljs-attr, .hljs-regexp) {
+  color: #a2c9ab;
+}
+
+.atlas-code-block :is(.hljs-number, .hljs-built_in, .hljs-title, .hljs-variable, .hljs-params) {
+  color: #adc4ea;
+}
+
+.atlas-code-block .hljs-comment {
+  color: #8d9488;
+  font-style: italic;
+}
+
 .atlas-table-wrap {
   margin: 24px 0;
   overflow-x: auto;
@@ -2249,7 +2266,7 @@ i[data-status="draft"] {
 }
 
 .atlas-callout-badge {
-  display: inline-block;
+  display: block;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 1.4px;
@@ -2259,18 +2276,25 @@ i[data-status="draft"] {
 
 .atlas-callout[data-callout="warning"],
 .atlas-callout[data-callout="caution"],
+.atlas-callout[data-callout="danger"],
 .atlas-callout[data-callout="important"] {
   border-left-color: var(--atlas-review);
 }
 
 .atlas-callout[data-callout="warning"] .atlas-callout-badge,
 .atlas-callout[data-callout="caution"] .atlas-callout-badge,
+.atlas-callout[data-callout="danger"] .atlas-callout-badge,
 .atlas-callout[data-callout="important"] .atlas-callout-badge {
   color: var(--atlas-review);
 }
 
-.atlas-callout p {
-  margin: 0 !important;
+.atlas-blockquote > :last-child,
+.atlas-callout > :last-child {
+  margin-bottom: 0 !important;
+}
+
+.atlas-callout p + p {
+  margin-top: 8px !important;
 }
 
 .atlas-figure {

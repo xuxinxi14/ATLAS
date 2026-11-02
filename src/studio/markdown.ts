@@ -1,9 +1,14 @@
 import DOMPurify from "dompurify";
 import katex from "katex";
 import hljs from "highlight.js/lib/common";
+import dos from "highlight.js/lib/languages/dos";
+import powershell from "highlight.js/lib/languages/powershell";
 import { Marked } from "marked";
 import { escapeHtml } from "../html";
 import "katex/dist/katex.min.css";
+
+hljs.registerLanguage("powershell", powershell);
+hljs.registerLanguage("dos", dos);
 
 /** Rendering is local and synchronous: it also works in the published offline build. */
 export interface StudioMarkdownContext {

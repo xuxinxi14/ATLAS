@@ -27,3 +27,4 @@ public/fonts/novecento/
 .vercel/
 .wrangler/
 content/.obsidian/workspace*.json
+output/

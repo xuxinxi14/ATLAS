@@ -1,9 +1,9 @@
 {
   "generatedAt": "2026-11-02",
-  "totalEntries": 17,
+  "totalEntries": 20,
   "inboxCount": 1,
   "statusCounts": {
-    "proficient": 12,
+    "proficient": 15,
     "learning": 3,
     "todo": 1,
     "review": 1,
@@ -11,9 +11,9 @@
   },
   "typeCounts": {
     "concept": 2,
-    "skill": 10,
+    "skill": 12,
     "troubleshooting": 1,
-    "snippet": 5
+    "snippet": 6
   },
   "portalStats": [
     {
@@ -46,8 +46,8 @@
       "en": "RESEARCH & LAB",
       "codePrefix": "R",
       "description": "细胞培养、分子对接、实验操作标准流程（SOP）与文献工作流",
-      "total": 2,
-      "proficient": 1,
+      "total": 3,
+      "proficient": 2,
       "learning": 0,
       "todo": 0,
       "review": 1
@@ -58,8 +58,8 @@
       "en": "ACADEMICS & CORE",
       "codePrefix": "A",
       "description": "生物学、生物化学、统计学、数学公式推导与核心课程总结",
-      "total": 2,
-      "proficient": 1,
+      "total": 3,
+      "proficient": 2,
       "learning": 0,
       "todo": 1,
       "review": 0
@@ -70,8 +70,8 @@
       "en": "CREATIVE & LIFE",
       "codePrefix": "L",
       "description": "视频后期、教学技巧、运动健康与日常实用问题解决记录",
-      "total": 2,
-      "proficient": 2,
+      "total": 3,
+      "proficient": 3,
       "learning": 0,
       "todo": 0,
       "review": 0
@@ -90,6 +90,39 @@
     }
   ],
   "recentEntries": [
+    {
+      "id": "research-qpcr-ct-ddct",
+      "slug": "research/qpcr-ct-ddct",
+      "title": "RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准",
+      "category": "research",
+      "categoryTitle": "科研与实验",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-11-02",
+      "visualCode": "R-001"
+    },
+    {
+      "id": "academics-pubmed-boolean-search",
+      "slug": "academics/pubmed-boolean-search",
+      "title": "PubMed 医学文献检索式构造（MeSH 主题词与布尔逻辑）速查",
+      "category": "academics",
+      "categoryTitle": "学科知识",
+      "type": "skill",
+      "status": "proficient",
+      "updated": "2026-11-02",
+      "visualCode": "A-001"
+    },
+    {
+      "id": "life-ergonomic-desk-posture",
+      "slug": "life/ergonomic-desk-posture",
+      "title": "桌面科研与长时间编码的人体工学视距及用眼节律速查",
+      "category": "life",
+      "categoryTitle": "创作与生活",
+      "type": "snippet",
+      "status": "proficient",
+      "updated": "2026-11-02",
+      "visualCode": "L-001"
+    },
     {
       "id": "tools-markdown-formatting-guide",
       "slug": "tools/markdown-formatting-guide",
@@ -122,44 +155,12 @@
       "status": "proficient",
       "updated": "2026-10-28",
       "visualCode": "T-003"
-    },
-    {
-      "id": "tool-aegisub",
-      "slug": "tools/aegisub",
-      "title": "Aegisub 字幕时间轴与样式基础",
-      "category": "tools",
-      "categoryTitle": "软件与工具",
-      "type": "skill",
-      "status": "proficient",
-      "updated": "2026-10-16",
-      "visualCode": "T-004"
-    },
-    {
-      "id": "tool-obsidian",
-      "slug": "tools/obsidian",
-      "title": "Obsidian 本地知识库与 ATLAS 协同工作流",
-      "category": "tools",
-      "categoryTitle": "软件与工具",
-      "type": "skill",
-      "status": "proficient",
-      "updated": "2026-10-16",
-      "visualCode": "T-005"
-    },
-    {
-      "id": "tools-gpt-sovits-voice-cloning",
-      "slug": "tools/gpt-sovits-voice-cloning",
-      "title": "GPT-SoVITS 本地语音克隆与音质优化操作手册",
-      "category": "tools",
-      "categoryTitle": "软件与工具",
-      "type": "skill",
-      "status": "learning",
-      "updated": "2026-10-16",
-      "visualCode": "T-006"
     }
   ],
   "activityByDate": {
     "2026-10-28": 3,
     "2026-10-16": 14,
+    "2026-11-02": 3,
     "2026-03-15": 1
   }
 }

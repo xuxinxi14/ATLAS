@@ -9,7 +9,11 @@ import type {
   KnowledgeEntry,
 } from "../knowledge/types.ts";
 import { buildEntryHash, buildStudioHash } from "../app/router.ts";
-import { normalizeSearchText } from "../search/search-engine.ts";
+import {
+  matchesSearchOperators,
+  normalizeSearchText,
+  parseSearchQueryOperators,
+} from "../search/search-engine.ts";
 import { publicReadOnly } from "../public-mode.ts";
 
 export interface LibraryState {
@@ -70,7 +74,12 @@ export function filterAndSortLibraryEntries(
   state: LibraryState,
   savedIds?: Set<string>,
 ): KnowledgeEntry[] {
-  const includeDrafts = state.category === "inbox" || state.status === "draft";
+  const parsedQuery = parseSearchQueryOperators(state.query);
+  const includeDrafts =
+    state.category === "inbox" ||
+    state.status === "draft" ||
+    parsedQuery.statuses.includes("draft") ||
+    parsedQuery.categories.includes("inbox");
   let list = knowledgeRepository.all(true).filter((entry) => {
     if (!includeDrafts && entry.category === "inbox") return false;
     if (
@@ -89,11 +98,13 @@ export function filterAndSortLibraryEntries(
       }
     }
     if (state.query.trim()) {
-      const q = normalizeSearchText(state.query);
-      const hay = normalizeSearchText(
-        `${entry.visualCode} ${entry.globalCode} ${entry.title} ${entry.summary} ${entry.tags.join(" ")} ${entry.plainText}`,
-      );
-      return hay.includes(q);
+      if (!matchesSearchOperators(entry, parsedQuery)) return false;
+      if (parsedQuery.freeTokens.length > 0) {
+        const hay = normalizeSearchText(
+          `${entry.visualCode} ${entry.globalCode} ${entry.title} ${entry.summary} ${entry.tags.join(" ")} ${entry.plainText}`,
+        );
+        return parsedQuery.freeTokens.every((tok) => hay.includes(tok));
+      }
     }
     return true;
   });
@@ -395,7 +406,7 @@ export function renderLibraryViewMarkup(
                   id="atlas-library-search"
                   type="search"
                   autocomplete="off"
-                  placeholder="搜索标题、编号或正文"
+                  placeholder="搜索标题、编号或算子 (tag: / cat: / status:)"
                   value="${escapeHtml(state.query)}"
                   aria-label="搜索标题、编号或正文"
                 />

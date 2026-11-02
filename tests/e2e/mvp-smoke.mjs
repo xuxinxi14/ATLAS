@@ -16,8 +16,12 @@ import {
 } from "../../src/studio/studio-view.ts";
 import {
   buildLocalKnowledgeGraph,
+  buildGlobalKnowledgeGraph,
+  renderGlobalKnowledgeGraphMarkup,
   renderHoverPreviewCardMarkup,
   resolveEntryRelations,
+  formatEntryWikiCitation,
+  formatEntryCitationCard,
 } from "../../src/knowledge/graph.ts";
 import {
   detectWikiLinkTrigger,
@@ -478,5 +482,61 @@ test("Studio wiki-link [[ autocomplete, drag-and-drop overlay, and trash restore
         'data-studio-restore-trash="1730000000000__tools__demo-note.md"',
       ),
     "Studio trash drawer renders deleted item and restore action button",
+  );
+});
+
+test("Global Knowledge Constellation, Review Calibration Queue, and Reader Citation Export work accurately", () => {
+  // 1. Global Knowledge Graph across 5 domain lanes
+  const globalGraph = buildGlobalKnowledgeGraph();
+  assert.ok(
+    globalGraph.nodes.length >= 15,
+    "Global Knowledge Graph includes all published entries across 5 lanes",
+  );
+  assert.ok(
+    globalGraph.edges.length >= 8,
+    "Global Knowledge Graph builds cross-entry edges",
+  );
+  const globalSvg = renderGlobalKnowledgeGraphMarkup();
+  assert.ok(globalSvg.includes("atlas-global-graph-svg"));
+  assert.ok(globalSvg.includes("R · 科研与实验"));
+  assert.ok(globalSvg.includes("A · 学科知识"));
+
+  // 2. Telemetry Home includes Global Constellation & Review Queue calibration buttons
+  const homeDefault = renderTelemetryHomeMarkup(true, false, new Set());
+  assert.ok(
+    homeDefault.includes("GLOBAL KNOWLEDGE CONSTELLATION"),
+    "Telemetry Home includes 05 // Global Knowledge Constellation",
+  );
+  assert.ok(
+    homeDefault.includes('data-atlas-action="mark-reviewed"'),
+    "Review queue includes quick mark-reviewed calibration button",
+  );
+
+  // Calibrate all review queue items and verify reset button state
+  const allReviewIds = new Set(
+    knowledgeRepository.telemetry().reviewQueue.map((e) => e.id),
+  );
+  const homeCalibrated = renderTelemetryHomeMarkup(true, false, allReviewIds);
+  assert.ok(
+    homeCalibrated.includes('data-atlas-action="reset-reviewed"'),
+    "When all review queue entries are calibrated, reset button renders",
+  );
+
+  // 3. Reader Wiki Citation & Summary Card Export
+  const qpcrEntry = knowledgeRepository.byId("research-qpcr-ct-ddct");
+  assert.ok(qpcrEntry, "New RT-qPCR note exists in repository");
+  const wikiCite = formatEntryWikiCitation(qpcrEntry, "快速复习");
+  assert.equal(wikiCite, `[[${qpcrEntry.title}#快速复习]]`);
+
+  const cardCite = formatEntryCitationCard(qpcrEntry);
+  assert.ok(cardCite.includes("> [!NOTE]"));
+  assert.ok(cardCite.includes(qpcrEntry.visualCode));
+  assert.ok(cardCite.includes(`[[${qpcrEntry.title}]]`));
+
+  const readerHtml = renderReaderViewMarkup(qpcrEntry.slug, new Set(), true);
+  assert.ok(
+    readerHtml.includes('data-optical-action="copy-wiki-link"') &&
+      readerHtml.includes('data-optical-action="copy-citation-card"'),
+    "Reader includes both wiki-link and citation-card export actions",
   );
 });

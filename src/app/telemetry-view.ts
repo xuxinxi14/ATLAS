@@ -4,10 +4,15 @@ import {
   statusMeta,
   typeMeta,
 } from "../knowledge/repository.ts";
-import { buildEntryHash, buildLibraryHash } from "./router.ts";
+import { renderGlobalKnowledgeGraphMarkup } from "../knowledge/graph.ts";
+import { buildEntryHash, buildLibraryHash, buildStudioHash } from "./router.ts";
 import { publicReadOnly } from "../public-mode.ts";
 
-export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicReadOnly): string {
+export function renderTelemetryHomeMarkup(
+  hasWebGL = true,
+  readOnly = publicReadOnly,
+  calibratedIds: Set<string> = new Set(),
+): string {
   const telemetry = knowledgeRepository.telemetry();
   const allPublished = knowledgeRepository.all(false);
   const total = Math.max(1, telemetry.totalEntries);
@@ -94,23 +99,43 @@ export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicRead
     .join("");
 
   // Calibration / Review Queue
+  const activeReviewQueue = telemetry.reviewQueue.filter(
+    (item) => !calibratedIds.has(item.id) && !calibratedIds.has(item.slug),
+  );
   const reviewHtml =
-    telemetry.reviewQueue.length > 0
-      ? telemetry.reviewQueue
+    activeReviewQueue.length > 0
+      ? activeReviewQueue
           .map(
             (item) => `
-          <a href="${buildEntryHash(item.slug)}" class="rhine-calibration-row">
+          <div class="rhine-calibration-row" data-preview-entry="${escapeHtml(item.id)}">
             <span class="calibration-tag">◈ REVIEW</span>
-            <div class="calibration-main">
+            <a href="${buildEntryHash(item.slug)}" class="calibration-main">
               <strong>${escapeHtml(item.title)}</strong>
               <small>${escapeHtml(item.categoryTitle)} · UPDATED ${escapeHtml(item.updated)} · ${escapeHtml(item.reason)}</small>
+            </a>
+            <div class="calibration-actions">
+              <button
+                type="button"
+                class="calibration-quick-btn"
+                data-atlas-action="mark-reviewed"
+                data-entry-id="${escapeHtml(item.id)}"
+                title="标记本轮已完成温习校准"
+              >✓ 已温习</button>
+              ${
+                readOnly
+                  ? `<a href="${buildEntryHash(item.slug)}" class="calibration-go">CALIBRATE <span>↗</span></a>`
+                  : `<a href="${buildStudioHash(item.slug)}" class="calibration-go" title="进入工作台修订该档案">✎ 修订 <span>↗</span></a>`
+              }
             </div>
-            <span class="calibration-go">CALIBRATE <span>↗</span></span>
-          </a>
+          </div>
         `,
           )
           .join("")
-      : `<div class="rhine-calibration-ok"><span>■</span> ALL SPECIMENS WITHIN CALIBRATION WINDOW · 全部词条处于有效校准周期内</div>`;
+      : `<div class="rhine-calibration-ok"><span>■</span> ALL SPECIMENS WITHIN CALIBRATION WINDOW · 全部词条处于有效校准周期内${
+          calibratedIds.size > 0
+            ? ` <button type="button" class="calibration-reset-btn" data-atlas-action="reset-reviewed">↺ 恢复本轮标记 (${calibratedIds.size})</button>`
+            : ""
+        }</div>`;
 
   // Recent Transmissions Ledger
   const recentRowsHtml = telemetry.recentEntries
@@ -288,6 +313,15 @@ export function renderTelemetryHomeMarkup(hasWebGL = true, readOnly = publicRead
             <div class="rhine-ledger-list">
               ${recentRowsHtml}
             </div>
+          </section>
+
+          <section class="rhine-global-graph-section" data-stagger="3" aria-label="全域知识关联星图">
+            <div class="rhine-section-kicker">
+              <span>05 // GLOBAL KNOWLEDGE CONSTELLATION · 全域知识关联星图</span>
+              <span>CLICK NODE TO INSPECT · HOVER FOR SUMMARY</span>
+            </div>
+            <div class="rhine-anchor-rule" data-rule><i></i></div>
+            ${renderGlobalKnowledgeGraphMarkup()}
           </section>
         </div>
       </div>

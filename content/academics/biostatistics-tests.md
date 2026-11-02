@@ -29,7 +29,24 @@ aliases: []
 | **三组及以上独立样本** | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |
 | **分类变量频数表** | 卡方检验（$\chi^2$，$n \ge 40$ 且期望频数 $\ge 5$） | — | Fisher 精确检验（小样本首选） |
 
+## 正态性与方差齐性检验代码片段（R）
+
+~~~r
+# 1. Shapiro-Wilk 正态性检验（p > 0.05 视为不拒绝正态分布假设）
+shapiro.test(df$value[df$group == "Control"])
+
+# 2. Welch's t-test（R 中 t.test 默认 var.equal = FALSE，稳健应对方差不齐）
+t.test(value ~ group, data = df, var.equal = FALSE)
+
+# 3. 多重假设检验 p 值校正（高通量组学推荐 BH / FDR 校正）
+df$p_adj <- p.adjust(df$p_raw, method = "BH")
+~~~
+
+> [!TIP] 多重检验校正选择
+> - **Bonferroni 校正**：控制族错误率（FWER），适合比较次数较少（$m \le 10$）的确定性验证实验。
+> - **Benjamini-Hochberg (FDR)**：控制错误发现率，适合转录组、蛋白质组等成百上千个指标的高通量筛选。
+
 ## 待补充核对项（TODO）
 
-- [ ] 补充 R 语言中 `shapiro.test()` 正态性检验与 `car::leveneTest()` 方差齐性检验代码片段
-- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明
+- [x] 补充 R 语言中 `shapiro.test()` 正态性检验与 `t.test()` 代码片段
+- [x] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明

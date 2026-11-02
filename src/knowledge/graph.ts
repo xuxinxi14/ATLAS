@@ -328,3 +328,204 @@ export function renderHoverPreviewCardMarkup(entry: KnowledgeEntry): string {
     </div>
   `;
 }
+
+export interface GlobalGraphNode {
+  entry: KnowledgeEntry;
+  laneIdx: number;
+  x: number;
+  y: number;
+}
+
+export interface GlobalGraphEdge {
+  fromId: string;
+  toId: string;
+  kind: "prerequisite" | "related";
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export function buildGlobalKnowledgeGraph(): {
+  nodes: GlobalGraphNode[];
+  edges: GlobalGraphEdge[];
+} {
+  const portals = knowledgeRepository.portals();
+  const published = knowledgeRepository.all(false);
+  const nodeMap = new Map<string, GlobalGraphNode>();
+  const nodes: GlobalGraphNode[] = [];
+
+  // Place 5 portals across 5 vertical/arc lanes in a 780 x 260 canvas
+  const laneX = [95, 238, 385, 532, 678];
+  portals.forEach((portal, laneIdx) => {
+    const items = published.filter((e) => e.category === portal.id);
+    const xBase = laneX[laneIdx] ?? 100 + laneIdx * 140;
+    const count = items.length;
+    items.forEach((entry, rowIdx) => {
+      const ySpan = 186;
+      const yStart = 44;
+      const y =
+        count <= 1
+          ? Math.round(yStart + ySpan / 2)
+          : Math.round(yStart + (rowIdx * ySpan) / (count - 1));
+      const xOffset = rowIdx % 2 === 0 ? -12 : 12;
+      const node: GlobalGraphNode = {
+        entry,
+        laneIdx,
+        x: xBase + (count > 2 ? xOffset : 0),
+        y,
+      };
+      nodes.push(node);
+      nodeMap.set(entry.id, node);
+    });
+  });
+
+  const edgeKeys = new Set<string>();
+  const edges: GlobalGraphEdge[] = [];
+
+  for (const node of nodes) {
+    const { entry } = node;
+    for (const prereqId of entry.prerequisites) {
+      const target = nodeMap.get(prereqId);
+      if (!target) continue;
+      const key = [entry.id, target.entry.id].sort().join("--");
+      if (!edgeKeys.has(key)) {
+        edgeKeys.add(key);
+        edges.push({
+          fromId: target.entry.id,
+          toId: entry.id,
+          kind: "prerequisite",
+          x1: target.x,
+          y1: target.y,
+          x2: node.x,
+          y2: node.y,
+        });
+      }
+    }
+    const relTargets = new Set<string>([
+      ...entry.related,
+      ...Array.from(extractOutboundSlugsFromHtml(entry.html))
+        .map((s) => knowledgeRepository.bySlug(s)?.id ?? "")
+        .filter(Boolean),
+    ]);
+    for (const relId of relTargets) {
+      const target = nodeMap.get(relId);
+      if (!target || target.entry.id === entry.id) continue;
+      const key = [entry.id, target.entry.id].sort().join("--");
+      if (!edgeKeys.has(key)) {
+        edgeKeys.add(key);
+        edges.push({
+          fromId: entry.id,
+          toId: target.entry.id,
+          kind: "related",
+          x1: node.x,
+          y1: node.y,
+          x2: target.x,
+          y2: target.y,
+        });
+      }
+    }
+  }
+
+  return { nodes, edges };
+}
+
+export function renderGlobalKnowledgeGraphMarkup(): string {
+  const portals = knowledgeRepository.portals();
+  const { nodes, edges } = buildGlobalKnowledgeGraph();
+  const laneX = [95, 238, 385, 532, 678];
+
+  const laneHeadersSvg = portals
+    .map((p, idx) => {
+      const x = laneX[idx] ?? 100 + idx * 140;
+      return `
+        <g transform="translate(${x}, 20)">
+          <line x1="0" y1="8" x2="0" y2="236" class="global-graph-lane-axis" />
+          <text y="0" text-anchor="middle" class="global-graph-lane-label">${escapeHtml(p.codePrefix)} · ${escapeHtml(p.title)}</text>
+        </g>
+      `;
+    })
+    .join("");
+
+  const edgesSvg = edges
+    .map((edge) => {
+      const midX = Math.round((edge.x1 + edge.x2) / 2);
+      const midY = Math.round((edge.y1 + edge.y2) / 2 - 14);
+      return `<path class="atlas-graph-edge is-${edge.kind}" fill="none" d="M ${edge.x1} ${edge.y1} Q ${midX} ${midY} ${edge.x2} ${edge.y2}" />`;
+    })
+    .join("");
+
+  const nodesSvg = nodes
+    .map((node) => {
+      const { entry } = node;
+      const href = buildEntryHash(entry.slug);
+      return `
+        <a
+          href="${escapeHtml(href)}"
+          class="atlas-graph-node global-node"
+          data-preview-entry="${escapeHtml(entry.id)}"
+          data-status="${escapeHtml(entry.status)}"
+          aria-label="${escapeHtml(`${entry.visualCode} ${entry.title}`)}"
+        >
+          <g transform="translate(${node.x}, ${node.y})">
+            <circle class="graph-node-halo" r="13" />
+            <circle class="graph-node-dot" r="4.2" />
+            <text class="graph-node-code" y="13" text-anchor="middle">${escapeHtml(entry.visualCode)}</text>
+          </g>
+        </a>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="atlas-global-graph-panel" id="atlas-global-graph-panel">
+      <div class="atlas-graph-canvas-wrap">
+        <svg
+          class="atlas-global-graph-svg"
+          viewBox="0 0 770 258"
+          role="img"
+          aria-label="五大领域全域知识关联星图"
+        >
+          <g class="global-graph-lanes">${laneHeadersSvg}</g>
+          <g class="atlas-graph-edges">${edgesSvg}</g>
+          <g class="atlas-graph-nodes">${nodesSvg}</g>
+        </svg>
+      </div>
+    </div>
+  `;
+}
+
+export function formatEntryWikiCitation(
+  entry: KnowledgeEntry,
+  headingText?: string,
+): string {
+  const cleanHeading = headingText?.trim();
+  if (cleanHeading) {
+    return `[[${entry.title}#${cleanHeading}]]`;
+  }
+  return `[[${entry.title}]]`;
+}
+
+export function formatEntryCitationCard(entry: KnowledgeEntry): string {
+  const sMeta = statusMeta(entry.status);
+  const tMeta = typeMeta(entry.type);
+  const bulletLines =
+    entry.findings.length > 0
+      ? entry.findings
+          .slice(0, 3)
+          .map((f) => `> - ${f}`)
+          .join("\n")
+      : `> - ${entry.summary}`;
+  const tagsLine =
+    entry.tags.length > 0
+      ? entry.tags.map((t) => `#${t}`).join(" ")
+      : `#${entry.category}`;
+
+  return [
+    `> [!NOTE] ${entry.visualCode} · [[${entry.title}]]`,
+    `> **领域**：${entry.categoryTitle} · ${tMeta.label}（${sMeta.label}）｜**环境**：${entry.version_scope}`,
+    `> **摘要**：${entry.summary}`,
+    bulletLines,
+    `> **标签**：${tagsLine}`,
+  ].join("\n");
+}

@@ -6173,3 +6173,141 @@ i[data-status="draft"] {
   display: flex;
   justify-content: flex-end;
 }
+
+/* ============================================================================
+ * GLOBAL KNOWLEDGE CONSTELLATION, CALIBRATION QUICK ACTIONS & CITATION EXPORT
+ * ============================================================================ */
+
+.rhine-global-graph-section {
+  margin-top: 2px;
+}
+
+.atlas-global-graph-panel {
+  border: 1px solid rgba(156, 149, 136, 0.42);
+  background: rgba(244, 242, 236, 0.52);
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-dark-surface="true"] .atlas-global-graph-panel {
+  background: rgba(28, 34, 38, 0.58);
+  border-color: rgba(125, 138, 144, 0.34);
+}
+
+.atlas-global-graph-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.global-graph-lane-axis {
+  stroke: rgba(156, 149, 136, 0.36);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.global-graph-lane-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  fill: var(--atlas-muted);
+}
+
+.calibration-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calibration-item-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.calibration-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.calibration-quick-btn,
+.calibration-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  font-size: 11px;
+  line-height: 1.35;
+  border: 1px solid rgba(156, 149, 136, 0.55);
+  background: rgba(248, 246, 241, 0.72);
+  color: var(--atlas-ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.calibration-quick-btn:hover,
+.calibration-reset-btn:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+}
+
+[data-dark-surface="true"] .calibration-quick-btn,
+[data-dark-surface="true"] .calibration-reset-btn {
+  background: rgba(26, 32, 36, 0.78);
+  border-color: rgba(125, 138, 144, 0.42);
+}
+
+.optical-dossier-citation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(156, 149, 136, 0.35);
+}
+
+.optical-citation-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  border: 1px solid rgba(156, 149, 136, 0.55);
+  background: rgba(248, 246, 241, 0.78);
+  color: var(--atlas-ink);
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.optical-citation-btn:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+}
+
+[data-dark-surface="true"] .optical-citation-btn {
+  background: rgba(26, 32, 36, 0.82);
+  border-color: rgba(125, 138, 144, 0.42);
+}
+
+.reader-markdown-body .atlas-heading-anchor {
+  cursor: pointer;
+  text-decoration: none;
+  opacity: 0.42;
+  margin-right: 6px;
+  color: var(--atlas-amber);
+  transition: opacity 140ms ease;
+}
+
+.reader-markdown-body :is(h1, h2, h3, h4):hover .atlas-heading-anchor {
+  opacity: 1;
+}

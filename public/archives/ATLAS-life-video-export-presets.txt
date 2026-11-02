@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE L-002 (life-video-export-presets) / 视频导出与压制常用 H.264 / AAC 参数速查
+FILE L-003 (life-video-export-presets) / 视频导出与压制常用 H.264 / AAC 参数速查
 CREATIVE & LIFE · SNIPPET · STATUS: PROFICIENT
 
 所属领域：创作与生活 (life)

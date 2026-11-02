@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE A-002 (concept-enzyme-kinetics) / 米氏方程（Michaelis-Menten）与酶抑制类型判读
+FILE A-003 (concept-enzyme-kinetics) / 米氏方程（Michaelis-Menten）与酶抑制类型判读
 ACADEMICS & CORE · CONCEPT · STATUS: PROFICIENT
 
 所属领域：学科知识 (academics)

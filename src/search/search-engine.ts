@@ -32,6 +32,142 @@ export interface SearchFilterOptions {
   includeDrafts?: boolean;
 }
 
+export interface ParsedSearchQuery {
+  tags: string[];
+  categories: string[];
+  statuses: string[];
+  types: string[];
+  codes: string[];
+  freeTokens: string[];
+  freeQuery: string;
+  hasOperators: boolean;
+}
+
+const STATUS_ALIASES: Record<string, EntryStatus> = {
+  proficient: "proficient",
+  mastered: "proficient",
+  已掌握: "proficient",
+  learning: "learning",
+  解析中: "learning",
+  todo: "todo",
+  待解密: "todo",
+  待整理: "todo",
+  review: "review",
+  需校准: "review",
+  需温习: "review",
+  draft: "draft",
+  草稿: "draft",
+};
+
+const TYPE_ALIASES: Record<string, EntryType> = {
+  concept: "concept",
+  概念: "concept",
+  核心概念: "concept",
+  skill: "skill",
+  技能: "skill",
+  技能操作: "skill",
+  troubleshooting: "troubleshooting",
+  排障: "troubleshooting",
+  故障排错: "troubleshooting",
+  snippet: "snippet",
+  速查: "snippet",
+  速查微卡: "snippet",
+};
+
+export function parseSearchQueryOperators(rawQuery: string): ParsedSearchQuery {
+  const norm = normalizeSearchText(rawQuery);
+  const rawTokens = norm ? norm.split(/\s+/).filter(Boolean) : [];
+  const tags: string[] = [];
+  const categories: string[] = [];
+  const statuses: string[] = [];
+  const types: string[] = [];
+  const codes: string[] = [];
+  const freeTokens: string[] = [];
+
+  for (const tok of rawTokens) {
+    if (tok.startsWith("#") && tok.length > 1) {
+      tags.push(tok.slice(1));
+      continue;
+    }
+    const opMatch = /^(tag|cat|domain|portal|status|is|type|code):(.+)$/.exec(
+      tok,
+    );
+    if (opMatch) {
+      const [, prefix, val] = opMatch;
+      if (prefix === "tag") tags.push(val);
+      else if (prefix === "cat" || prefix === "domain" || prefix === "portal")
+        categories.push(val);
+      else if (prefix === "status" || prefix === "is")
+        statuses.push(STATUS_ALIASES[val] ?? val);
+      else if (prefix === "type") types.push(TYPE_ALIASES[val] ?? val);
+      else if (prefix === "code") codes.push(val);
+      continue;
+    }
+    freeTokens.push(tok);
+  }
+
+  return {
+    tags,
+    categories,
+    statuses,
+    types,
+    codes,
+    freeTokens,
+    freeQuery: freeTokens.join(" "),
+    hasOperators:
+      tags.length > 0 ||
+      categories.length > 0 ||
+      statuses.length > 0 ||
+      types.length > 0 ||
+      codes.length > 0,
+  };
+}
+
+export function matchesSearchOperators(
+  item: {
+    id: string;
+    slug: string;
+    visualCode: string;
+    globalCode?: string;
+    category: string;
+    categoryTitle: string;
+    type: EntryType;
+    status: EntryStatus;
+    tags: string[];
+    body?: string;
+    plainText?: string;
+  },
+  parsed: ParsedSearchQuery,
+): boolean {
+  if (!parsed.hasOperators) return true;
+
+  if (parsed.tags.length > 0) {
+    const normTags = normalizeSearchText(item.tags.join(" "));
+    if (!parsed.tags.every((t) => normTags.includes(t))) return false;
+  }
+  if (parsed.categories.length > 0) {
+    const normCat = normalizeSearchText(`${item.category} ${item.categoryTitle}`);
+    if (!parsed.categories.every((c) => normCat.includes(c))) return false;
+  }
+  if (parsed.statuses.length > 0) {
+    const normStatus = normalizeSearchText(item.status);
+    if (!parsed.statuses.every((s) => normStatus === s || normStatus.includes(s)))
+      return false;
+  }
+  if (parsed.types.length > 0) {
+    const normType = normalizeSearchText(item.type);
+    if (!parsed.types.every((t) => normType === t || normType.includes(t)))
+      return false;
+  }
+  if (parsed.codes.length > 0) {
+    const normCodeAndBody = normalizeSearchText(
+      `${item.visualCode} ${item.globalCode ?? ""} ${item.id} ${item.slug} ${item.body ?? item.plainText ?? ""}`,
+    );
+    if (!parsed.codes.every((c) => normCodeAndBody.includes(c))) return false;
+  }
+  return true;
+}
+
 const indexItems: SearchIndexItem[] = [...(searchIndexData as SearchIndexItem[])];
 
 export function hotReloadSearchIndex(newItems: SearchIndexItem[]) {
@@ -83,7 +219,8 @@ export function searchKnowledge(
   rawQuery: string,
   filters: SearchFilterOptions = {},
 ): SearchResult[] {
-  const query = normalizeSearchText(rawQuery);
+  const parsed = parseSearchQueryOperators(rawQuery);
+  const query = parsed.freeQuery;
   const {
     category = "all",
     type = "all",
@@ -104,19 +241,26 @@ export function searchKnowledge(
     }
     if (type !== "all" && item.type !== type) return false;
     if (status !== "all" && item.status !== status) return false;
+    if (!matchesSearchOperators(item, parsed)) return false;
     return true;
   });
 
   if (!query) {
+    const opFields: string[] = [];
+    if (parsed.tags.length > 0) opFields.push("标签");
+    if (parsed.categories.length > 0) opFields.push("领域");
+    if (parsed.statuses.length > 0) opFields.push("状态");
+    if (parsed.types.length > 0) opFields.push("类型");
+    if (parsed.codes.length > 0) opFields.push("编号");
     return candidates.map((item) => ({
       item,
-      score: 1,
+      score: parsed.hasOperators ? 100 : 1,
       snippet: item.summary,
-      matchedFields: [],
+      matchedFields: opFields,
     }));
   }
 
-  const tokens = query.split(/\s+/).filter(Boolean);
+  const tokens = parsed.freeTokens;
   const bigrams = extractCjkBigrams(query);
   const results: SearchResult[] = [];
 

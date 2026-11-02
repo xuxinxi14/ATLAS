@@ -360,6 +360,24 @@ export function renderReaderViewMarkup(
             <button
               type="button"
               class="optical-menu-item"
+              data-optical-action="copy-wiki-link"
+              data-entry-id="${escapeHtml(entry.id)}"
+            >
+              <span>⎘ 复制双链引用</span>
+              <kbd>[[ ]]</kbd>
+            </button>
+            <button
+              type="button"
+              class="optical-menu-item"
+              data-optical-action="copy-citation-card"
+              data-entry-id="${escapeHtml(entry.id)}"
+            >
+              <span>❖ 复制摘要引用卡</span>
+              <kbd>C</kbd>
+            </button>
+            <button
+              type="button"
+              class="optical-menu-item"
               data-optical-action="toggle-dossier"
             >
               <span>ⓘ 档案信息与溯源</span>
@@ -485,6 +503,20 @@ export function renderReaderViewMarkup(
                   <div class="optical-dossier-sources">
                     <p class="reader-side-path">源文件：<code>${escapeHtml(entry.relPath)}</code></p>
                     ${sourcesHtml}
+                    <div class="optical-dossier-citation-actions">
+                      <button
+                        type="button"
+                        class="optical-citation-btn"
+                        data-optical-action="copy-wiki-link"
+                        data-entry-id="${escapeHtml(entry.id)}"
+                      >⎘ 复制双链 [[${escapeHtml(entry.title.slice(0, 12))}${entry.title.length > 12 ? "…" : ""}]]</button>
+                      <button
+                        type="button"
+                        class="optical-citation-btn"
+                        data-optical-action="copy-citation-card"
+                        data-entry-id="${escapeHtml(entry.id)}"
+                      >❖ 复制摘要引用卡片 (Markdown)</button>
+                    </div>
                   </div>
                 </div>
               </details>

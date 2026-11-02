@@ -71,7 +71,11 @@ import {
   hydrateEntryHtmlImages,
   prefetchEntryAssets,
 } from "./reader/reader-view";
-import { renderHoverPreviewCardMarkup } from "./knowledge/graph";
+import {
+  renderHoverPreviewCardMarkup,
+  formatEntryWikiCitation,
+  formatEntryCitationCard,
+} from "./knowledge/graph";
 import {
   detectWikiLinkTrigger,
   queryWikiLinkSuggestions,
@@ -302,6 +306,17 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 const saved = new Set<string>(readLocal<string[]>("rhine-saved", []));
+const calibratedReviewIds = new Set<string>(
+  readLocal<string[]>("atlas-calibrated-ids", []),
+);
+function saveCalibratedReviewIds() {
+  try {
+    localStorage.setItem(
+      "atlas-calibrated-ids",
+      JSON.stringify([...calibratedReviewIds]),
+    );
+  } catch {}
+}
 const storedPrefs = readLocal<
   Partial<{
     sound: boolean;
@@ -1341,7 +1356,7 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
   const hasWebGL = Boolean(scene);
   const bodyHtml =
     atlasView === "home"
-      ? renderTelemetryHomeMarkup(hasWebGL)
+      ? renderTelemetryHomeMarkup(hasWebGL, publicReadOnly, calibratedReviewIds)
       : atlasView === "library"
         ? renderLibraryViewMarkup(libraryState, saved, hasWebGL)
         : atlasView === "studio"
@@ -3348,7 +3363,7 @@ function renderModal() {
   modalTransition?.dispose();
   const filterCategories = [...categories, "闪念草稿箱"];
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>ATLAS // ${modal === "settings" ? "SYSTEM PREFERENCES" : "KNOWLEDGE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "全文与命令加权检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入标题、编号 (X-001 / T-001)、标签或正文命令…" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${filterCategories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案与摘要</span><span>PORTAL / 领域</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>ATLAS KNOWLEDGE BASE <i>●</i> ${records.length} ARCHIVED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>ATLAS // ${modal === "settings" ? "SYSTEM PREFERENCES" : "KNOWLEDGE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "全文与命令加权检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入标题、编号、标签或检索算子 (tag: / cat: / status: / type:)…" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${filterCategories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案与摘要</span><span>PORTAL / 领域</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>ATLAS KNOWLEDGE BASE <i>●</i> ${records.length} ARCHIVED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -3655,6 +3670,37 @@ document.addEventListener("change", (e) => {
   }
 });
 document.addEventListener("click", (e) => {
+  const readerHeadingAnchor =
+    atlasView === "reader"
+      ? (e.target as Element).closest<HTMLAnchorElement>(
+          ".reader-markdown-body a.atlas-heading-anchor",
+        )
+      : null;
+  if (readerHeadingAnchor) {
+    e.preventDefault();
+    const href = readerHeadingAnchor.getAttribute("href") ?? "";
+    const headingId = href.startsWith("#") ? href.slice(1) : "";
+    const headingEl = headingId
+      ? document.getElementById(headingId)
+      : readerHeadingAnchor.parentElement;
+    headingEl?.scrollIntoView({
+      behavior: motionActive("surfaceTransitions") ? "smooth" : "auto",
+      block: "start",
+    });
+    const entry =
+      knowledgeRepository.bySlug(activeReaderSlug) ??
+      knowledgeRepository.byId(activeReaderSlug);
+    if (entry && headingEl) {
+      const headingText = (headingEl.textContent ?? "")
+        .replace(/^#\s*/, "")
+        .trim();
+      const wiki = formatEntryWikiCitation(entry, headingText);
+      void navigator.clipboard?.writeText(wiki).catch(() => {});
+      audio.play("confirm");
+      notify(`✓ 已复制章节双链引用 ${wiki}`);
+    }
+    return;
+  }
   const previewAnchor = atlasView === "studio"
     ? (e.target as Element).closest<HTMLAnchorElement>('#studio-preview-body a[href^="#"]')
     : null;
@@ -3827,6 +3873,30 @@ document.addEventListener("click", (e) => {
       opticalActionBtn.setAttribute("aria-pressed", String(next));
       scene?.setReaderReceded(next);
       audio.play("ui-tick");
+      return;
+    }
+    if (oAct === "copy-wiki-link") {
+      const entry =
+        knowledgeRepository.bySlug(activeReaderSlug) ??
+        knowledgeRepository.byId(activeReaderSlug);
+      if (entry) {
+        const wiki = formatEntryWikiCitation(entry);
+        void navigator.clipboard?.writeText(wiki).catch(() => {});
+        audio.play("confirm");
+        notify(`✓ 已复制双链引用 ${wiki}`);
+      }
+      return;
+    }
+    if (oAct === "copy-citation-card") {
+      const entry =
+        knowledgeRepository.bySlug(activeReaderSlug) ??
+        knowledgeRepository.byId(activeReaderSlug);
+      if (entry) {
+        const card = formatEntryCitationCard(entry);
+        void navigator.clipboard?.writeText(card).catch(() => {});
+        audio.play("confirm");
+        notify(`✓ 已复制 ${entry.globalCode} Markdown 摘要引用卡片`);
+      }
       return;
     }
     return;
@@ -4499,6 +4569,25 @@ document.addEventListener("click", (e) => {
       audio.play("open");
       return;
     }
+    if (act === "mark-reviewed") {
+      const entryId = atlasActionBtn.dataset.entryId ?? "";
+      if (entryId) {
+        calibratedReviewIds.add(entryId);
+        saveCalibratedReviewIds();
+        renderAtlasSurface(true);
+        audio.play("confirm");
+        notify("✓ 已标记完成本轮温习校准");
+      }
+      return;
+    }
+    if (act === "reset-reviewed") {
+      calibratedReviewIds.clear();
+      saveCalibratedReviewIds();
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      notify("↺ 已恢复待校准列表");
+      return;
+    }
   }
   if (!started) return;
   if (modalClosing) return;
@@ -5023,6 +5112,19 @@ document.addEventListener("keydown", (e) => {
       if (readerStage) readerStage.dataset.receded = String(next);
       scene?.setReaderReceded(next);
       audio.play("ui-tick");
+      return;
+    }
+    if (lower === "c") {
+      e.preventDefault();
+      const entry =
+        knowledgeRepository.bySlug(activeReaderSlug) ??
+        knowledgeRepository.byId(activeReaderSlug);
+      if (entry) {
+        const card = formatEntryCitationCard(entry);
+        void navigator.clipboard?.writeText(card).catch(() => {});
+        audio.play("confirm");
+        notify(`✓ 已复制 ${entry.globalCode} Markdown 摘要引用卡片`);
+      }
       return;
     }
   }

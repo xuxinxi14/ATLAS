@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { searchKnowledge } from "../../src/search/search-engine.ts";
+import {
+  searchKnowledge,
+  parseSearchQueryOperators,
+} from "../../src/search/search-engine.ts";
 import {
   buildEntryHash,
   buildLibraryHash,
@@ -55,4 +58,30 @@ test("hash router parses home, archive, library, entry, and alias slugs accurate
 
   assert.equal(buildEntryHash("tools/aegisub"), "#/entry/tools/aegisub");
   assert.equal(buildLibraryHash("research"), "#/library/research");
+});
+
+test("structured search operators (tag:, #tag, cat:, status:, type:, code:) filter and rank accurately", () => {
+  const parsed = parseSearchQueryOperators(
+    "tag:rt-qpcr cat:research status:proficient type:snippet 2^-ddCt",
+  );
+  assert.deepEqual(parsed.tags, ["rt-qpcr"]);
+  assert.deepEqual(parsed.categories, ["research"]);
+  assert.deepEqual(parsed.statuses, ["proficient"]);
+  assert.deepEqual(parsed.types, ["snippet"]);
+  assert.equal(parsed.freeQuery, "2^-ddct");
+
+  const byTag = searchKnowledge("#rt-qpcr");
+  assert.ok(byTag.length >= 1, "#rt-qpcr matches RT-qPCR note");
+  assert.equal(byTag[0].item.id, "research-qpcr-ct-ddct");
+
+  const byCatAndType = searchKnowledge("cat:academics type:skill MeSH");
+  assert.ok(byCatAndType.length >= 1);
+  assert.equal(byCatAndType[0].item.id, "academics-pubmed-boolean-search");
+
+  const byStatusOnly = searchKnowledge("status:review");
+  assert.ok(byStatusOnly.length >= 1);
+  assert.ok(
+    byStatusOnly.every((r) => r.item.status === "review"),
+    "status:review returns only review entries",
+  );
 });

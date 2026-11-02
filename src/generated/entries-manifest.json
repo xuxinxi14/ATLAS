@@ -1238,6 +1238,74 @@
       "globalCode": "X-011"
     },
     {
+      "id": "research-qpcr-ct-ddct",
+      "slug": "research/qpcr-ct-ddct",
+      "title": "RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准",
+      "category": "research",
+      "categoryTitle": "科研与实验",
+      "en": "RESEARCH & LAB",
+      "department": "实验方案与生物信息",
+      "subcategory": "molecular-biology",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "RT-qPCR",
+        "2-ΔΔCt",
+        "相对定量",
+        "熔解曲线",
+        "分子生物学"
+      ],
+      "summary": "从内参基因归一化、ΔΔCt 相对表达量推导、复孔标准差阈值到熔解曲线单峰质控的完整实验与计算流程。",
+      "created": "2026-10-20",
+      "updated": "2026-11-02",
+      "version_scope": "SYBR Green 荧光定量 PCR 通用 SOP",
+      "source_urls": [],
+      "prerequisites": [
+        "skill-cell-observation"
+      ],
+      "related": [
+        "academics-biostatistics-tests",
+        "skill-r-dataframe"
+      ],
+      "aliases": [
+        "research/qpcr"
+      ],
+      "relPath": "content/research/qpcr-ct-ddct.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "扩增与熔解曲线异常排查表",
+          "text": "扩增与熔解曲线异常排查表",
+          "level": 2
+        },
+        {
+          "id": "验证清单",
+          "text": "验证清单",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>核心计算公式</strong>：先算每个样品的目的基因与内参基因差值 <span class=\"atlas-math-inline\" data-latex=\"\\Delta C_t\">Δ C<sub>t</sub></span>，再减去对照组均值得到 <span class=\"atlas-math-inline\" data-latex=\"\\Delta\\Delta C_t\">ΔΔ C<sub>t</sub></span>，相对表达倍数为 <span class=\"atlas-math-inline\" data-latex=\"2^{-\\Delta\\Delta C_t}\">2<sup>-ΔΔ C<sub>t</sub></sup></span>。</li><li><strong>三复孔质控红线</strong>：同一生物样品的 3 个技术复孔（Technical Replicates）<span class=\"atlas-math-inline\" data-latex=\"C_t\">C<sub>t</sub></span> 标准差必须满足 <span class=\"atlas-math-inline\" data-latex=\"\\text{SD} &lt; 0.20\"><span class=\"math-roman\">SD</span> &lt; 0.20</span>（若 <span class=\"atlas-math-inline\" data-latex=\"C_t &gt; 32\">C<sub>t</sub> &gt; 32</span> 可放宽至 <span class=\"atlas-math-inline\" data-latex=\"0.30\">0.30</span>），偏离过大的单孔需结合扩增曲线剔除。</li><li><strong>熔解曲线（Melting Curve）</strong>：SYBR Green 体系必须呈现<strong>单一锐利主峰</strong>，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 <span class=\"atlas-math-inline\" data-latex=\"C_t &gt; 38\">C<sub>t</sub> &gt; 38</span>。</li></ul>\n<div class=\"atlas-math-block\" data-latex=\"\\Delta C_t = C_{t,\\text{target}} - C_{t,\\text{ref}}, \\quad \\Delta\\Delta C_t = \\Delta C_{t,\\text{treated}} - \\overline{\\Delta C_{t,\\text{control}}}, \\quad \\text{Fold Change} = 2^{-\\Delta\\Delta C_t}\">Δ C<sub>t</sub> = C<sub>t,<span class=\"math-roman\">target</span></sub> - C<sub>t,<span class=\"math-roman\">ref</span></sub>, \\quad ΔΔ C<sub>t</sub> = Δ C<sub>t,<span class=\"math-roman\">treated</span></sub> - \\overline{Δ C<sub>t,<span class=\"math-roman\">control</span></sub>}, \\quad <span class=\"math-roman\">Fold Change</span> = 2<sup>-ΔΔ C<sub>t</sub></sup></div>\n<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change\nlibrary(dplyr)\n\nqpcr_result &lt;- raw_ct |&gt;\n  group_by(sample_id, group) |&gt;\n  summarise(ct_target = mean(ct_gene), ct_ref = mean(ct_gapdh), .groups = &quot;drop&quot;) |&gt;\n  mutate(delta_ct = ct_target - ct_ref) |&gt;\n  mutate(\n    control_mean = mean(delta_ct[group == &quot;Control&quot;]),\n    ddct = delta_ct - control_mean,\n    fold_change = 2^(-ddct)\n  )\">COPY</button></div><pre><code class=\"hljs language-r\"><span class=\"hljs-comment\"># R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change</span>\nlibrary<span class=\"hljs-punctuation\">(</span>dplyr<span class=\"hljs-punctuation\">)</span>\n\nqpcr_result <span class=\"hljs-operator\">&lt;-</span> raw_ct <span class=\"hljs-operator\">|&gt;</span>\n  group_by<span class=\"hljs-punctuation\">(</span>sample_id<span class=\"hljs-punctuation\">,</span> group<span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  summarise<span class=\"hljs-punctuation\">(</span>ct_target <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>ct_gene<span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span> ct_ref <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>ct_gapdh<span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span> .groups <span class=\"hljs-operator\">=</span> <span class=\"hljs-string\">&quot;drop&quot;</span><span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  mutate<span class=\"hljs-punctuation\">(</span>delta_ct <span class=\"hljs-operator\">=</span> ct_target <span class=\"hljs-operator\">-</span> ct_ref<span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  mutate<span class=\"hljs-punctuation\">(</span>\n    control_mean <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>delta_ct<span class=\"hljs-punctuation\">[</span>group <span class=\"hljs-operator\">==</span> <span class=\"hljs-string\">&quot;Control&quot;</span><span class=\"hljs-punctuation\">]</span><span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span>\n    ddct <span class=\"hljs-operator\">=</span> delta_ct <span class=\"hljs-operator\">-</span> control_mean<span class=\"hljs-punctuation\">,</span>\n    fold_change <span class=\"hljs-operator\">=</span> <span class=\"hljs-number\">2</span><span class=\"hljs-operator\">^</span><span class=\"hljs-punctuation\">(</span><span class=\"hljs-operator\">-</span>ddct<span class=\"hljs-punctuation\">)</span>\n  <span class=\"hljs-punctuation\">)</span></code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>核心计算公式</strong>：先算每个样品的目的基因与内参基因差值 <span class=\"atlas-math-inline\" data-latex=\"\\Delta C_t\">Δ C<sub>t</sub></span>，再减去对照组均值得到 <span class=\"atlas-math-inline\" data-latex=\"\\Delta\\Delta C_t\">ΔΔ C<sub>t</sub></span>，相对表达倍数为 <span class=\"atlas-math-inline\" data-latex=\"2^{-\\Delta\\Delta C_t}\">2<sup>-ΔΔ C<sub>t</sub></sup></span>。</li><li><strong>三复孔质控红线</strong>：同一生物样品的 3 个技术复孔（Technical Replicates）<span class=\"atlas-math-inline\" data-latex=\"C_t\">C<sub>t</sub></span> 标准差必须满足 <span class=\"atlas-math-inline\" data-latex=\"\\text{SD} &lt; 0.20\"><span class=\"math-roman\">SD</span> &lt; 0.20</span>（若 <span class=\"atlas-math-inline\" data-latex=\"C_t &gt; 32\">C<sub>t</sub> &gt; 32</span> 可放宽至 <span class=\"atlas-math-inline\" data-latex=\"0.30\">0.30</span>），偏离过大的单孔需结合扩增曲线剔除。</li><li><strong>熔解曲线（Melting Curve）</strong>：SYBR Green 体系必须呈现<strong>单一锐利主峰</strong>，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 <span class=\"atlas-math-inline\" data-latex=\"C_t &gt; 38\">C<sub>t</sub> &gt; 38</span>。</li></ul>\n<div class=\"atlas-math-block\" data-latex=\"\\Delta C_t = C_{t,\\text{target}} - C_{t,\\text{ref}}, \\quad \\Delta\\Delta C_t = \\Delta C_{t,\\text{treated}} - \\overline{\\Delta C_{t,\\text{control}}}, \\quad \\text{Fold Change} = 2^{-\\Delta\\Delta C_t}\">Δ C<sub>t</sub> = C<sub>t,<span class=\"math-roman\">target</span></sub> - C<sub>t,<span class=\"math-roman\">ref</span></sub>, \\quad ΔΔ C<sub>t</sub> = Δ C<sub>t,<span class=\"math-roman\">treated</span></sub> - \\overline{Δ C<sub>t,<span class=\"math-roman\">control</span></sub>}, \\quad <span class=\"math-roman\">Fold Change</span> = 2<sup>-ΔΔ C<sub>t</sub></sup></div>\n<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change\nlibrary(dplyr)\n\nqpcr_result &lt;- raw_ct |&gt;\n  group_by(sample_id, group) |&gt;\n  summarise(ct_target = mean(ct_gene), ct_ref = mean(ct_gapdh), .groups = &quot;drop&quot;) |&gt;\n  mutate(delta_ct = ct_target - ct_ref) |&gt;\n  mutate(\n    control_mean = mean(delta_ct[group == &quot;Control&quot;]),\n    ddct = delta_ct - control_mean,\n    fold_change = 2^(-ddct)\n  )\">COPY</button></div><pre><code class=\"hljs language-r\"><span class=\"hljs-comment\"># R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change</span>\nlibrary<span class=\"hljs-punctuation\">(</span>dplyr<span class=\"hljs-punctuation\">)</span>\n\nqpcr_result <span class=\"hljs-operator\">&lt;-</span> raw_ct <span class=\"hljs-operator\">|&gt;</span>\n  group_by<span class=\"hljs-punctuation\">(</span>sample_id<span class=\"hljs-punctuation\">,</span> group<span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  summarise<span class=\"hljs-punctuation\">(</span>ct_target <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>ct_gene<span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span> ct_ref <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>ct_gapdh<span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span> .groups <span class=\"hljs-operator\">=</span> <span class=\"hljs-string\">&quot;drop&quot;</span><span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  mutate<span class=\"hljs-punctuation\">(</span>delta_ct <span class=\"hljs-operator\">=</span> ct_target <span class=\"hljs-operator\">-</span> ct_ref<span class=\"hljs-punctuation\">)</span> <span class=\"hljs-operator\">|&gt;</span>\n  mutate<span class=\"hljs-punctuation\">(</span>\n    control_mean <span class=\"hljs-operator\">=</span> mean<span class=\"hljs-punctuation\">(</span>delta_ct<span class=\"hljs-punctuation\">[</span>group <span class=\"hljs-operator\">==</span> <span class=\"hljs-string\">&quot;Control&quot;</span><span class=\"hljs-punctuation\">]</span><span class=\"hljs-punctuation\">)</span><span class=\"hljs-punctuation\">,</span>\n    ddct <span class=\"hljs-operator\">=</span> delta_ct <span class=\"hljs-operator\">-</span> control_mean<span class=\"hljs-punctuation\">,</span>\n    fold_change <span class=\"hljs-operator\">=</span> <span class=\"hljs-number\">2</span><span class=\"hljs-operator\">^</span><span class=\"hljs-punctuation\">(</span><span class=\"hljs-operator\">-</span>ddct<span class=\"hljs-punctuation\">)</span>\n  <span class=\"hljs-punctuation\">)</span></code></pre></div>\n<h2 id=\"扩增与熔解曲线异常排查表\" class=\"atlas-heading atlas-h2\"><a href=\"#扩增与熔解曲线异常排查表\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>扩增与熔解曲线异常排查表</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>异常现象</th><th>常见原因</th><th>解决方案</th></tr></thead><tbody><tr><td><strong>熔解曲线出现双峰（低温小峰）</strong></td><td>引物二聚体（Primer Dimer）或退火温度偏低</td><td>降低引物终浓度至 <code class=\"atlas-inline-code\">0.2 μM</code>，或将退火温度提高 <code class=\"atlas-inline-code\">1~2 °C</code></td></tr><tr><td><strong>NTC 孔在 32 サイクル前起峰</strong></td><td>试剂、水或移液器气溶胶污染</td><td>更换新分装无核酸酶水（DEPC/Nuclease-free Water），使用带滤芯枪头</td></tr><tr><td><strong>内参基因 <span class=\"atlas-math-inline\" data-latex=\"C_t\">C<sub>t</sub></span> 值跨组漂移 &gt; 1.5</strong></td><td>RNA 上样量不准或实验处理本身改变了该内参表达</td><td>核对逆转录上样 RNA 浓度（NanoDrop），或改用 <code class=\"atlas-inline-code\">ACTB</code> / <code class=\"atlas-inline-code\">18S rRNA</code> 双内参几何平均</td></tr><tr><td><strong><span class=\"atlas-math-inline\" data-latex=\"C_t &lt; 12\">C<sub>t</sub> &lt; 12</span> 过早起峰</strong></td><td>cDNA 模板浓度过高，基线（Baseline）扣除失真</td><td>将 cDNA 模板按 <code class=\"atlas-inline-code\">1:5</code> 或 <code class=\"atlas-inline-code\">1:10</code> 梯度稀释后重测</td></tr></tbody></table></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"tip\"><strong class=\"atlas-callout-badge\">统计检验注意事项</strong><p>进行组间显著性检验（参见 <a href=\"#/entry/academics/biostatistics-tests\" class=\"atlas-int-link\" data-entry-link=\"academics/biostatistics-tests\">生物统计常用假设检验方法选择速查卡</a> 与 <span class=\"atlas-unresolved-link\">R 语言数据框清洗与筛选核心惯用法</span>）时，推荐在 <strong><span class=\"atlas-math-inline\" data-latex=\"\\Delta C_t\">Δ C<sub>t</sub></span> 线性尺度</strong> 上进行独立样本 <span class=\"atlas-math-inline\" data-latex=\"t\">t</span> 检验或 ANOVA，再将均值与置信区间转换为 <span class=\"atlas-math-inline\" data-latex=\"2^{-\\Delta\\Delta C_t}\">2<sup>-ΔΔ C<sub>t</sub></sup></span> 作图，避免指数变换带来的偏态失真。</p></blockquote>\n<h2 id=\"验证清单\" class=\"atlas-heading atlas-h2\"><a href=\"#验证清单\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证清单</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>逆转录前已测定 RNA 纯度（<span class=\"atlas-math-inline\" data-latex=\"\\text{A}_{260}/\\text{A}_{280} \\in [1.8, 2.1]\"><span class=\"math-roman\">A</span><sub>260</sub>/<span class=\"math-roman\">A</span><sub>280</sub> \\in [1.8, 2.1]</span>）</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>导出熔解曲线导数图（<span class=\"atlas-math-inline\" data-latex=\"-\\mathrm{d}F/\\mathrm{d}T\">-\\mathrm{d}F/\\mathrm{d}T</span>）确认全板单峰</span></li></ul>",
+      "findings": [
+        "核心计算公式：先算每个样品的目的基因与内参基因差值 \\Delta C_t，再减去对照组均值得到 \\Delta\\Delta C_t，相对表达倍数为 2^{-\\Delta\\Delta C_t}。",
+        "三复孔质控红线：同一生物样品的 3 个技术复孔（Technical Replicates）C_t 标准差必须满足 \\text{SD} < 0.20（若 C_t > 32 可放宽至 0.30），偏离过大的单孔需结合扩增曲线剔除。",
+        "熔解曲线（Melting Curve）：SYBR Green 体系必须呈现单一锐利主峰，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 C_t > 38。",
+        "逆转录前已测定 RNA 纯度（\\text{A}_{260}/\\text{A}_{280} \\in [1.8, 2.1]）",
+        "每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）",
+        "导出熔解曲线导数图（-\\mathrm{d}F/\\mathrm{d}T）确认全板单峰"
+      ],
+      "plainText": "RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准\n\n快速复习\n\n- 核心计算公式：先算每个样品的目的基因与内参基因差值 \\Delta C_t，再减去对照组均值得到 \\Delta\\Delta C_t，相对表达倍数为 2^{-\\Delta\\Delta C_t}。\n- 三复孔质控红线：同一生物样品的 3 个技术复孔（Technical Replicates）C_t 标准差必须满足 \\text{SD} < 0.20（若 C_t > 32 可放宽至 0.30），偏离过大的单孔需结合扩增曲线剔除。\n- 熔解曲线（Melting Curve）：SYBR Green 体系必须呈现单一锐利主峰，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 C_t > 38。\n\n\n\\Delta C_t = C_{t,\\text{target}} - C_{t,\\text{ref}}, \\quad \\Delta\\Delta C_t = \\Delta C_{t,\\text{treated}} - \\overline{\\Delta C_{t,\\text{control}}}, \\quad \\text{Fold Change} = 2^{-\\Delta\\Delta C_t}\n\n\n~r\nR 语言批量计算 ΔCt、ΔΔCt 与 Fold Change\nlibrary(dplyr)\n\nqpcr_result <- raw_ct |>\n  group_by(sample_id, group) |>\n  summarise(ct_target = mean(ct_gene), ct_ref = mean(ct_gapdh), .groups = \"drop\") |>\n  mutate(delta_ct = ct_target - ct_ref) |>\n  mutate(\n    control_mean = mean(delta_ct[group == \"Control\"]),\n    ddct = delta_ct - control_mean,\n    fold_change = 2^(-ddct)\n  )\n~\n\n扩增与熔解曲线异常排查表\n\n| 异常现象 | 常见原因 | 解决方案 |\n| --- | --- | --- |\n| 熔解曲线出现双峰（低温小峰） | 引物二聚体（Primer Dimer）或退火温度偏低 | 降低引物终浓度至 0.2 μM，或将退火温度提高 1~2 °C |\n| NTC 孔在 32 サイクル前起峰 | 试剂、水或移液器气溶胶污染 | 更换新分装无核酸酶水（DEPC/Nuclease-free Water），使用带滤芯枪头 |\n| 内参基因 C_t 值跨组漂移 > 1.5 | RNA 上样量不准或实验处理本身改变了该内参表达 | 核对逆转录上样 RNA 浓度（NanoDrop），或改用 ACTB / 18S rRNA 双内参几何平均 |\n| C_t < 12 过早起峰 | cDNA 模板浓度过高，基线（Baseline）扣除失真 | 将 cDNA 模板按 1:5 或 1:10 梯度稀释后重测 |\n\n> [!TIP] 统计检验注意事项\n> 进行组间显著性检验（参见 生物统计常用假设检验方法选择速查卡 与 R 语言数据框清洗与筛选核心惯用法）时，推荐在 \\Delta C_t 线性尺度 上进行独立样本 t 检验或 ANOVA，再将均值与置信区间转换为 2^{-\\Delta\\Delta C_t} 作图，避免指数变换带来的偏态失真。\n\n验证清单\n\n- [x] 逆转录前已测定 RNA 纯度（\\text{A}_{260}/\\text{A}_{280} \\in [1.8, 2.1]）\n- [x] 每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）\n- [x] 导出熔解曲线导数图（-\\mathrm{d}F/\\mathrm{d}T）确认全板单峰",
+      "markdown": "\n# RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准\n\n## 快速复习\n\n- **核心计算公式**：先算每个样品的目的基因与内参基因差值 $\\Delta C_t$，再减去对照组均值得到 $\\Delta\\Delta C_t$，相对表达倍数为 $2^{-\\Delta\\Delta C_t}$。\n- **三复孔质控红线**：同一生物样品的 3 个技术复孔（Technical Replicates）$C_t$ 标准差必须满足 $\\text{SD} < 0.20$（若 $C_t > 32$ 可放宽至 $0.30$），偏离过大的单孔需结合扩增曲线剔除。\n- **熔解曲线（Melting Curve）**：SYBR Green 体系必须呈现**单一锐利主峰**，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 $C_t > 38$。\n\n$$\n\\Delta C_t = C_{t,\\text{target}} - C_{t,\\text{ref}}, \\quad \\Delta\\Delta C_t = \\Delta C_{t,\\text{treated}} - \\overline{\\Delta C_{t,\\text{control}}}, \\quad \\text{Fold Change} = 2^{-\\Delta\\Delta C_t}\n$$\n\n~~~r\n# R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change\nlibrary(dplyr)\n\nqpcr_result <- raw_ct |>\n  group_by(sample_id, group) |>\n  summarise(ct_target = mean(ct_gene), ct_ref = mean(ct_gapdh), .groups = \"drop\") |>\n  mutate(delta_ct = ct_target - ct_ref) |>\n  mutate(\n    control_mean = mean(delta_ct[group == \"Control\"]),\n    ddct = delta_ct - control_mean,\n    fold_change = 2^(-ddct)\n  )\n~~~\n\n## 扩增与熔解曲线异常排查表\n\n| 异常现象 | 常见原因 | 解决方案 |\n| --- | --- | --- |\n| **熔解曲线出现双峰（低温小峰）** | 引物二聚体（Primer Dimer）或退火温度偏低 | 降低引物终浓度至 `0.2 μM`，或将退火温度提高 `1~2 °C` |\n| **NTC 孔在 32 サイクル前起峰** | 试剂、水或移液器气溶胶污染 | 更换新分装无核酸酶水（DEPC/Nuclease-free Water），使用带滤芯枪头 |\n| **内参基因 $C_t$ 值跨组漂移 > 1.5** | RNA 上样量不准或实验处理本身改变了该内参表达 | 核对逆转录上样 RNA 浓度（NanoDrop），或改用 `ACTB` / `18S rRNA` 双内参几何平均 |\n| **$C_t < 12$ 过早起峰** | cDNA 模板浓度过高，基线（Baseline）扣除失真 | 将 cDNA 模板按 `1:5` 或 `1:10` 梯度稀释后重测 |\n\n> [!TIP] 统计检验注意事项\n> 进行组间显著性检验（参见 [[生物统计常用假设检验方法选择速查卡]] 与 [[R 语言数据框清洗与筛选核心惯用法]]）时，推荐在 **$\\Delta C_t$ 线性尺度** 上进行独立样本 $t$ 检验或 ANOVA，再将均值与置信区间转换为 $2^{-\\Delta\\Delta C_t}$ 作图，避免指数变换带来的偏态失真。\n\n## 验证清单\n\n- [x] 逆转录前已测定 RNA 纯度（$\\text{A}_{260}/\\text{A}_{280} \\in [1.8, 2.1]$）\n- [x] 每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）\n- [x] 导出熔解曲线导数图（$-\\mathrm{d}F/\\mathrm{d}T$）确认全板单峰\n",
+      "visualCode": "R-001",
+      "globalCode": "X-012"
+    },
+    {
       "id": "skill-cell-observation",
       "slug": "research/cell-observation",
       "title": "贴壁细胞日常形态观察与污染排查入门",
@@ -1316,8 +1384,8 @@
       ],
       "plainText": "贴壁细胞日常形态观察与污染排查入门\n\n快速复习\n\n1. 先肉眼看培养液颜色与透明度：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。\n2. 低倍镜（4× / 10×）看整体分布与汇合度（Confluency）：当汇合度达 80%～85%（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。\n3. 高倍镜（20×）看状态细节：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。\n\n适用场景\n\n每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。\n\n前置准备\n\n- 75% 医用酒精喷壶、无尘擦镜纸\n- 倒置相差显微镜（确认聚光镜与相差环已对中）\n\n操作步骤\n\n1. 传代时机与汇合度评估\n\n- < 30%：稀疏生长期，换液不传代；\n- 70% ~ 85%：最佳传代与实验铺板窗口；\n- > 95%：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。\n\n2. 三大常见污染快速鉴别表\n\n| 污染类型 | 培养液外观 | 镜下典型特征 | 应急处置 |\n| --- | --- | --- | --- |\n| 细菌污染 | 12–24h 内迅速变黄、浑浊 | 细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动 | 勿开盖！直接加含氯消毒液浸泡后密封丢弃 |\n| 霉菌/酵母污染 | 初期清亮，后期出现白色/淡黄色漂浮团块 | 可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串 | 立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘 |\n| 支原体污染 | 培养液清亮，pH 变化慢，极易漏诊 | 细胞生长变慢、形态拉长或碎裂，背景有细砂状附着 | 进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理 |\n\n验证结果\n\n- 每次观察后在实验记录本登记：细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代），确保前后批次实验可追溯。",
       "markdown": "\n# 贴壁细胞日常形态观察与污染排查入门\n\n## 快速复习\n\n1. **先肉眼看培养液颜色与透明度**：正常 DMEM/RPMI-1640 呈清亮樱桃红/桃红色；若剧烈变黄且浑浊多为细菌污染，变紫红且细胞大片脱落多为 pH 偏碱或细胞死亡。\n2. **低倍镜（4× / 10×）看整体分布与汇合度（Confluency）**：当汇合度达 **80%～85%**（处于对数生长期）时及时传代，切勿等到 100% 堆叠挤压。\n3. **高倍镜（20×）看状态细节**：健康细胞边界清晰、立体感与折光性强；老化或受损细胞胞质内出现大量空泡、黑点或边缘毛糙。\n\n## 适用场景\n\n每日进入细胞房后的第一项例行检查，决定当天是否换液、传代、冻存或立即丢弃受污染培养瓶。\n\n## 前置准备\n\n- 75% 医用酒精喷壶、无尘擦镜纸\n- 倒置相差显微镜（确认聚光镜与相差环已对中）\n\n## 操作步骤\n\n### 1. 传代时机与汇合度评估\n\n- **< 30%**：稀疏生长期，换液不传代；\n- **70% ~ 85%**：最佳传代与实验铺板窗口；\n- **> 95%**：接触抑制或营养耗竭，影响后续转染效率和药敏可重复性。\n\n### 2. 三大常见污染快速鉴别表\n\n| 污染类型 | 培养液外观 | 镜下典型特征 | 应急处置 |\n| --- | --- | --- | --- |\n| **细菌污染** | 12–24h 内迅速变黄、浑浊 | 细胞间隙大量细小黑点呈活跃布朗运动或穿梭游动 | 勿开盖！直接加含氯消毒液浸泡后密封丢弃 |\n| **霉菌/酵母污染** | 初期清亮，后期出现白色/淡黄色漂浮团块 | 可见清晰丝状菌丝（树枝状）或卵圆形出芽孢子串 | 立即密封丢弃，彻底擦拭消毒培养箱隔板与水盘 |\n| **支原体污染** | 培养液清亮，pH 变化慢，极易漏诊 | 细胞生长变慢、形态拉长或碎裂，背景有细砂状附着 | 进行 PCR 或发光法支原体检测；珍贵细胞使用专用清除剂隔离处理 |\n\n## 验证结果\n\n- 每次观察后在实验记录本登记：**细胞代次（Passage，如 P8）、汇合度（如 80%）、形态评分、操作（换液/1:3传代）**，确保前后批次实验可追溯。\n",
-      "visualCode": "R-001",
-      "globalCode": "X-012"
+      "visualCode": "R-002",
+      "globalCode": "X-013"
     },
     {
       "id": "skill-molecular-docking",
@@ -1405,8 +1473,81 @@
       ],
       "plainText": "AutoDock Vina 分子对接标准流程概览\n\n快速复习\n\n1. 受体准备（Receptor）：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 .pdbqt。\n2. 配体准备（Ligand）：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 .pdbqt。\n3. 对接盒子（Grid Box）：以原结晶配体质心或预测口袋为中心，边长通常设为 20 Å × 20 Å × 20 Å（确保包裹整个活性位点且不过大）。\n4. 判读经验阈值：Vina 结合自由能 \\Delta G \\le -7.0\\text{ kcal/mol} 通常指示较强结合潜力，但必须结合 氢键距离（< 3.5 Å） 与疏水相互作用构象合理性综合判断。\n\n适用场景\n\n靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。\n\n前置准备\n\n- 已安装 AutoDock Vina、AutoDockTools (MGLTools) 或 Meeko、OpenBabel、PyMOL\n- 靶标蛋白晶体结构（优先选择分辨率 < 2.5\\text{ \\AA} 且含共晶配体的 PDB 条目）\n\n操作步骤\n\n1. 编写 Vina 对接配置文件 config.txt\n\n``ini\nreceptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\n`\n\n2. 运行对接与重对接验证（Redocking）\n\n`bash\n运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\n`\n\n> 金标准控制（Redocking）：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 \\text{RMSD}。当 \\text{RMSD} < 2.0\\text{ \\AA} 时，说明当前参数与盒子设置可靠。\n\n验证结果\n\n- docked_poses.pdbqt 生成多个打分构象，Mode 1 结合能最低；\n- 在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 \\pi-\\pi 堆积，且无明显空间位阻碰撞（Clash）。\n\n常见问题与修复\n\n- 问题：对接打分全部为正值（如 +15.2 kcal/mol）。  \n  原因：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。  \n  修复：在 PyMOL 中选中原配体执行 get_extent ligand` 重新核对中心坐标 (x, y, z)。",
       "markdown": "\n# AutoDock Vina 分子对接标准流程概览\n\n## 快速复习\n\n1. **受体准备（Receptor）**：从 PDB 下载结构 → 删除结晶水与无关辅因子 → 补齐缺失氢原子（极性氢）与 Gasteiger 电荷 → 导出 `.pdbqt`。\n2. **配体准备（Ligand）**：从 PubChem 获取 SDF 或由 SMILES 生成 3D 构象 → MMFF94 力场能量最小化 → 设定可旋转键（Torsion Tree）→ 导出 `.pdbqt`。\n3. **对接盒子（Grid Box）**：以原结晶配体质心或预测口袋为中心，边长通常设为 `20 Å × 20 Å × 20 Å`（确保包裹整个活性位点且不过大）。\n4. **判读经验阈值**：Vina 结合自由能 $\\Delta G \\le -7.0\\text{ kcal/mol}$ 通常指示较强结合潜力，但必须结合 **氢键距离（< 3.5 Å）** 与疏水相互作用构象合理性综合判断。\n\n## 适用场景\n\n靶标蛋白与候选小分子化合物的虚拟筛选、结合模式（Binding Pose）预测及突变体亲和力变化解释。\n\n## 前置准备\n\n- 已安装 `AutoDock Vina`、`AutoDockTools (MGLTools)` 或 `Meeko`、`OpenBabel`、`PyMOL`\n- 靶标蛋白晶体结构（优先选择分辨率 $< 2.5\\text{ \\AA}$ 且含共晶配体的 PDB 条目）\n\n## 操作步骤\n\n### 1. 编写 Vina 对接配置文件 `config.txt`\n\n```ini\nreceptor = receptor.pdbqt\nligand   = ligand.pdbqt\n\ncenter_x = 14.520\ncenter_y = -8.310\ncenter_z = 22.140\n\nsize_x   = 22.0\nsize_y   = 22.0\nsize_z   = 22.0\n\nexhaustiveness = 16\nnum_modes      = 9\nenergy_range   = 3\n```\n\n### 2. 运行对接与重对接验证（Redocking）\n\n```bash\n# 运行 Vina 对接并输出日志\nvina --config config.txt --out docked_poses.pdbqt --log vina_dock.log\n```\n\n> **金标准控制（Redocking）**：正式对接未知化合物前，务必先把原晶体中的共晶配体抽出来重对接回原口袋，计算预测构象与晶体构象的 $\\text{RMSD}$。当 $\\text{RMSD} < 2.0\\text{ \\AA}$ 时，说明当前参数与盒子设置可靠。\n\n## 验证结果\n\n- `docked_poses.pdbqt` 生成多个打分构象，Mode 1 结合能最低；\n- 在 PyMOL 中载入受体与 Mode 1 配体，检查关键催化残基是否形成稳定氢键、盐桥或 $\\pi-\\pi$ 堆积，且无明显空间位阻碰撞（Clash）。\n\n## 常见问题与修复\n\n- **问题**：对接打分全部为正值（如 `+15.2 kcal/mol`）。  \n  **原因**：Grid Box 中心坐标填错（偏离蛋白口袋落入蛋白内部骨架区）或盒子尺寸过小导致配体无法舒展。  \n  **修复**：在 PyMOL 中选中原配体执行 `get_extent ligand` 重新核对中心坐标 $(x, y, z)$。\n",
-      "visualCode": "R-002",
-      "globalCode": "X-013"
+      "visualCode": "R-003",
+      "globalCode": "X-014"
+    },
+    {
+      "id": "academics-pubmed-boolean-search",
+      "slug": "academics/pubmed-boolean-search",
+      "title": "PubMed 医学文献检索式构造（MeSH 主题词与布尔逻辑）速查",
+      "category": "academics",
+      "categoryTitle": "学科知识",
+      "en": "ACADEMICS & CORE",
+      "department": "基础学科与课程体系",
+      "subcategory": "literature-review",
+      "type": "skill",
+      "status": "proficient",
+      "tags": [
+        "PubMed",
+        "MeSH",
+        "文献检索",
+        "布尔逻辑",
+        "科研写作"
+      ],
+      "summary": "结合 MeSH 规范主题词与 Title/Abstract 自由词构造高查全率、高查准率的 PubMed 布尔检索式。",
+      "created": "2026-10-22",
+      "updated": "2026-11-02",
+      "version_scope": "PubMed / NCBI Entrez 检索语法",
+      "source_urls": [
+        "https://pubmed.ncbi.nlm.nih.gov/help/"
+      ],
+      "prerequisites": [],
+      "related": [
+        "concept-enzyme-kinetics",
+        "tools-ppt-master-workflow"
+      ],
+      "aliases": [
+        "academics/pubmed"
+      ],
+      "relPath": "content/academics/pubmed-boolean-search.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        },
+        {
+          "id": "常用字段限定符（field-tags）对照表",
+          "text": "常用字段限定符（Field Tags）对照表",
+          "level": 2
+        },
+        {
+          "id": "文献筛选与汇报衔接流程",
+          "text": "文献筛选与汇报衔接流程",
+          "level": 2
+        },
+        {
+          "id": "验证清单",
+          "text": "验证清单",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<ul class=\"atlas-list\"><li><strong>标准组合范式</strong>：同一概念内部用 <code class=\"atlas-inline-code\">OR</code> 连接「MeSH 主题词 + 自由词同义词（<code class=\"atlas-inline-code\">[Title/Abstract]</code>）」，不同核心概念之间用 <code class=\"atlas-inline-code\">AND</code> 交集组合，布尔运算符必须<strong>全大写（<code class=\"atlas-inline-code\">AND</code> / <code class=\"atlas-inline-code\">OR</code> / <code class=\"atlas-inline-code\">NOT</code>）</strong>。</li><li><strong>为什么不能只搜 MeSH</strong>：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 <code class=\"atlas-inline-code\">[MeSH Terms]</code> 会漏掉近 3～6 个月的新文献；必须配合 <code class=\"atlas-inline-code\">[tiab]</code> 自由词补齐。</li></ul>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"((&quot;Autophagy&quot;[MeSH Terms] OR &quot;autophag*&quot;[Title/Abstract])\n  AND (&quot;Ferroptosis&quot;[MeSH Terms] OR &quot;ferroptotic&quot;[Title/Abstract] OR &quot;ferroptosis&quot;[Title/Abstract]))\n  AND (&quot;2021/01/01&quot;[Date - Publication] : &quot;3000&quot;[Date - Publication])\">COPY</button></div><pre><code class=\"language-text\">((&quot;Autophagy&quot;[MeSH Terms] OR &quot;autophag*&quot;[Title/Abstract])\n  AND (&quot;Ferroptosis&quot;[MeSH Terms] OR &quot;ferroptotic&quot;[Title/Abstract] OR &quot;ferroptosis&quot;[Title/Abstract]))\n  AND (&quot;2021/01/01&quot;[Date - Publication] : &quot;3000&quot;[Date - Publication])</code></pre></div>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<ul class=\"atlas-list\"><li><strong>标准组合范式</strong>：同一概念内部用 <code class=\"atlas-inline-code\">OR</code> 连接「MeSH 主题词 + 自由词同义词（<code class=\"atlas-inline-code\">[Title/Abstract]</code>）」，不同核心概念之间用 <code class=\"atlas-inline-code\">AND</code> 交集组合，布尔运算符必须<strong>全大写（<code class=\"atlas-inline-code\">AND</code> / <code class=\"atlas-inline-code\">OR</code> / <code class=\"atlas-inline-code\">NOT</code>）</strong>。</li><li><strong>为什么不能只搜 MeSH</strong>：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 <code class=\"atlas-inline-code\">[MeSH Terms]</code> 会漏掉近 3～6 个月的新文献；必须配合 <code class=\"atlas-inline-code\">[tiab]</code> 自由词补齐。</li></ul>\n<div class=\"atlas-code-block\" data-lang=\"text\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">TEXT</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"((&quot;Autophagy&quot;[MeSH Terms] OR &quot;autophag*&quot;[Title/Abstract])\n  AND (&quot;Ferroptosis&quot;[MeSH Terms] OR &quot;ferroptotic&quot;[Title/Abstract] OR &quot;ferroptosis&quot;[Title/Abstract]))\n  AND (&quot;2021/01/01&quot;[Date - Publication] : &quot;3000&quot;[Date - Publication])\">COPY</button></div><pre><code class=\"language-text\">((&quot;Autophagy&quot;[MeSH Terms] OR &quot;autophag*&quot;[Title/Abstract])\n  AND (&quot;Ferroptosis&quot;[MeSH Terms] OR &quot;ferroptotic&quot;[Title/Abstract] OR &quot;ferroptosis&quot;[Title/Abstract]))\n  AND (&quot;2021/01/01&quot;[Date - Publication] : &quot;3000&quot;[Date - Publication])</code></pre></div>\n<h2 id=\"常用字段限定符（field-tags）对照表\" class=\"atlas-heading atlas-h2\"><a href=\"#常用字段限定符（field-tags）对照表\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>常用字段限定符（Field Tags）对照表</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>字段标签</th><th>简写</th><th>检索范围说明</th><th>典型示例</th></tr></thead><tbody><tr><td><code class=\"atlas-inline-code\">[MeSH Terms]</code></td><td><code class=\"atlas-inline-code\">[mh]</code></td><td>NCBI 医学主题词表（自动包含下位词扩展）</td><td><code class=\"atlas-inline-code\">&quot;Neoplasms&quot;[Mesh]</code></td></tr><tr><td><code class=\"atlas-inline-code\">[MeSH Major Topic]</code></td><td><code class=\"atlas-inline-code\">[majr]</code></td><td>作为文章核心研究主题的 MeSH 词（提高查准率）</td><td><code class=\"atlas-inline-code\">&quot;Enzyme Inhibitors&quot;[Majr]</code></td></tr><tr><td><code class=\"atlas-inline-code\">[Title/Abstract]</code></td><td><code class=\"atlas-inline-code\">[tiab]</code></td><td>标题或摘要中出现的自由词（支持词尾截词符 <code class=\"atlas-inline-code\">*</code>）</td><td><code class=\"atlas-inline-code\">&quot;mitochondri*&quot;[tiab]</code></td></tr><tr><td><code class=\"atlas-inline-code\">[Publication Type]</code></td><td><code class=\"atlas-inline-code\">[pt]</code></td><td>文献类型过滤（综述、RCT、Meta 分析）</td><td><code class=\"atlas-inline-code\">&quot;Review&quot;[pt] OR &quot;Clinical Trial&quot;[pt]</code></td></tr><tr><td><code class=\"atlas-inline-code\">[Journal]</code></td><td><code class=\"atlas-inline-code\">[ta]</code></td><td>指定目标期刊缩写或全称</td><td><code class=\"atlas-inline-code\">&quot;Nature&quot;[ta] OR &quot;Cell&quot;[ta]</code></td></tr></tbody></table></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"important\"><strong class=\"atlas-callout-badge\">截词符与双引号规则</strong><p>在 PubMed 中使用短语双引号 <code class=\"atlas-inline-code\">&quot;...&quot;</code> 并附加字段标签（如 <code class=\"atlas-inline-code\">&quot;cell death&quot;[tiab]</code>）会关闭自动词语映射（ATM），强制精确匹配该短语；若同时使用词尾截词符 <code class=\"atlas-inline-code\">*</code>，至少需保留前 4 个字母（如 <code class=\"atlas-inline-code\">&quot;inhibit*&quot;[tiab]</code>）。</p></blockquote>\n<h2 id=\"文献筛选与汇报衔接流程\" class=\"atlas-heading atlas-h2\"><a href=\"#文献筛选与汇报衔接流程\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>文献筛选与汇报衔接流程</h2>\n<ol class=\"atlas-list\"><li><strong>初检定界</strong>：先用核心综述（<code class=\"atlas-inline-code\">&quot;Review&quot;[pt]</code>）快速摸清领域术语与经典指标（如酶动力学参数 <span class=\"atlas-math-inline\" data-latex=\"K_m, K_i\">K<sub>m</sub>, K<sub>i</sub></span>，参见 <span class=\"atlas-unresolved-link\">米氏方程与酶抑制动力学判读</span>）。</li><li><strong>精化去噪</strong>：用 <code class=\"atlas-inline-code\">NOT (&quot;animals&quot;[MeSH Terms] NOT &quot;humans&quot;[MeSH Terms])</code> 排除纯动物实验（仅限临床研究场景）。</li><li><strong>整理入库</strong>：将高价值文献的 PMID 与核心实验图表结论导入 <span class=\"atlas-unresolved-link\">PPT Master 科研组会汇报生成与核对工作流</span> 或笔记库。</li></ol>\n<h2 id=\"验证清单\" class=\"atlas-heading atlas-h2\"><a href=\"#验证清单\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>验证清单</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>布尔逻辑词 <code class=\"atlas-inline-code\">AND</code>、<code class=\"atlas-inline-code\">OR</code>、<code class=\"atlas-inline-code\">NOT</code> 已全部大写且括号层级闭合</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>每个核心概念同时覆盖 <code class=\"atlas-inline-code\">[MeSH Terms]</code> 与 <code class=\"atlas-inline-code\">[Title/Abstract]</code></span></li></ul>",
+      "findings": [
+        "标准组合范式：同一概念内部用 OR 连接「MeSH 主题词 + 自由词同义词（[Title/Abstract]）」，不同核心概念之间用 AND 交集组合，布尔运算符必须全大写（AND / OR / NOT）。",
+        "为什么不能只搜 MeSH：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 [MeSH Terms] 会漏掉近 3～6 个月的新文献；必须配合 [tiab] 自由词补齐。",
+        "初检定界：先用核心综述（\"Review\"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程与酶抑制动力学判读）。",
+        "精化去噪：用 NOT (\"animals\"[MeSH Terms] NOT \"humans\"[MeSH Terms]) 排除纯动物实验（仅限临床研究场景）。",
+        "整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master 科研组会汇报生成与核对工作流 或笔记库。",
+        "布尔逻辑词 AND、OR、NOT 已全部大写且括号层级闭合"
+      ],
+      "plainText": "PubMed 医学文献检索式构造（MeSH 主题词与布尔逻辑）速查\n\n快速复习\n\n- 标准组合范式：同一概念内部用 OR 连接「MeSH 主题词 + 自由词同义词（[Title/Abstract]）」，不同核心概念之间用 AND 交集组合，布尔运算符必须全大写（AND / OR / NOT）。\n- 为什么不能只搜 MeSH：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 [MeSH Terms] 会漏掉近 3～6 个月的新文献；必须配合 [tiab] 自由词补齐。\n\n~text\n((\"Autophagy\"[MeSH Terms] OR \"autophag\"[Title/Abstract])\n  AND (\"Ferroptosis\"[MeSH Terms] OR \"ferroptotic\"[Title/Abstract] OR \"ferroptosis\"[Title/Abstract]))\n  AND (\"2021/01/01\"[Date - Publication] : \"3000\"[Date - Publication])\n~\n\n常用字段限定符（Field Tags）对照表\n\n| 字段标签 | 简写 | 检索范围说明 | 典型示例 |\n| --- | --- | --- | --- |\n| [MeSH Terms] | [mh] | NCBI 医学主题词表（自动包含下位词扩展） | \"Neoplasms\"[Mesh] |\n| [MeSH Major Topic] | [majr] | 作为文章核心研究主题的 MeSH 词（提高查准率） | \"Enzyme Inhibitors\"[Majr] |\n| [Title/Abstract] | [tiab] | 标题或摘要中出现的自由词（支持词尾截词符 ） | \"mitochondri\"[tiab] |\n| [Publication Type] | [pt] | 文献类型过滤（综述、RCT、Meta 分析） | \"Review\"[pt] OR \"Clinical Trial\"[pt] |\n| [Journal] | [ta] | 指定目标期刊缩写或全称 | \"Nature\"[ta] OR \"Cell\"[ta] |\n\n> [!IMPORTANT] 截词符与双引号规则\n> 在 PubMed 中使用短语双引号 \"...\" 并附加字段标签（如 \"cell death\"[tiab]）会关闭自动词语映射（ATM），强制精确匹配该短语；若同时使用词尾截词符 ，至少需保留前 4 个字母（如 \"inhibit*\"[tiab]）。\n\n文献筛选与汇报衔接流程\n\n1. 初检定界：先用核心综述（\"Review\"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程与酶抑制动力学判读）。\n2. 精化去噪：用 NOT (\"animals\"[MeSH Terms] NOT \"humans\"[MeSH Terms]) 排除纯动物实验（仅限临床研究场景）。\n3. 整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master 科研组会汇报生成与核对工作流 或笔记库。\n\n验证清单\n\n- [x] 布尔逻辑词 AND、OR、NOT 已全部大写且括号层级闭合\n- [x] 每个核心概念同时覆盖 [MeSH Terms] 与 [Title/Abstract]",
+      "markdown": "\n# PubMed 医学文献检索式构造（MeSH 主题词与布尔逻辑）速查\n\n## 快速复习\n\n- **标准组合范式**：同一概念内部用 `OR` 连接「MeSH 主题词 + 自由词同义词（`[Title/Abstract]`）」，不同核心概念之间用 `AND` 交集组合，布尔运算符必须**全大写（`AND` / `OR` / `NOT`）**。\n- **为什么不能只搜 MeSH**：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 `[MeSH Terms]` 会漏掉近 3～6 个月的新文献；必须配合 `[tiab]` 自由词补齐。\n\n~~~text\n((\"Autophagy\"[MeSH Terms] OR \"autophag*\"[Title/Abstract])\n  AND (\"Ferroptosis\"[MeSH Terms] OR \"ferroptotic\"[Title/Abstract] OR \"ferroptosis\"[Title/Abstract]))\n  AND (\"2021/01/01\"[Date - Publication] : \"3000\"[Date - Publication])\n~~~\n\n## 常用字段限定符（Field Tags）对照表\n\n| 字段标签 | 简写 | 检索范围说明 | 典型示例 |\n| --- | --- | --- | --- |\n| `[MeSH Terms]` | `[mh]` | NCBI 医学主题词表（自动包含下位词扩展） | `\"Neoplasms\"[Mesh]` |\n| `[MeSH Major Topic]` | `[majr]` | 作为文章核心研究主题的 MeSH 词（提高查准率） | `\"Enzyme Inhibitors\"[Majr]` |\n| `[Title/Abstract]` | `[tiab]` | 标题或摘要中出现的自由词（支持词尾截词符 `*`） | `\"mitochondri*\"[tiab]` |\n| `[Publication Type]` | `[pt]` | 文献类型过滤（综述、RCT、Meta 分析） | `\"Review\"[pt] OR \"Clinical Trial\"[pt]` |\n| `[Journal]` | `[ta]` | 指定目标期刊缩写或全称 | `\"Nature\"[ta] OR \"Cell\"[ta]` |\n\n> [!IMPORTANT] 截词符与双引号规则\n> 在 PubMed 中使用短语双引号 `\"...\"` 并附加字段标签（如 `\"cell death\"[tiab]`）会关闭自动词语映射（ATM），强制精确匹配该短语；若同时使用词尾截词符 `*`，至少需保留前 4 个字母（如 `\"inhibit*\"[tiab]`）。\n\n## 文献筛选与汇报衔接流程\n\n1. **初检定界**：先用核心综述（`\"Review\"[pt]`）快速摸清领域术语与经典指标（如酶动力学参数 $K_m, K_i$，参见 [[米氏方程与酶抑制动力学判读]]）。\n2. **精化去噪**：用 `NOT (\"animals\"[MeSH Terms] NOT \"humans\"[MeSH Terms])` 排除纯动物实验（仅限临床研究场景）。\n3. **整理入库**：将高价值文献的 PMID 与核心实验图表结论导入 [[PPT Master 科研组会汇报生成与核对工作流]] 或笔记库。\n\n## 验证清单\n\n- [x] 布尔逻辑词 `AND`、`OR`、`NOT` 已全部大写且括号层级闭合\n- [x] 每个核心概念同时覆盖 `[MeSH Terms]` 与 `[Title/Abstract]`\n",
+      "visualCode": "A-001",
+      "globalCode": "X-015"
     },
     {
       "id": "academics-biostatistics-tests",
@@ -1446,21 +1587,26 @@
           "level": 2
         },
         {
+          "id": "正态性与方差齐性检验代码片段（r）",
+          "text": "正态性与方差齐性检验代码片段（R）",
+          "level": 2
+        },
+        {
           "id": "待补充核对项（todo）",
           "text": "待补充核对项（TODO）",
           "level": 2
         }
       ],
       "quickstartHtml": "<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>比较场景</th><th>满足正态性 + 方差齐性（参数检验）</th><th>正态但方差不齐</th><th>不满足正态分布（非参数检验）</th></tr></thead><tbody><tr><td><strong>两组独立样本</strong></td><td>Student&#39;s t-test</td><td>Welch&#39;s t-test（推荐默认）</td><td>Mann-Whitney U 检验（Wilcoxon 秩和）</td></tr><tr><td><strong>两组配对样本</strong></td><td>Paired t-test</td><td>—</td><td>Wilcoxon 符号秩检验</td></tr><tr><td><strong>三组及以上独立样本</strong></td><td>One-way ANOVA + Tukey HSD</td><td>Welch&#39;s ANOVA + Games-Howell</td><td>Kruskal-Wallis 检验 + Dunn&#39;s 检验</td></tr><tr><td><strong>分类变量频数表</strong></td><td>卡方检验（<span class=\"atlas-math-inline\" data-latex=\"\\chi^2\">χ<sup>2</sup></span>，<span class=\"atlas-math-inline\" data-latex=\"n \\ge 40\">n ≥ 40</span> 且期望频数 <span class=\"atlas-math-inline\" data-latex=\"\\ge 5\">≥ 5</span>）</td><td>—</td><td>Fisher 精确检验（小样本首选）</td></tr></tbody></table></div>",
-      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>比较场景</th><th>满足正态性 + 方差齐性（参数检验）</th><th>正态但方差不齐</th><th>不满足正态分布（非参数检验）</th></tr></thead><tbody><tr><td><strong>两组独立样本</strong></td><td>Student&#39;s t-test</td><td>Welch&#39;s t-test（推荐默认）</td><td>Mann-Whitney U 检验（Wilcoxon 秩和）</td></tr><tr><td><strong>两组配对样本</strong></td><td>Paired t-test</td><td>—</td><td>Wilcoxon 符号秩检验</td></tr><tr><td><strong>三组及以上独立样本</strong></td><td>One-way ANOVA + Tukey HSD</td><td>Welch&#39;s ANOVA + Games-Howell</td><td>Kruskal-Wallis 检验 + Dunn&#39;s 检验</td></tr><tr><td><strong>分类变量频数表</strong></td><td>卡方检验（<span class=\"atlas-math-inline\" data-latex=\"\\chi^2\">χ<sup>2</sup></span>，<span class=\"atlas-math-inline\" data-latex=\"n \\ge 40\">n ≥ 40</span> 且期望频数 <span class=\"atlas-math-inline\" data-latex=\"\\ge 5\">≥ 5</span>）</td><td>—</td><td>Fisher 精确检验（小样本首选）</td></tr></tbody></table></div>\n<h2 id=\"待补充核对项（todo）\" class=\"atlas-heading atlas-h2\"><a href=\"#待补充核对项（todo）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>待补充核对项（TODO）</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>补充 R 语言中 <code class=\"atlas-inline-code\">shapiro.test()</code> 正态性检验与 <code class=\"atlas-inline-code\">car::leveneTest()</code> 方差齐性检验代码片段</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled  /><span>补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明</span></li></ul>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>比较场景</th><th>满足正态性 + 方差齐性（参数检验）</th><th>正态但方差不齐</th><th>不满足正态分布（非参数检验）</th></tr></thead><tbody><tr><td><strong>两组独立样本</strong></td><td>Student&#39;s t-test</td><td>Welch&#39;s t-test（推荐默认）</td><td>Mann-Whitney U 检验（Wilcoxon 秩和）</td></tr><tr><td><strong>两组配对样本</strong></td><td>Paired t-test</td><td>—</td><td>Wilcoxon 符号秩检验</td></tr><tr><td><strong>三组及以上独立样本</strong></td><td>One-way ANOVA + Tukey HSD</td><td>Welch&#39;s ANOVA + Games-Howell</td><td>Kruskal-Wallis 检验 + Dunn&#39;s 检验</td></tr><tr><td><strong>分类变量频数表</strong></td><td>卡方检验（<span class=\"atlas-math-inline\" data-latex=\"\\chi^2\">χ<sup>2</sup></span>，<span class=\"atlas-math-inline\" data-latex=\"n \\ge 40\">n ≥ 40</span> 且期望频数 <span class=\"atlas-math-inline\" data-latex=\"\\ge 5\">≥ 5</span>）</td><td>—</td><td>Fisher 精确检验（小样本首选）</td></tr></tbody></table></div>\n<h2 id=\"正态性与方差齐性检验代码片段（r）\" class=\"atlas-heading atlas-h2\"><a href=\"#正态性与方差齐性检验代码片段（r）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>正态性与方差齐性检验代码片段（R）</h2>\n<div class=\"atlas-code-block\" data-lang=\"r\"><div class=\"atlas-code-header\"><span class=\"atlas-code-lang\">R</span><button type=\"button\" class=\"atlas-code-copy\" data-copy-code=\"# 1. Shapiro-Wilk 正态性检验（p &gt; 0.05 视为不拒绝正态分布假设）\nshapiro.test(df$value[df$group == &quot;Control&quot;])\n\n# 2. Welch&#39;s t-test（R 中 t.test 默认 var.equal = FALSE，稳健应对方差不齐）\nt.test(value ~ group, data = df, var.equal = FALSE)\n\n# 3. 多重假设检验 p 值校正（高通量组学推荐 BH / FDR 校正）\ndf$p_adj &lt;- p.adjust(df$p_raw, method = &quot;BH&quot;)\">COPY</button></div><pre><code class=\"hljs language-r\"><span class=\"hljs-comment\"># 1. Shapiro-Wilk 正态性检验（p &gt; 0.05 视为不拒绝正态分布假设）</span>\nshapiro.test<span class=\"hljs-punctuation\">(</span>df<span class=\"hljs-operator\">$</span>value<span class=\"hljs-punctuation\">[</span>df<span class=\"hljs-operator\">$</span>group <span class=\"hljs-operator\">==</span> <span class=\"hljs-string\">&quot;Control&quot;</span><span class=\"hljs-punctuation\">]</span><span class=\"hljs-punctuation\">)</span>\n\n<span class=\"hljs-comment\"># 2. Welch&#x27;s t-test（R 中 t.test 默认 var.equal = FALSE，稳健应对方差不齐）</span>\nt.test<span class=\"hljs-punctuation\">(</span>value <span class=\"hljs-operator\">~</span> group<span class=\"hljs-punctuation\">,</span> data <span class=\"hljs-operator\">=</span> df<span class=\"hljs-punctuation\">,</span> var.equal <span class=\"hljs-operator\">=</span> <span class=\"hljs-literal\">FALSE</span><span class=\"hljs-punctuation\">)</span>\n\n<span class=\"hljs-comment\"># 3. 多重假设检验 p 值校正（高通量组学推荐 BH / FDR 校正）</span>\ndf<span class=\"hljs-operator\">$</span>p_adj <span class=\"hljs-operator\">&lt;-</span> p.adjust<span class=\"hljs-punctuation\">(</span>df<span class=\"hljs-operator\">$</span>p_raw<span class=\"hljs-punctuation\">,</span> method <span class=\"hljs-operator\">=</span> <span class=\"hljs-string\">&quot;BH&quot;</span><span class=\"hljs-punctuation\">)</span></code></pre></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"tip\"><strong class=\"atlas-callout-badge\">多重检验校正选择</strong><ul class=\"atlas-list\"><li><strong>Bonferroni 校正</strong>：控制族错误率（FWER），适合比较次数较少（<span class=\"atlas-math-inline\" data-latex=\"m \\le 10\">m ≤ 10</span>）的确定性验证实验。</li><li><strong>Benjamini-Hochberg (FDR)</strong>：控制错误发现率，适合转录组、蛋白质组等成百上千个指标的高通量筛选。</li></ul></blockquote>\n<h2 id=\"待补充核对项（todo）\" class=\"atlas-heading atlas-h2\"><a href=\"#待补充核对项（todo）\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>待补充核对项（TODO）</h2>\n<ul class=\"atlas-list\"><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>补充 R 语言中 <code class=\"atlas-inline-code\">shapiro.test()</code> 正态性检验与 <code class=\"atlas-inline-code\">t.test()</code> 代码片段</span></li><li class=\"atlas-task-item\"><input type=\"checkbox\" disabled checked /><span>补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明</span></li></ul>",
       "findings": [
-        "补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段",
+        "补充 R 语言中 shapiro.test() 正态性检验与 t.test() 代码片段",
         "补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明"
       ],
-      "plainText": "生物统计常用假设检验方法选择速查卡\n\n快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| 两组独立样本 | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| 两组配对样本 | Paired t-test | — | Wilcoxon 符号秩检验 |\n| 三组及以上独立样本 | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| 分类变量频数表 | 卡方检验（\\chi^2，n \\ge 40 且期望频数 \\ge 5） | — | Fisher 精确检验（小样本首选） |\n\n待补充核对项（TODO）\n\n- [ ] 补充 R 语言中 shapiro.test() 正态性检验与 car::leveneTest() 方差齐性检验代码片段\n- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明",
-      "markdown": "\n# 生物统计常用假设检验方法选择速查卡\n\n## 快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| **两组独立样本** | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| **两组配对样本** | Paired t-test | — | Wilcoxon 符号秩检验 |\n| **三组及以上独立样本** | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| **分类变量频数表** | 卡方检验（$\\chi^2$，$n \\ge 40$ 且期望频数 $\\ge 5$） | — | Fisher 精确检验（小样本首选） |\n\n## 待补充核对项（TODO）\n\n- [ ] 补充 R 语言中 `shapiro.test()` 正态性检验与 `car::leveneTest()` 方差齐性检验代码片段\n- [ ] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明\n",
-      "visualCode": "A-001",
-      "globalCode": "X-014"
+      "plainText": "生物统计常用假设检验方法选择速查卡\n\n快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| 两组独立样本 | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| 两组配对样本 | Paired t-test | — | Wilcoxon 符号秩检验 |\n| 三组及以上独立样本 | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| 分类变量频数表 | 卡方检验（\\chi^2，n \\ge 40 且期望频数 \\ge 5） | — | Fisher 精确检验（小样本首选） |\n\n正态性与方差齐性检验代码片段（R）\n\n~~~r\n1. Shapiro-Wilk 正态性检验（p > 0.05 视为不拒绝正态分布假设）\nshapiro.test(dfvalue[dfgroup == \"Control\"])\n\n2. Welch's t-test（R 中 t.test 默认 var.equal = FALSE，稳健应对方差不齐）\nt.test(value ~ group, data = df, var.equal = FALSE)\n\n3. 多重假设检验 p 值校正（高通量组学推荐 BH / FDR 校正）\ndfp_adj <- p.adjust(dfp_raw, method = \"BH\")\n~~~\n\n> [!TIP] 多重检验校正选择\n> - Bonferroni 校正：控制族错误率（FWER），适合比较次数较少（m \\le 10）的确定性验证实验。\n> - Benjamini-Hochberg (FDR)：控制错误发现率，适合转录组、蛋白质组等成百上千个指标的高通量筛选。\n\n待补充核对项（TODO）\n\n- [x] 补充 R 语言中 shapiro.test() 正态性检验与 t.test() 代码片段\n- [x] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明",
+      "markdown": "\n# 生物统计常用假设检验方法选择速查卡\n\n## 快速复习\n\n| 比较场景 | 满足正态性 + 方差齐性（参数检验） | 正态但方差不齐 | 不满足正态分布（非参数检验） |\n| --- | --- | --- | --- |\n| **两组独立样本** | Student's t-test | Welch's t-test（推荐默认） | Mann-Whitney U 检验（Wilcoxon 秩和） |\n| **两组配对样本** | Paired t-test | — | Wilcoxon 符号秩检验 |\n| **三组及以上独立样本** | One-way ANOVA + Tukey HSD | Welch's ANOVA + Games-Howell | Kruskal-Wallis 检验 + Dunn's 检验 |\n| **分类变量频数表** | 卡方检验（$\\chi^2$，$n \\ge 40$ 且期望频数 $\\ge 5$） | — | Fisher 精确检验（小样本首选） |\n\n## 正态性与方差齐性检验代码片段（R）\n\n~~~r\n# 1. Shapiro-Wilk 正态性检验（p > 0.05 视为不拒绝正态分布假设）\nshapiro.test(df$value[df$group == \"Control\"])\n\n# 2. Welch's t-test（R 中 t.test 默认 var.equal = FALSE，稳健应对方差不齐）\nt.test(value ~ group, data = df, var.equal = FALSE)\n\n# 3. 多重假设检验 p 值校正（高通量组学推荐 BH / FDR 校正）\ndf$p_adj <- p.adjust(df$p_raw, method = \"BH\")\n~~~\n\n> [!TIP] 多重检验校正选择\n> - **Bonferroni 校正**：控制族错误率（FWER），适合比较次数较少（$m \\le 10$）的确定性验证实验。\n> - **Benjamini-Hochberg (FDR)**：控制错误发现率，适合转录组、蛋白质组等成百上千个指标的高通量筛选。\n\n## 待补充核对项（TODO）\n\n- [x] 补充 R 语言中 `shapiro.test()` 正态性检验与 `t.test()` 代码片段\n- [x] 补充多重假设检验校正（Bonferroni vs Benjamini-Hochberg FDR）适用边界说明\n",
+      "visualCode": "A-002",
+      "globalCode": "X-016"
     },
     {
       "id": "concept-enzyme-kinetics",
@@ -1526,8 +1672,56 @@
       ],
       "plainText": "米氏方程（Michaelis-Menten）与酶抑制类型判读\n\n快速复习\n\n- 米氏方程标准形式：\n  v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}\n- K_m 的核心意义：当反应初速度 v_0 = \\frac{1}{2} V_{\\max} 时的底物浓度 [S]（单位与浓度相同，如 \\text{mmol/L}）。K_m 越小，表示酶对底物的表观亲和力越高。\n- 三大可逆抑制速记：\n  - 竞争性抑制：抢活性中心 → V_{\\max} 不变，表观 K_m 增大；\n  - 非竞争性抑制：绑别构位点降活性 → V_{\\max} 降低，表观 K_m 不变；\n  - 反竞争性抑制：只绑 ES 复合物 → V_{\\max} 与 K_m 同比例降低。\n\n核心定义与稳态推导\n\n在酶促反应体系中，酶 E 与底物 S 可逆结合生成中间复合物 ES，随后生成产物 P：\n\nE + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P\n\n在稳态近似（\\frac{d[ES]}{dt} = 0）条件下，定义米氏常数 K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}，且最大反应速率 V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}。\n\nLineweaver-Burk 双倒数方程\n\n对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：\n\n\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}\n\n| 抑制类型 | 结合对象 | 表观 V_{\\max} | 表观 K_m | 双倒数图交点位置 |\n| --- | --- | --- | --- | --- |\n| 竞争性抑制 | 游离酶 E | 不变 | 增大 (1 + [I]/K_i) | 交于纵轴（y 轴截距不变） |\n| 非竞争性抑制 | E 与 ES 均結合 | 减小 | 不变 | 交于横轴（x 轴截距不变） |\n| 反竞争性抑制 | 仅结合 ES 复合物 | 减小 | 减小 | 多条平行线（斜率 K_m/V_{\\max} 不变） |\n\n易错点与实验建议\n\n1. K_m 与酶浓度无关：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 V_{\\max} 与体系中加入的酶总浓度 [E]_t 成正比。\n2. 拟合软件推荐：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用非线性回归（Nonlinear regression）拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。",
       "markdown": "\n# 米氏方程（Michaelis-Menten）与酶抑制类型判读\n\n## 快速复习\n\n- **米氏方程标准形式**：\n  $$v_0 = \\frac{V_{\\max} [S]}{K_m + [S]}$$\n- **$K_m$ 的核心意义**：当反应初速度 $v_0 = \\frac{1}{2} V_{\\max}$ 时的底物浓度 $[S]$（单位与浓度相同，如 $\\text{mmol/L}$）。$K_m$ 越小，表示酶对底物的表观亲和力越高。\n- **三大可逆抑制速记**：\n  - **竞争性抑制**：抢活性中心 → $V_{\\max}$ 不变，表观 $K_m$ 增大；\n  - **非竞争性抑制**：绑别构位点降活性 → $V_{\\max}$ 降低，表观 $K_m$ 不变；\n  - **反竞争性抑制**：只绑 $ES$ 复合物 → $V_{\\max}$ 与 $K_m$ 同比例降低。\n\n## 核心定义与稳态推导\n\n在酶促反应体系中，酶 $E$ 与底物 $S$ 可逆结合生成中间复合物 $ES$，随后生成产物 $P$：\n\n$$E + S \\underset{k_{-1}}{\\overset{k_1}{\\rightleftharpoons}} ES \\overset{k_{\\text{cat}}}{\\longrightarrow} E + P$$\n\n在稳态近似（$\\frac{d[ES]}{dt} = 0$）条件下，定义米氏常数 $K_m = \\frac{k_{-1} + k_{\\text{cat}}}{k_1}$，且最大反应速率 $V_{\\max} = k_{\\text{cat}} [E]_{\\text{total}}$。\n\n## Lineweaver-Burk 双倒数方程\n\n对方程两边取倒数，可将双曲线线性化以便直观判断抑制剂类型：\n\n$$\\frac{1}{v_0} = \\frac{K_m}{V_{\\max}} \\cdot \\frac{1}{[S]} + \\frac{1}{V_{\\max}}$$\n\n| 抑制类型 | 结合对象 | 表观 $V_{\\max}$ | 表观 $K_m$ | 双倒数图交点位置 |\n| --- | --- | --- | --- | --- |\n| **竞争性抑制** | 游离酶 $E$ | 不变 | **增大** $(1 + [I]/K_i)$ | 交于纵轴（$y$ 轴截距不变） |\n| **非竞争性抑制** | $E$ 与 $ES$ 均結合 | **减小** | 不变 | 交于横轴（$x$ 轴截距不变） |\n| **反竞争性抑制** | 仅结合 $ES$ 复合物 | **减小** | **减小** | 多条平行线（斜率 $K_m/V_{\\max}$ 不变） |\n\n## 易错点与实验建议\n\n1. **$K_m$ 与酶浓度无关**：它是特定酶对特定底物在给定温度、pH 下的特征常数；而 $V_{\\max}$ 与体系中加入的酶总浓度 $[E]_t$ 成正比。\n2. **拟合软件推荐**：实际实验数据处理时，尽量在 R 或 GraphPad Prism 中直接使用**非线性回归（Nonlinear regression）**拟合原始米氏曲线，避免双倒数变换放大低底物浓度区的测量误差。\n",
-      "visualCode": "A-002",
-      "globalCode": "X-015"
+      "visualCode": "A-003",
+      "globalCode": "X-017"
+    },
+    {
+      "id": "life-ergonomic-desk-posture",
+      "slug": "life/ergonomic-desk-posture",
+      "title": "桌面科研与长时间编码的人体工学视距及用眼节律速查",
+      "category": "life",
+      "categoryTitle": "创作与生活",
+      "en": "CREATIVE & LIFE",
+      "department": "日常技能与创作实践",
+      "subcategory": "health-ergonomics",
+      "type": "snippet",
+      "status": "proficient",
+      "tags": [
+        "人体工学",
+        "桌面设置",
+        "视力保护",
+        "实验室健康"
+      ],
+      "summary": "显示器高度与视距校准、20-20-20 视觉放松节律以及移液/键鼠长时间操作的手腕中立位准则。",
+      "created": "2026-10-24",
+      "updated": "2026-11-02",
+      "version_scope": "日常工位与实验室工作台通用",
+      "source_urls": [],
+      "prerequisites": [],
+      "related": [
+        "life-feynman-teaching",
+        "skill-cell-observation"
+      ],
+      "aliases": [],
+      "relPath": "content/life/ergonomic-desk-posture.md",
+      "autoInferred": false,
+      "images": [],
+      "toc": [
+        {
+          "id": "快速复习",
+          "text": "快速复习",
+          "level": 2
+        }
+      ],
+      "quickstartHtml": "<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>校准维度</th><th>推荐标准范围</th><th>常见错误姿势</th><th>改善调整动作</th></tr></thead><tbody><tr><td><strong>显示器顶边高度</strong></td><td>与平视视线齐平或略低 <code class=\"atlas-inline-code\">0~5 cm</code>（视线微俯 <code class=\"atlas-inline-code\">10°~15°</code>）</td><td>屏幕过低导致颈椎持续前倾（乌龟颈）</td><td>调高显示器支架或垫高笔记本并外接键鼠</td></tr><tr><td><strong>眼睛到屏幕距离</strong></td><td><code class=\"atlas-inline-code\">55 ~ 70 cm</code>（约一臂长，27 寸屏取 <code class=\"atlas-inline-code\">65 cm</code>）</td><td>凑近屏幕阅读过小字号</td><td>将编辑器/阅读器字号保持在 <code class=\"atlas-inline-code\">16~19 px</code></td></tr><tr><td><strong>用眼与久坐节律</strong></td><td>每 <code class=\"atlas-inline-code\">25~30 min</code> 远眺 <code class=\"atlas-inline-code\">6 m</code> 外至少 <code class=\"atlas-inline-code\">20 s</code>；每 <code class=\"atlas-inline-code\">50 min</code> 起身活动</td><td>连续数小时凝视发光屏幕导致泪膜破裂</td><td>结合番茄钟在组会整理或代码编译间隙强制起身</td></tr><tr><td><strong>手腕与前臂角度</strong></td><td>肘部呈 <code class=\"atlas-inline-code\">90°~100°</code> 自然下垂，手腕保持水平中立位</td><td>手腕悬空紧绷或长期压在硬质桌沿上</td><td>桌面预留前臂支撑深度（<code class=\"atlas-inline-code\">≥ 15 cm</code>），连续移液时交替休息</td></tr></tbody></table></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"note\"><strong class=\"atlas-callout-badge\">环境光照对比度</strong><p>夜间或暗室阅片/写代码时，避免「全黑房间 + 高亮显示器」的极端眩光对比；开启屏幕挂灯或暖白背景光，并在 ATLAS 终端中按环境光线切换亮色（暖白纸感）或暗色（石墨低眩光）主题。</p></blockquote>",
+      "html": "<h2 id=\"快速复习\" class=\"atlas-heading atlas-h2\"><a href=\"#快速复习\" class=\"atlas-heading-anchor\" aria-hidden=\"true\">#</a>快速复习</h2>\n<div class=\"atlas-table-wrap\"><table class=\"atlas-table\"><thead><tr><th>校准维度</th><th>推荐标准范围</th><th>常见错误姿势</th><th>改善调整动作</th></tr></thead><tbody><tr><td><strong>显示器顶边高度</strong></td><td>与平视视线齐平或略低 <code class=\"atlas-inline-code\">0~5 cm</code>（视线微俯 <code class=\"atlas-inline-code\">10°~15°</code>）</td><td>屏幕过低导致颈椎持续前倾（乌龟颈）</td><td>调高显示器支架或垫高笔记本并外接键鼠</td></tr><tr><td><strong>眼睛到屏幕距离</strong></td><td><code class=\"atlas-inline-code\">55 ~ 70 cm</code>（约一臂长，27 寸屏取 <code class=\"atlas-inline-code\">65 cm</code>）</td><td>凑近屏幕阅读过小字号</td><td>将编辑器/阅读器字号保持在 <code class=\"atlas-inline-code\">16~19 px</code></td></tr><tr><td><strong>用眼与久坐节律</strong></td><td>每 <code class=\"atlas-inline-code\">25~30 min</code> 远眺 <code class=\"atlas-inline-code\">6 m</code> 外至少 <code class=\"atlas-inline-code\">20 s</code>；每 <code class=\"atlas-inline-code\">50 min</code> 起身活动</td><td>连续数小时凝视发光屏幕导致泪膜破裂</td><td>结合番茄钟在组会整理或代码编译间隙强制起身</td></tr><tr><td><strong>手腕与前臂角度</strong></td><td>肘部呈 <code class=\"atlas-inline-code\">90°~100°</code> 自然下垂，手腕保持水平中立位</td><td>手腕悬空紧绷或长期压在硬质桌沿上</td><td>桌面预留前臂支撑深度（<code class=\"atlas-inline-code\">≥ 15 cm</code>），连续移液时交替休息</td></tr></tbody></table></div>\n<blockquote class=\"atlas-blockquote atlas-callout\" data-callout=\"note\"><strong class=\"atlas-callout-badge\">环境光照对比度</strong><p>夜间或暗室阅片/写代码时，避免「全黑房间 + 高亮显示器」的极端眩光对比；开启屏幕挂灯或暖白背景光，并在 ATLAS 终端中按环境光线切换亮色（暖白纸感）或暗色（石墨低眩光）主题。</p></blockquote>",
+      "findings": [
+        "显示器高度与视距校准、20-20-20 视觉放松节律以及移液/键鼠长时间操作的手腕中立位准则。"
+      ],
+      "plainText": "桌面科研与长时间编码的人体工学视距及用眼节律速查\n\n快速复习\n\n| 校准维度 | 推荐标准范围 | 常见错误姿势 | 改善调整动作 |\n| --- | --- | --- | --- |\n| 显示器顶边高度 | 与平视视线齐平或略低 0~5 cm（视线微俯 10°~15°） | 屏幕过低导致颈椎持续前倾（乌龟颈） | 调高显示器支架或垫高笔记本并外接键鼠 |\n| 眼睛到屏幕距离 | 55 ~ 70 cm（约一臂长，27 寸屏取 65 cm） | 凑近屏幕阅读过小字号 | 将编辑器/阅读器字号保持在 16~19 px |\n| 用眼与久坐节律 | 每 25~30 min 远眺 6 m 外至少 20 s；每 50 min 起身活动 | 连续数小时凝视发光屏幕导致泪膜破裂 | 结合番茄钟在组会整理或代码编译间隙强制起身 |\n| 手腕与前臂角度 | 肘部呈 90°~100° 自然下垂，手腕保持水平中立位 | 手腕悬空紧绷或长期压在硬质桌沿上 | 桌面预留前臂支撑深度（≥ 15 cm），连续移液时交替休息 |\n\n> [!NOTE] 环境光照对比度\n> 夜间或暗室阅片/写代码时，避免「全黑房间 + 高亮显示器」的极端眩光对比；开启屏幕挂灯或暖白背景光，并在 ATLAS 终端中按环境光线切换亮色（暖白纸感）或暗色（石墨低眩光）主题。",
+      "markdown": "\n# 桌面科研与长时间编码的人体工学视距及用眼节律速查\n\n## 快速复习\n\n| 校准维度 | 推荐标准范围 | 常见错误姿势 | 改善调整动作 |\n| --- | --- | --- | --- |\n| **显示器顶边高度** | 与平视视线齐平或略低 `0~5 cm`（视线微俯 `10°~15°`） | 屏幕过低导致颈椎持续前倾（乌龟颈） | 调高显示器支架或垫高笔记本并外接键鼠 |\n| **眼睛到屏幕距离** | `55 ~ 70 cm`（约一臂长，27 寸屏取 `65 cm`） | 凑近屏幕阅读过小字号 | 将编辑器/阅读器字号保持在 `16~19 px` |\n| **用眼与久坐节律** | 每 `25~30 min` 远眺 `6 m` 外至少 `20 s`；每 `50 min` 起身活动 | 连续数小时凝视发光屏幕导致泪膜破裂 | 结合番茄钟在组会整理或代码编译间隙强制起身 |\n| **手腕与前臂角度** | 肘部呈 `90°~100°` 自然下垂，手腕保持水平中立位 | 手腕悬空紧绷或长期压在硬质桌沿上 | 桌面预留前臂支撑深度（`≥ 15 cm`），连续移液时交替休息 |\n\n> [!NOTE] 环境光照对比度\n> 夜间或暗室阅片/写代码时，避免「全黑房间 + 高亮显示器」的极端眩光对比；开启屏幕挂灯或暖白背景光，并在 ATLAS 终端中按环境光线切换亮色（暖白纸感）或暗色（石墨低眩光）主题。\n",
+      "visualCode": "L-001",
+      "globalCode": "X-018"
     },
     {
       "id": "life-feynman-teaching",
@@ -1599,8 +1793,8 @@
       ],
       "plainText": "费曼技巧与实验室新人带教四步法\n\n快速复习\n\n1. 先讲“为什么要做这一步（Why & 失败后果）”，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。\n2. 三遍带教节奏：\n   - 第一遍：我做你看，我讲关键控制点；\n   - 第二遍：你做我看，操作前先口述下一步；\n   - 第三遍：你独立做，对照 ATLAS 档案清单自检结果。\n3. 卡壳即知识盲区：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 inbox/ 查文献补齐。\n\n操作步骤\n\n1. 拆解操作颗粒度\n\n将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。\n\n2. 让学习者用自己的话复述\n\n不要问“听懂了吗？”（回答永远是“懂了”），而是问：\n- “如果这一步离心转速设高了一倍，沉淀会出什么问题？”\n- “你现在复述一下接下来 5 分钟的三个动作顺序。”\n\n验证结果\n\n- 被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。",
       "markdown": "\n# 费曼技巧与实验室新人带教四步法\n\n## 快速复习\n\n1. **先讲“为什么要做这一步（Why & 失败后果）”**，再讲“手怎么动（How）”，避免新人机械背诵步骤却在异常时手足无措。\n2. **三遍带教节奏**：\n   - 第一遍：**我做你看，我讲关键控制点**；\n   - 第二遍：**你做我看，操作前先口述下一步**；\n   - 第三遍：**你独立做，对照 ATLAS 档案清单自检结果**。\n3. **卡壳即知识盲区**：如果自己无法用非专业语言向跨专业同学解释清楚某个原理（如为什么 Western Blot 转膜要控流/控压），立刻将该问题记入 `inbox/` 查文献补齐。\n\n## 操作步骤\n\n### 1. 拆解操作颗粒度\n\n将复杂技能拆分为「准备阶段 → 关键不可逆点（Point of No Return） → 验证指标」三段，重点标出最容易出错的 2 个红线动作（例如细胞传代中胰酶消化过度、PCR 体系忘加模板）。\n\n### 2. 让学习者用自己的话复述\n\n不要问“听懂了吗？”（回答永远是“懂了”），而是问：\n- “如果这一步离心转速设高了一倍，沉淀会出什么问题？”\n- “你现在复述一下接下来 5 分钟的三个动作顺序。”\n\n## 验证结果\n\n- 被带教者能在不依赖口头提醒的情况下，对照 ATLAS 中的单页档案独立完成一次标准操作并留存合格数据。\n",
-      "visualCode": "L-001",
-      "globalCode": "X-016"
+      "visualCode": "L-002",
+      "globalCode": "X-019"
     },
     {
       "id": "life-video-export-presets",
@@ -1649,8 +1843,8 @@
       ],
       "plainText": "视频导出与压制常用 H.264 / AAC 参数速查\n\n快速复习\n\n日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：\n\n``bash\n1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\n`\n\n关键参数备忘\n\n- -pix_fmt yuv420p：必加，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。\n- -movflags +faststart：将 moov atom` 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。",
       "markdown": "# 视频导出与压制常用 H.264 / AAC 参数速查\n\n## 快速复习\n\n日常使用 FFmpeg 或剪辑软件导出课程录像、演示动图与 B 站投稿视频时，直接复制以下经过验证的黄金参数，无需每次重新查文档：\n\n```bash\n# 1. 标准 1080p 高画质高兼容压缩（CRF 18-20 视觉无损，适合归档与网页播放）\nffmpeg -i input.mov -c:v libx264 -preset slow -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4\n\n# 2. 截取指定时间段（无损极速切分，不重新编码）\nffmpeg -ss 00:01:10 -to 00:02:30 -i input.mp4 -c copy clip.mp4\n```\n\n## 关键参数备忘\n\n- `-pix_fmt yuv420p`：**必加**，确保导出的 MP4 在 Windows 自带播放器、Safari 和手机浏览器中均能正常硬解，不会黑屏。\n- `-movflags +faststart`：将 `moov atom` 元数据移至文件头部，放在网页上时无需等整个视频下载完即可边下边播。\n",
-      "visualCode": "L-002",
-      "globalCode": "X-017"
+      "visualCode": "L-003",
+      "globalCode": "X-020"
     },
     {
       "id": "inbox-docker-port-conflict",
@@ -1687,7 +1881,7 @@
       "plainText": "Windows 端口被占用（EADDRINUSE）快速定位与释放\n\n刚启动本地服务遇到 Error: listen EADDRINUSE: address already in use :::5173 时随手记一下 PowerShell 一键排查命令：\n\n``powershell\n查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n根据 PID 结束进程\nStop-Process -Id <PID> -Force\n``",
       "markdown": "# Windows 端口被占用（EADDRINUSE）快速定位与释放\n\n刚启动本地服务遇到 `Error: listen EADDRINUSE: address already in use :::5173` 时随手记一下 PowerShell 一键排查命令：\n\n```powershell\n# 查看占用 5173 端口的进程 PID\nGet-NetTCPConnection -LocalPort 5173 | Select-Object LocalAddress, LocalPort, OwningProcess\n\n# 根据 PID 结束进程\nStop-Process -Id <PID> -Force\n```\n",
       "visualCode": "D-001",
-      "globalCode": "X-018"
+      "globalCode": "X-021"
     }
   ]
 }

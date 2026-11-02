@@ -1,0 +1,68 @@
+﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
+FILE R-001 (research-qpcr-ct-ddct) / RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准
+RESEARCH & LAB · SKILL · STATUS: PROFICIENT
+
+所属领域：科研与实验 (research)
+适用范围：SYBR Green 荧光定量 PCR 通用 SOP
+更新日期：2026-11-02
+标签：RT-qPCR, 2-ΔΔCt, 相对定量, 熔解曲线, 分子生物学
+
+【摘要】
+从内参基因归一化、ΔΔCt 相对表达量推导、复孔标准差阈值到熔解曲线单峰质控的完整实验与计算流程。
+
+【核心要点】
+1. 核心计算公式：先算每个样品的目的基因与内参基因差值 \Delta C_t，再减去对照组均值得到 \Delta\Delta C_t，相对表达倍数为 2^{-\Delta\Delta C_t}。
+2. 三复孔质控红线：同一生物样品的 3 个技术复孔（Technical Replicates）C_t 标准差必须满足 \text{SD} < 0.20（若 C_t > 32 可放宽至 0.30），偏离过大的单孔需结合扩增曲线剔除。
+3. 熔解曲线（Melting Curve）：SYBR Green 体系必须呈现单一锐利主峰，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 C_t > 38。
+4. 逆转录前已测定 RNA 纯度（\text{A}_{260}/\text{A}_{280} \in [1.8, 2.1]）
+5. 每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）
+6. 导出熔解曲线导数图（-\mathrm{d}F/\mathrm{d}T）确认全板单峰
+
+【正文内容】
+RT-qPCR 相对定量 (2^-ΔΔCt) 计算与扩增曲线质控标准
+
+快速复习
+
+- 核心计算公式：先算每个样品的目的基因与内参基因差值 \Delta C_t，再减去对照组均值得到 \Delta\Delta C_t，相对表达倍数为 2^{-\Delta\Delta C_t}。
+- 三复孔质控红线：同一生物样品的 3 个技术复孔（Technical Replicates）C_t 标准差必须满足 \text{SD} < 0.20（若 C_t > 32 可放宽至 0.30），偏离过大的单孔需结合扩增曲线剔除。
+- 熔解曲线（Melting Curve）：SYBR Green 体系必须呈现单一锐利主峰，无引物二聚体低熔点杂峰，NTC（无模板对照）无扩增或 C_t > 38。
+
+
+\Delta C_t = C_{t,\text{target}} - C_{t,\text{ref}}, \quad \Delta\Delta C_t = \Delta C_{t,\text{treated}} - \overline{\Delta C_{t,\text{control}}}, \quad \text{Fold Change} = 2^{-\Delta\Delta C_t}
+
+
+~r
+R 语言批量计算 ΔCt、ΔΔCt 与 Fold Change
+library(dplyr)
+
+qpcr_result <- raw_ct |>
+  group_by(sample_id, group) |>
+  summarise(ct_target = mean(ct_gene), ct_ref = mean(ct_gapdh), .groups = "drop") |>
+  mutate(delta_ct = ct_target - ct_ref) |>
+  mutate(
+    control_mean = mean(delta_ct[group == "Control"]),
+    ddct = delta_ct - control_mean,
+    fold_change = 2^(-ddct)
+  )
+~
+
+扩增与熔解曲线异常排查表
+
+| 异常现象 | 常见原因 | 解决方案 |
+| --- | --- | --- |
+| 熔解曲线出现双峰（低温小峰） | 引物二聚体（Primer Dimer）或退火温度偏低 | 降低引物终浓度至 0.2 μM，或将退火温度提高 1~2 °C |
+| NTC 孔在 32 サイクル前起峰 | 试剂、水或移液器气溶胶污染 | 更换新分装无核酸酶水（DEPC/Nuclease-free Water），使用带滤芯枪头 |
+| 内参基因 C_t 值跨组漂移 > 1.5 | RNA 上样量不准或实验处理本身改变了该内参表达 | 核对逆转录上样 RNA 浓度（NanoDrop），或改用 ACTB / 18S rRNA 双内参几何平均 |
+| C_t < 12 过早起峰 | cDNA 模板浓度过高，基线（Baseline）扣除失真 | 将 cDNA 模板按 1:5 或 1:10 梯度稀释后重测 |
+
+> [!TIP] 统计检验注意事项
+> 进行组间显著性检验（参见 生物统计常用假设检验方法选择速查卡 与 R 语言数据框清洗与筛选核心惯用法）时，推荐在 \Delta C_t 线性尺度 上进行独立样本 t 检验或 ANOVA，再将均值与置信区间转换为 2^{-\Delta\Delta C_t} 作图，避免指数变换带来的偏态失真。
+
+验证清单
+
+- [x] 逆转录前已测定 RNA 纯度（\text{A}_{260}/\text{A}_{280} \in [1.8, 2.1]）
+- [x] 每块 96 孔板均包含至少 2 孔 NTC（无模板阴性对照）
+- [x] 导出熔解曲线导数图（-\mathrm{d}F/\mathrm{d}T）确认全板单峰
+
+参考来源：
+- 本地实践记录

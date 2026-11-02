@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE R-002 (skill-molecular-docking) / AutoDock Vina 分子对接标准流程概览
+FILE R-003 (skill-molecular-docking) / AutoDock Vina 分子对接标准流程概览
 RESEARCH & LAB · SKILL · STATUS: REVIEW
 
 所属领域：科研与实验 (research)

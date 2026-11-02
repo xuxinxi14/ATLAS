@@ -1,5 +1,5 @@
 ﻿ATLAS · PERSONAL KNOWLEDGE TERMINAL
-FILE R-001 (skill-cell-observation) / 贴壁细胞日常形态观察与污染排查入门
+FILE R-002 (skill-cell-observation) / 贴壁细胞日常形态观察与污染排查入门
 RESEARCH & LAB · SKILL · STATUS: PROFICIENT
 
 所属领域：科研与实验 (research)

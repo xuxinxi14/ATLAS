@@ -12,6 +12,10 @@ import {
   buildLibraryHash,
   buildStudioHash,
 } from "../app/router.ts";
+import {
+  renderLocalKnowledgeGraphMarkup,
+  resolveEntryRelations,
+} from "../knowledge/graph.ts";
 
 export function hydrateEntryHtmlImages(html: string): string {
   return html.replace(
@@ -165,16 +169,16 @@ export function renderReaderViewMarkup(
         </ul>`
       : `<p class="reader-side-muted">本篇为精简速查微卡，无多级章节目录</p>`;
 
-  const resolveRelLinks = (ids: string[]) =>
-    ids
-      .map((id) => knowledgeRepository.byId(id))
-      .filter((x): x is KnowledgeEntry => Boolean(x));
-
-  const prereqEntries = resolveRelLinks(entry.prerequisites);
-  const relatedEntries = resolveRelLinks(entry.related);
+  const relBundle = resolveEntryRelations(entry);
+  const prereqEntries = relBundle.prerequisites;
+  const relatedEntries = relBundle.related;
+  const backlinkEntries = relBundle.backlinks;
+  const graphHtml = renderLocalKnowledgeGraphMarkup(entry);
 
   const relationsHtml =
-    prereqEntries.length > 0 || relatedEntries.length > 0
+    prereqEntries.length > 0 ||
+    relatedEntries.length > 0 ||
+    backlinkEntries.length > 0
       ? `
         ${
           prereqEntries.length > 0
@@ -183,7 +187,7 @@ export function renderReaderViewMarkup(
                 ${prereqEntries
                   .map(
                     (r) => `
-                    <a href="${buildEntryHash(r.slug)}" class="reader-rel-card">
+                    <a href="${buildEntryHash(r.slug)}" class="reader-rel-card" data-preview-entry="${escapeHtml(r.id)}">
                       <span>${escapeHtml(r.visualCode)} · ${escapeHtml(r.categoryTitle)}</span>
                       <strong>${escapeHtml(r.title)} <i>↗</i></strong>
                     </a>
@@ -200,7 +204,7 @@ export function renderReaderViewMarkup(
                 ${relatedEntries
                   .map(
                     (r) => `
-                    <a href="${buildEntryHash(r.slug)}" class="reader-rel-card">
+                    <a href="${buildEntryHash(r.slug)}" class="reader-rel-card" data-preview-entry="${escapeHtml(r.id)}">
                       <span>${escapeHtml(r.visualCode)} · ${escapeHtml(r.categoryTitle)}</span>
                       <strong>${escapeHtml(r.title)} <i>↗</i></strong>
                     </a>
@@ -210,8 +214,25 @@ export function renderReaderViewMarkup(
               </div>`
             : ""
         }
+        ${
+          backlinkEntries.length > 0
+            ? `<div class="reader-rel-group">
+                <h4>反向引用 // BACKLINKS</h4>
+                ${backlinkEntries
+                  .map(
+                    (r) => `
+                    <a href="${buildEntryHash(r.slug)}" class="reader-rel-card is-backlink" data-preview-entry="${escapeHtml(r.id)}">
+                      <span>${escapeHtml(r.visualCode)} · ${escapeHtml(r.categoryTitle)} · 引用本文</span>
+                      <strong>${escapeHtml(r.title)} <i>↗</i></strong>
+                    </a>
+                  `,
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
       `
-      : `<p class="reader-side-muted">暂无显式关联条目</p>`;
+      : `<p class="reader-side-muted">暂无显式关联条目（已在上方星图展示同域邻接节点）</p>`;
 
   const sourcesHtml =
     entry.source_urls.length > 0
@@ -367,12 +388,13 @@ export function renderReaderViewMarkup(
             </a>
           </div>
 
-          <!-- On-Demand Slide-Over Drawer: TOC & Archive Directory (Collapsed by default) -->
+          <!-- On-Demand Slide-Over Drawer: TOC, Archive Directory & Knowledge Graph (Collapsed by default) -->
           <aside class="optical-toc-drawer" id="optical-toc-drawer" hidden>
             <div class="optical-drawer-head">
               <div class="optical-drawer-tabs">
                 <button type="button" class="optical-drawer-tab active" data-optical-drawer-tab="toc">本文章节 (${entry.toc.length})</button>
                 <button type="button" class="optical-drawer-tab" data-optical-drawer-tab="tree">全部档案 (${allEntries.length})</button>
+                <button type="button" class="optical-drawer-tab" data-optical-drawer-tab="graph">关系图谱 (${relBundle.totalDirectCount})</button>
               </div>
               <button type="button" class="optical-drawer-close" data-optical-toggle="toc" aria-label="收起目录">×</button>
             </div>
@@ -381,6 +403,12 @@ export function renderReaderViewMarkup(
             </div>
             <div class="atlas-reader-sidebar-left optical-drawer-pane" id="optical-pane-tree" hidden>
               ${sidebarTreeHtml}
+            </div>
+            <div class="optical-drawer-pane optical-pane-graph" id="optical-pane-graph" hidden>
+              ${graphHtml}
+              <div class="optical-drawer-relations">
+                ${relationsHtml}
+              </div>
             </div>
           </aside>
 
@@ -451,6 +479,7 @@ export function renderReaderViewMarkup(
                   }
 
                   <div class="optical-dossier-relations">
+                    ${graphHtml}
                     ${relationsHtml}
                   </div>
                   <div class="optical-dossier-sources">

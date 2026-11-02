@@ -40,6 +40,17 @@ export interface StudioDraftSnapshot {
   lastSavedAt: string;
 }
 
+export interface StudioTrashItem {
+  fileName: string;
+  title: string;
+  slug: string;
+  category: string;
+  fileStem: string;
+  summary: string;
+  deletedAt: string;
+  deletedMs: number;
+}
+
 export interface StudioDraftState {
   originalSlug: string;
   /** Stable identity code shown on the left cassette dock ("T-001" or "NEW"); never jumps while typing */
@@ -67,6 +78,10 @@ export interface StudioDraftState {
   moreDrawerOpen: boolean;
   /** Right-side local drawer for AI Markdown paste & import ("AI 导入") */
   aiPasteOpen: boolean;
+  /** Right-side local drawer for Trash & Restore ("回收站恢复") */
+  trashDrawerOpen: boolean;
+  trashItems: StudioTrashItem[];
+  trashLoading: boolean;
   aiRawInput: string;
   aiPendingCandidate: StudioAiCandidate | null;
   aiPreImportBackup: StudioDraftSnapshot | null;
@@ -156,6 +171,9 @@ export function createDefaultStudioDraft(
     openDropdown: null,
     moreDrawerOpen: false,
     aiPasteOpen: false,
+    trashDrawerOpen: false,
+    trashItems: [],
+    trashLoading: false,
     aiRawInput: "",
     aiPendingCandidate: null,
     aiPreImportBackup: null,
@@ -454,6 +472,16 @@ export function renderStudioViewMarkup(
                       data-studio-action="new-blank"
                     >＋ 新建空白档案</button>
                     ${
+                      state.localDiskAvailable
+                        ? `<button
+                            type="button"
+                            role="menuitem"
+                            class="studio-menu-item"
+                            data-studio-action="toggle-trash-drawer"
+                          >⟲ 回收站与历史恢复</button>`
+                        : ""
+                    }
+                    ${
                       state.dirty
                         ? `<button
                             type="button"
@@ -470,7 +498,7 @@ export function renderStudioViewMarkup(
                             role="menuitem"
                             class="studio-menu-item is-danger"
                             data-studio-action="delete-entry"
-                          >× 删除本地档案</button>`
+                          >× 移入本地回收站</button>`
                         : ""
                     }
                   </div>
@@ -683,11 +711,23 @@ export function renderStudioViewMarkup(
             </div>
 
             <!-- The textarea remains usable if the editor module cannot be loaded. -->
-            <div class="studio-body-zone">
+            <div class="studio-body-zone" id="studio-body-zone">
+              <div class="studio-dropzone-overlay" aria-hidden="true">
+                <span>▣ 松开鼠标将图片存入 <code>content/${escapeHtml(state.category)}/assets/</code> 并插入 Markdown 引用</span>
+              </div>
+
+              <div
+                id="studio-wiki-suggest"
+                class="studio-wiki-suggest-popover"
+                role="region"
+                aria-label="双链自动补全"
+                hidden
+              ></div>
+
               <textarea
                 id="studio-input-body"
                 class="studio-body-textarea"
-                placeholder="在这里输入内容…"
+                placeholder="在这里输入内容（支持粘贴或拖拽图片，输入 [[ 自动补全双链）…"
                 ${state.activeTab === "preview" ? "hidden" : ""}
                 ${state.loading ? "disabled" : ""}
               >${escapeHtml(state.body)}</textarea>
@@ -885,6 +925,61 @@ export function renderStudioViewMarkup(
                         </div>
                       `
                       : ""
+                  }
+                </div>
+              </aside>
+
+              <!-- 右侧局部抽屉 3：回收站恢复 (350px, 从 backups/studio-trash/ 恢复已删档案) -->
+              <aside
+                class="studio-local-drawer studio-trash-drawer"
+                id="studio-trash-drawer"
+                role="dialog"
+                aria-label="回收站与历史恢复"
+                ${state.trashDrawerOpen ? "" : "hidden"}
+              >
+                <div class="studio-drawer-head">
+                  <strong>⟲ 回收站与历史恢复</strong>
+                  <button
+                    type="button"
+                    class="studio-drawer-close"
+                    data-studio-action="close-trash-drawer"
+                    aria-label="关闭回收站抽屉"
+                  >×</button>
+                </div>
+
+                <div class="studio-drawer-body">
+                  <p class="studio-ai-intro">
+                    删除的本地档案会自动保存在 <code>backups/studio-trash/</code> 目录，可在此一键恢复至知识库。
+                  </p>
+                  ${
+                    state.trashLoading
+                      ? `<p class="studio-trash-empty">正在读取回收站记录…</p>`
+                      : state.trashItems.length === 0
+                        ? `<p class="studio-trash-empty">当前回收站为空（暂无已删除的本地档案）。</p>`
+                        : `<div class="studio-trash-list">
+                            ${state.trashItems
+                              .map(
+                                (item) => `
+                                  <div class="studio-trash-card">
+                                    <div class="trash-card-top">
+                                      <span class="trash-card-cat">${escapeHtml(deskDomainTitle(item.category))}</span>
+                                      <small class="trash-card-time">${escapeHtml(item.deletedAt)}</small>
+                                    </div>
+                                    <strong class="trash-card-title">${escapeHtml(item.title)}</strong>
+                                    <code class="trash-card-slug">content/${escapeHtml(item.slug)}.md</code>
+                                    <p class="trash-card-summary">${escapeHtml(item.summary)}</p>
+                                    <div class="trash-card-actions">
+                                      <button
+                                        type="button"
+                                        class="studio-primary-save-btn"
+                                        data-studio-restore-trash="${escapeHtml(item.fileName)}"
+                                      >↺ 恢复并打开</button>
+                                    </div>
+                                  </div>
+                                `,
+                              )
+                              .join("")}
+                          </div>`
                   }
                 </div>
               </aside>

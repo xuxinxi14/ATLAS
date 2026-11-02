@@ -46,6 +46,7 @@ interface MountOptions {
   readOnly: boolean;
   context: StudioMarkdownContext;
   onChange: (value: string, lines: number) => void;
+  onCursorChange?: (value: string, cursor: number) => void;
   onSave: () => void;
   onToggleRead: () => void;
   initialSelection?: { from: number; to: number; scrollTop: number };
@@ -464,6 +465,11 @@ export function mountStudioEditor(options: MountOptions) {
               update.state.doc.toString(),
               update.state.doc.lines,
             );
+          if (update.docChanged || update.selectionSet)
+            callbacks?.onCursorChange?.(
+              update.state.doc.toString(),
+              update.state.selection.main.head,
+            );
         }),
       ],
     });
@@ -526,6 +532,31 @@ export function setStudioEditorMode(mode: StudioEditorMode) {
 export function insertStudioEditorText(value: string): boolean {
   if (!current) return false;
   current.dispatch(current.state.replaceSelection(value));
+  current.focus();
+  return true;
+}
+
+export function getStudioEditorCursorContext(): {
+  docText: string;
+  cursor: number;
+} | null {
+  if (!current) return null;
+  return {
+    docText: current.state.doc.toString(),
+    cursor: current.state.selection.main.head,
+  };
+}
+
+export function replaceStudioEditorRange(
+  from: number,
+  to: number,
+  insert: string,
+): boolean {
+  if (!current) return false;
+  current.dispatch({
+    changes: { from, to, insert },
+    selection: { anchor: from + insert.length },
+  });
   current.focus();
   return true;
 }

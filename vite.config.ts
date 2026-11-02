@@ -473,13 +473,147 @@ function atlasStudioPlugin(): Plugin {
               sendJson(res, 404, { ok: false, error: "磁盘文件不存在" });
               return;
             }
+            const trashDir = path.join(repoRoot, "backups", "studio-trash");
+            await fs.mkdir(trashDir, { recursive: true });
+            const stem = path.basename(absFile, ".md");
+            const safeCategory = VALID_CATEGORIES.has(String(entry.category))
+              ? String(entry.category)
+              : "tools";
+            const trashFileName = `${Date.now()}__${safeCategory}__${stem}.md`;
+            const trashPath = path.join(trashDir, trashFileName);
             suppressWatcherUntil = Date.now() + 1500;
+            await fs.copyFile(absFile, trashPath);
             await fs.rm(absFile, { force: true });
             await syncContentFiles(repoRoot);
             const snapshot = await broadcastContentUpdate();
             sendJson(res, 200, {
               ok: true,
               deletedSlug: targetSlug,
+              trashFileName,
+              snapshot,
+            });
+            return;
+          }
+
+          if (pathname === "/__atlas_api/trash" && req.method === "GET") {
+            const trashDir = path.join(repoRoot, "backups", "studio-trash");
+            if (!existsSync(trashDir)) {
+              sendJson(res, 200, { ok: true, items: [] });
+              return;
+            }
+            const dirEntries = await fs.readdir(trashDir, {
+              withFileTypes: true,
+            });
+            const mdFiles = dirEntries.filter(
+              (d) => d.isFile() && d.name.endsWith(".md"),
+            );
+            const items = await Promise.all(
+              mdFiles.map(async (d) => {
+                const fullPath = path.join(trashDir, d.name);
+                const [raw, stat] = await Promise.all([
+                  fs.readFile(fullPath, "utf8").catch(() => ""),
+                  fs.stat(fullPath),
+                ]);
+                let fm: Record<string, any> = {};
+                let body = raw;
+                try {
+                  const parsed = parseFrontMatter(raw, d.name);
+                  fm = parsed.data;
+                  body = parsed.body;
+                } catch {
+                  // Keep raw fallback
+                }
+                const nameMatch = /^(\d+)__([a-z]+)__(.+)\.md$/i.exec(d.name);
+                const category = VALID_CATEGORIES.has(
+                  String(fm.category || nameMatch?.[2] || ""),
+                )
+                  ? String(fm.category || nameMatch?.[2])
+                  : "tools";
+                const fileStem = sanitizeSlugStem(
+                  nameMatch?.[3] ||
+                    String(fm.slug || "").split("/").pop() ||
+                    path.basename(d.name, ".md"),
+                );
+                const h1Match = body.match(/^#\s+(.+)$/m);
+                const title = String(
+                  fm.title || h1Match?.[1] || fileStem,
+                ).trim();
+                const summary = String(
+                  fm.summary || body.replace(/^#\s+.+$/m, "").trim().slice(0, 80) || title,
+                ).trim();
+                const deletedMs = nameMatch
+                  ? Number(nameMatch[1])
+                  : stat.mtimeMs;
+                return {
+                  fileName: d.name,
+                  title,
+                  slug: `${category}/${fileStem}`,
+                  category,
+                  fileStem,
+                  summary,
+                  deletedAt: new Date(deletedMs)
+                    .toISOString()
+                    .replace("T", " ")
+                    .slice(0, 16),
+                  deletedMs,
+                };
+              }),
+            );
+            items.sort((a, b) => b.deletedMs - a.deletedMs);
+            sendJson(res, 200, { ok: true, items });
+            return;
+          }
+
+          if (
+            pathname === "/__atlas_api/trash/restore" &&
+            req.method === "POST"
+          ) {
+            const payload = await readJsonBody(req);
+            const fileName = path.basename(String(payload.fileName || "").trim());
+            if (!fileName || !fileName.endsWith(".md")) {
+              sendJson(res, 400, { ok: false, error: "缺少合法的回收站文件名" });
+              return;
+            }
+            const trashDir = path.join(repoRoot, "backups", "studio-trash");
+            const trashFile = path.join(trashDir, fileName);
+            if (!isInsideDir(trashDir, trashFile) || !existsSync(trashFile)) {
+              sendJson(res, 404, { ok: false, error: "回收站文件不存在" });
+              return;
+            }
+            const raw = await fs.readFile(trashFile, "utf8");
+            let fm: Record<string, any> = {};
+            try {
+              fm = parseFrontMatter(raw, fileName).data;
+            } catch {
+              // ignore
+            }
+            const nameMatch = /^(\d+)__([a-z]+)__(.+)\.md$/i.exec(fileName);
+            const category = VALID_CATEGORIES.has(
+              String(fm.category || nameMatch?.[2] || ""),
+            )
+              ? String(fm.category || nameMatch?.[2])
+              : "tools";
+            let fileStem = sanitizeSlugStem(
+              nameMatch?.[3] ||
+                String(fm.slug || "").split("/").pop() ||
+                path.basename(fileName, ".md"),
+            );
+            const targetDir = path.join(contentDir, category);
+            await fs.mkdir(targetDir, { recursive: true });
+            let targetFile = path.join(targetDir, `${fileStem}.md`);
+            if (existsSync(targetFile)) {
+              fileStem = `${fileStem}-restored-${Date.now().toString(36).slice(-4)}`;
+              targetFile = path.join(targetDir, `${fileStem}.md`);
+            }
+            suppressWatcherUntil = Date.now() + 1500;
+            await fs.writeFile(targetFile, raw, "utf8");
+            await fs.rm(trashFile, { force: true });
+            await syncContentFiles(repoRoot);
+            const snapshot = await broadcastContentUpdate();
+            sendJson(res, 200, {
+              ok: true,
+              slug: `${category}/${fileStem}`,
+              relPath: `content/${category}/${fileStem}.md`,
               snapshot,
             });
             return;
@@ -537,6 +671,36 @@ function atlasStudioPlugin(): Plugin {
 
 export default defineConfig(({ mode }) => ({
   base: mode === "wallpaper" ? "./" : process.env.ATLAS_BASE || "/",
+  build: {
+    chunkSizeWarningLimit: 750,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const norm = id.replaceAll("\\", "/");
+          if (norm.includes("/node_modules/three/")) {
+            return "three-vendor";
+          }
+          if (
+            norm.includes("/node_modules/@codemirror/") ||
+            norm.includes("/node_modules/@lezer/")
+          ) {
+            return "codemirror-vendor";
+          }
+          if (
+            norm.includes("/node_modules/highlight.js/") ||
+            norm.includes("/node_modules/marked/") ||
+            norm.includes("/node_modules/dompurify/")
+          ) {
+            return "markdown-vendor";
+          }
+          if (norm.includes("/src/generated/")) {
+            return "atlas-content-data";
+          }
+          return undefined;
+        },
+      },
+    },
+  },
   define: {
     __ATLAS_PUBLIC__: JSON.stringify(process.env.ATLAS_PUBLIC === "1"),
     __RHINE_MODELS__: JSON.stringify(

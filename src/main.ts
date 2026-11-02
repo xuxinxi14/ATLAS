@@ -29,7 +29,7 @@ import {
 } from "@kitlangton/rolling-number";
 import { ArchiveScene } from "./scene";
 import { HomeTransitClock } from "./home-transit";
-import { ModelViewer } from "./model-viewer";
+import type { ModelViewer } from "./model-viewer";
 import { ContentTransition, SurfaceTransition } from "./ui-transitions";
 import { BootSequence } from "./boot";
 import { loadBootWebfonts } from "./boot-lettering";
@@ -71,6 +71,14 @@ import {
   hydrateEntryHtmlImages,
   prefetchEntryAssets,
 } from "./reader/reader-view";
+import { renderHoverPreviewCardMarkup } from "./knowledge/graph";
+import {
+  detectWikiLinkTrigger,
+  queryWikiLinkSuggestions,
+  renderWikiSuggestPopoverMarkup,
+  type WikiLinkSuggestion,
+  type WikiLinkTrigger,
+} from "./studio/wiki-suggest";
 import {
   renderStudioViewMarkup,
   renderStudioSaveStatusMarkup,
@@ -1171,6 +1179,9 @@ function mountStudioMarkdownEditor() {
         studioBodyLineCount = lines;
         studioBodyLineCountFor = value;
         markStudioDirty();
+      },
+      onCursorChange(value, cursor) {
+        updateStudioWikiSuggest(value, cursor);
       },
       onSave: () => void saveStudioDraftToDisk(),
       onToggleRead: () => setStudioEditorTab(studioState.activeTab === "preview" ? studioPreviousEditTab : "preview"),
@@ -2526,7 +2537,7 @@ async function saveStudioDraftToDisk(andReturn = false) {
 async function deleteStudioEntryFromDisk() {
   if (studioState.isNew || !studioState.originalSlug) return;
   const confirmed = window.confirm(
-    `确定要从本地 content/ 目录永久删除档案「${studioState.title || studioState.originalSlug}」吗？`,
+    `确定要将本地档案「${studioState.title || studioState.originalSlug}」移入回收站吗？（可在右上角菜单「回收站与历史恢复」中随时找回）`,
   );
   if (!confirmed) return;
 
@@ -2553,10 +2564,151 @@ async function deleteStudioEntryFromDisk() {
     sync3DCameraWith2DView();
     renderAtlasSurface();
     audio.play("back");
-    notify("档案已从本地知识库中删除");
+    notify("档案已移入本地回收站（可在右上角菜单随时恢复）");
   } catch (err) {
     notify(`删除失败：${err instanceof Error ? err.message : String(err)}`);
   }
+}
+
+async function loadStudioTrashItems() {
+  if (!studioState.localDiskAvailable) return;
+  studioState.trashLoading = true;
+  renderAtlasSurface(true);
+  try {
+    const res = await fetch("/__atlas_api/trash", { cache: "no-store" });
+    const data = await res.json();
+    studioState.trashItems = Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    studioState.trashItems = [];
+  } finally {
+    studioState.trashLoading = false;
+    if (atlasView === "studio") renderAtlasSurface(true);
+  }
+}
+
+async function restoreStudioTrashItem(fileName: string) {
+  if (!fileName) return;
+  try {
+    const res = await fetch("/__atlas_api/trash/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "恢复失败");
+    }
+    if (data.snapshot) {
+      applyHotSnapshot(data.snapshot, true);
+    }
+    studioState.trashDrawerOpen = false;
+    const restoredSlug = String(data.slug || "");
+    if (restoredSlug) {
+      navigateAtlas(buildStudioHash(restoredSlug));
+    } else {
+      await loadStudioTrashItems();
+    }
+    audio.play("confirm");
+    notify(`✓ 已从回收站恢复档案：${restoredSlug}`);
+  } catch (err) {
+    notify(`恢复失败：${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+let studioWikiTrigger: WikiLinkTrigger | null = null;
+let studioWikiSuggestions: WikiLinkSuggestion[] = [];
+let studioWikiActiveIdx = 0;
+
+function hideStudioWikiSuggest() {
+  studioWikiTrigger = null;
+  studioWikiSuggestions = [];
+  studioWikiActiveIdx = 0;
+  const pop = document.getElementById("studio-wiki-suggest");
+  if (pop) {
+    pop.hidden = true;
+    pop.innerHTML = "";
+  }
+}
+
+function updateStudioWikiSuggest(docText: string, cursor: number) {
+  if (atlasView !== "studio" || studioState.activeTab === "preview") {
+    hideStudioWikiSuggest();
+    return;
+  }
+  const trigger = detectWikiLinkTrigger(docText, cursor);
+  if (!trigger) {
+    hideStudioWikiSuggest();
+    return;
+  }
+  const suggestions = queryWikiLinkSuggestions(
+    trigger.query,
+    studioState.originalSlug,
+    7,
+  );
+  if (suggestions.length === 0) {
+    hideStudioWikiSuggest();
+    return;
+  }
+  const isSameQuery =
+    studioWikiTrigger?.query === trigger.query &&
+    studioWikiTrigger?.from === trigger.from;
+  studioWikiTrigger = trigger;
+  studioWikiSuggestions = suggestions;
+  if (!isSameQuery) {
+    studioWikiActiveIdx = 0;
+  } else {
+    studioWikiActiveIdx = Math.max(
+      0,
+      Math.min(studioWikiActiveIdx, suggestions.length - 1),
+    );
+  }
+  const pop = document.getElementById("studio-wiki-suggest");
+  if (pop) {
+    pop.innerHTML = renderWikiSuggestPopoverMarkup(
+      studioWikiSuggestions,
+      studioWikiActiveIdx,
+    );
+    pop.hidden = false;
+  }
+}
+
+function applyStudioWikiSuggestion(idx = studioWikiActiveIdx): boolean {
+  if (!studioWikiTrigger || studioWikiSuggestions.length === 0) return false;
+  const chosen =
+    studioWikiSuggestions[
+      Math.max(0, Math.min(idx, studioWikiSuggestions.length - 1))
+    ];
+  if (!chosen) return false;
+  const prefix = studioWikiTrigger.embed ? "![[" : "[[";
+  const openFrom = studioWikiTrigger.embed
+    ? studioWikiTrigger.from - 1
+    : studioWikiTrigger.from;
+  const replacement = `${prefix}${chosen.insertText}]]`;
+  const to = studioWikiTrigger.to;
+  hideStudioWikiSuggest();
+
+  if (
+    studioEditorModule?.replaceStudioEditorRange(openFrom, to, replacement)
+  ) {
+    audio.play("ui-tick");
+    return true;
+  }
+  const textarea =
+    document.querySelector<HTMLTextAreaElement>("#studio-input-body");
+  if (textarea) {
+    textarea.value =
+      textarea.value.slice(0, openFrom) +
+      replacement +
+      textarea.value.slice(to);
+    studioState.body = textarea.value;
+    const nextPos = openFrom + replacement.length;
+    textarea.focus();
+    textarea.setSelectionRange(nextPos, nextPos);
+    markStudioDirty();
+    audio.play("ui-tick");
+    return true;
+  }
+  return false;
 }
 
 function applyAiCandidateToStudio(
@@ -2730,6 +2882,43 @@ async function uploadStudioImageFile(file: File) {
   const category = studioState.category;
   const draftKey = studioCacheKey(studioState.originalSlug, studioState.isNew);
   const loadRevision = studioLoadRevision;
+  const altLabel = file.name.replace(/\.[^.]+$/, "") || "截图说明";
+
+  const setImgMsg = (msg: string) => {
+    studioState.imageImportingMsg = msg;
+    const footLeft = document.querySelector<HTMLElement>(".studio-bottom-left");
+    if (footLeft) {
+      let badge = footLeft.querySelector<HTMLElement>(".studio-img-import-status");
+      if (msg) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "studio-img-import-status";
+          footLeft.appendChild(badge);
+        }
+        badge.textContent = msg;
+      } else {
+        badge?.remove();
+      }
+    }
+  };
+
+  if (!studioState.localDiskAvailable) {
+    const safeName = (file.name || "screenshot.png").replace(/[^a-zA-Z0-9._-]/g, "-");
+    const mdImage = `\n![${altLabel}](./assets/${safeName})\n`;
+    const textarea = document.querySelector<HTMLTextAreaElement>("#studio-input-body");
+    if (!studioEditorModule?.insertStudioEditorText(mdImage) && textarea) {
+      const pos = textarea.selectionStart ?? textarea.value.length;
+      textarea.value = textarea.value.slice(0, pos) + mdImage + textarea.value.slice(pos);
+      studioState.body = textarea.value;
+      markStudioDirty();
+    }
+    setImgMsg(`已插入相对路径 ./assets/${safeName}（静态模式请手动放入对应 assets 目录）`);
+    setTimeout(() => setImgMsg(""), 4000);
+    notify(`已插入图片引用 ./assets/${safeName}`);
+    return;
+  }
+
+  setImgMsg("正在写入图片资产…");
   try {
     const reader = new FileReader();
     const base64Data = await new Promise<string>((resolve, reject) => {
@@ -2751,11 +2940,12 @@ async function uploadStudioImageFile(file: File) {
 
     if (atlasView !== "studio" || studioLoadRevision !== loadRevision ||
         studioCacheKey(studioState.originalSlug, studioState.isNew) !== draftKey) {
+      setImgMsg("");
       notify(`图片已存入 content/${category}/assets/${data.fileName}；原草稿已切换，请手动插入`);
       return;
     }
 
-    const mdImage = `\n![${file.name.replace(/\.[^.]+$/, "") || "截图说明"}](${data.markdownPath})\n`;
+    const mdImage = `\n![${altLabel}](${data.markdownPath})\n`;
     const textarea =
       document.querySelector<HTMLTextAreaElement>("#studio-input-body");
     if (studioEditorModule?.insertStudioEditorText(mdImage)) {
@@ -2771,11 +2961,14 @@ async function uploadStudioImageFile(file: File) {
       markStudioDirty();
     }
     if (studioState.activeTab === "preview") void scheduleStudioLivePreview(true);
+    setImgMsg(`✓ 已插入 ${data.markdownPath}`);
+    setTimeout(() => setImgMsg(""), 4000);
     audio.play("confirm");
     notify(
       `图片已存入 content/${category}/assets/${data.fileName}`,
     );
   } catch (err) {
+    setImgMsg("");
     notify(`图片上传失败：${err instanceof Error ? err.message : String(err)}`);
   }
 }
@@ -3281,10 +3474,12 @@ document.addEventListener("input", (e) => {
     studioState.source_urls = (e.target as HTMLInputElement).value;
     if (!studioComposing) markStudioDirty();
   } else if (targetId === "studio-input-body") {
-    studioState.body = (e.target as HTMLTextAreaElement).value;
+    const ta = e.target as HTMLTextAreaElement;
+    studioState.body = ta.value;
     if (!studioComposing) {
       markStudioDirty();
       void scheduleStudioLivePreview(false);
+      updateStudioWikiSuggest(ta.value, ta.selectionStart ?? ta.value.length);
     }
   } else if (targetId === "studio-ai-raw-input") {
     studioState.aiRawInput = (e.target as HTMLTextAreaElement).value;
@@ -3337,6 +3532,42 @@ document.addEventListener("paste", (e) => {
         return;
       }
     }
+  }
+});
+document.addEventListener("dragover", (e) => {
+  if (atlasView !== "studio") return;
+  const hasFiles = Array.from(e.dataTransfer?.types ?? []).includes("Files");
+  if (!hasFiles) return;
+  const inTray = (e.target as Element | null)?.closest(".sliding-studio-tray");
+  if (!inTray) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+  document.getElementById("studio-body-zone")?.classList.add("is-drag-over");
+});
+document.addEventListener("dragleave", (e) => {
+  if (atlasView !== "studio") return;
+  const zone = document.getElementById("studio-body-zone");
+  if (!zone) return;
+  const related = e.relatedTarget as Node | null;
+  if (!related || !zone.contains(related)) {
+    zone.classList.remove("is-drag-over");
+  }
+});
+document.addEventListener("drop", (e) => {
+  if (atlasView !== "studio") return;
+  const zone = document.getElementById("studio-body-zone");
+  zone?.classList.remove("is-drag-over");
+  const inTray = (e.target as Element | null)?.closest(".sliding-studio-tray");
+  if (!inTray) return;
+  const files = Array.from(e.dataTransfer?.files ?? []).filter(
+    (f) =>
+      f.type.startsWith("image/") ||
+      /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(f.name),
+  );
+  if (files.length === 0) return;
+  e.preventDefault();
+  for (const file of files) {
+    void uploadStudioImageFile(file);
   }
 });
 document.addEventListener("change", (e) => {
@@ -3547,9 +3778,13 @@ document.addEventListener("click", (e) => {
       .forEach((b) => b.classList.toggle("active", b === opticalDrawerTabBtn));
     const paneToc = document.getElementById("optical-pane-toc");
     const paneTree = document.getElementById("optical-pane-tree");
+    const paneGraph = document.getElementById("optical-pane-graph");
     if (paneToc && paneTree) {
       paneToc.hidden = tab !== "toc";
       paneTree.hidden = tab !== "tree";
+    }
+    if (paneGraph) {
+      paneGraph.hidden = tab !== "graph";
     }
     audio.play("ui-tick");
     return;
@@ -3771,6 +4006,23 @@ document.addEventListener("click", (e) => {
     audio.play("ui-tick");
     return;
   }
+  const wikiSuggestBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-wiki-suggest-idx]",
+  );
+  if (wikiSuggestBtn) {
+    e.preventDefault();
+    const idx = Number(wikiSuggestBtn.dataset.wikiSuggestIdx ?? 0);
+    applyStudioWikiSuggestion(idx);
+    return;
+  }
+  const restoreTrashBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-restore-trash]",
+  );
+  if (restoreTrashBtn) {
+    const fileName = restoreTrashBtn.dataset.studioRestoreTrash ?? "";
+    void restoreStudioTrashItem(fileName);
+    return;
+  }
   const studioInsertBtn = (e.target as Element).closest<HTMLButtonElement>(
     "[data-studio-insert]",
   );
@@ -3810,6 +4062,7 @@ document.addEventListener("click", (e) => {
       studioState.moreDrawerOpen = !studioState.moreDrawerOpen;
       if (studioState.moreDrawerOpen) {
         studioState.aiPasteOpen = false;
+        studioState.trashDrawerOpen = false;
       }
       studioState.openDropdown = null;
       renderAtlasSurface(true);
@@ -3820,6 +4073,24 @@ document.addEventListener("click", (e) => {
             ?.focus(),
         );
       }
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "toggle-trash-drawer") {
+      studioState.trashDrawerOpen = !studioState.trashDrawerOpen;
+      if (studioState.trashDrawerOpen) {
+        studioState.moreDrawerOpen = false;
+        studioState.aiPasteOpen = false;
+        void loadStudioTrashItems();
+      }
+      studioState.openDropdown = null;
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "close-trash-drawer") {
+      studioState.trashDrawerOpen = false;
+      renderAtlasSurface(true);
       audio.play("ui-tick");
       return;
     }
@@ -3916,6 +4187,7 @@ document.addEventListener("click", (e) => {
       studioState.aiPasteOpen = !studioState.aiPasteOpen;
       if (studioState.aiPasteOpen) {
         studioState.moreDrawerOpen = false;
+        studioState.trashDrawerOpen = false;
       } else {
         studioState.aiPendingCandidate = null;
       }
@@ -4355,26 +4627,29 @@ document.addEventListener("click", (e) => {
     // Safari does not always focus a button when it is tapped. Capture the
     // actual opener so closing the modal reliably restores the right control.
     el.focus({ preventScroll: true });
-    viewer ??= new ModelViewer(
-      $("#stage"),
-      () => {
-        audio.setScene(mode);
-        audio.play("page-close");
-      },
-      (sound) => audio.play(sound === "tick" ? "ui-tick" : sound),
-    );
-    audio.setScene("viewer");
-    viewer.setSuperPerformance(superPerformanceEnabled());
-    viewer.setQuality(effectiveRenderQuality());
-    viewer.setMotion(prefs.motion);
-    scene.finishDecryption();
-    viewer.open(
-      records[selected].id,
-      records[selected].title,
-      () => activeScene.createAssemblyModel(),
-      !motionActive("viewerNavigation"),
-    );
-    audio.play("page-open");
+    void import("./model-viewer").then(({ ModelViewer }) => {
+      if (mode !== "detail" || !scene) return;
+      viewer ??= new ModelViewer(
+        $("#stage"),
+        () => {
+          audio.setScene(mode);
+          audio.play("page-close");
+        },
+        (sound) => audio.play(sound === "tick" ? "ui-tick" : sound),
+      );
+      audio.setScene("viewer");
+      viewer.setSuperPerformance(superPerformanceEnabled());
+      viewer.setQuality(effectiveRenderQuality());
+      viewer.setMotion(prefs.motion);
+      activeScene.finishDecryption();
+      viewer.open(
+        records[selected].id,
+        records[selected].title,
+        () => activeScene.createAssemblyModel(),
+        !motionActive("viewerNavigation"),
+      );
+      audio.play("page-open");
+    });
   }
   if (action === "back") {
     setMode("archive");
@@ -4409,6 +4684,129 @@ document.addEventListener("click", (e) => {
         .catch(() => notify("请使用浏览器的全屏快捷键 F11"));
   }
 });
+document.addEventListener(
+  "keydown",
+  (e) => {
+    if (
+      atlasView === "studio" &&
+      studioWikiTrigger &&
+      studioWikiSuggestions.length > 0 &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey
+    ) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        const step = e.key === "ArrowDown" ? 1 : -1;
+        studioWikiActiveIdx =
+          (studioWikiActiveIdx + step + studioWikiSuggestions.length) %
+          studioWikiSuggestions.length;
+        const pop = document.getElementById("studio-wiki-suggest");
+        if (pop) {
+          pop.innerHTML = renderWikiSuggestPopoverMarkup(
+            studioWikiSuggestions,
+            studioWikiActiveIdx,
+          );
+          pop.hidden = false;
+        }
+        return;
+      }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        e.stopPropagation();
+        applyStudioWikiSuggestion(studioWikiActiveIdx);
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        hideStudioWikiSuggest();
+        return;
+      }
+    }
+  },
+  true,
+);
+
+let hoverPreviewTimer: ReturnType<typeof setTimeout> | null = null;
+let hoverPreviewAnchor: HTMLElement | null = null;
+
+function hideLinkHoverPreview() {
+  if (hoverPreviewTimer) {
+    clearTimeout(hoverPreviewTimer);
+    hoverPreviewTimer = null;
+  }
+  hoverPreviewAnchor = null;
+  const pop = document.getElementById("atlas-link-preview-popover");
+  if (pop) pop.hidden = true;
+}
+
+document.addEventListener("mouseover", (e) => {
+  if (atlasView !== "reader" && atlasView !== "home" && atlasView !== "studio") {
+    return;
+  }
+  const target = (e.target as Element | null)?.closest<HTMLElement>(
+    '[data-preview-entry], .reader-markdown-body a[href^="#/entry/"], .reader-rel-card, .studio-wiki-link[href^="#/entry/"]',
+  );
+  if (!target) {
+    if (
+      hoverPreviewAnchor &&
+      !(e.target as Element | null)?.closest("#atlas-link-preview-popover")
+    ) {
+      hideLinkHoverPreview();
+    }
+    return;
+  }
+  if (target === hoverPreviewAnchor) return;
+  hideLinkHoverPreview();
+  hoverPreviewAnchor = target;
+
+  const explicitId = target.dataset.previewEntry || target.dataset.entrySlug;
+  let slugOrId = explicitId || "";
+  if (!slugOrId) {
+    const href = target.getAttribute("href") || "";
+    const m = /^#\/entry\/([^#?]+)/.exec(href);
+    if (m) slugOrId = decodeURIComponent(m[1]);
+  }
+  if (!slugOrId) return;
+  const entry =
+    knowledgeRepository.byId(slugOrId) ?? knowledgeRepository.bySlug(slugOrId);
+  if (!entry) return;
+
+  hoverPreviewTimer = setTimeout(() => {
+    if (!hoverPreviewAnchor || !hoverPreviewAnchor.isConnected) return;
+    let pop = document.getElementById("atlas-link-preview-popover");
+    if (!pop) {
+      pop = document.createElement("aside");
+      pop.id = "atlas-link-preview-popover";
+      pop.className = "atlas-hover-preview-popover";
+      pop.setAttribute("role", "tooltip");
+      document.body.appendChild(pop);
+    }
+    pop.innerHTML = renderHoverPreviewCardMarkup(entry);
+    pop.hidden = false;
+
+    const rect = hoverPreviewAnchor.getBoundingClientRect();
+    const popWidth = 340;
+    const left = Math.max(
+      14,
+      Math.min(window.innerWidth - popWidth - 14, rect.left),
+    );
+    const showAbove = rect.bottom + 185 > window.innerHeight && rect.top > 190;
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = showAbove
+      ? `${Math.round(rect.top - pop.offsetHeight - 10)}px`
+      : `${Math.round(rect.bottom + 10)}px`;
+  }, 150);
+});
+
+document.addEventListener("scroll", () => hideLinkHoverPreview(), true);
+window.addEventListener("hashchange", () => {
+  hideLinkHoverPreview();
+  hideStudioWikiSuggest();
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.defaultPrevented || e.isComposing) return;
   if (!started) return;
@@ -4479,6 +4877,10 @@ document.addEventListener("keydown", (e) => {
         audio.play("ui-tick");
       } else if (studioState.aiPasteOpen) {
         studioState.aiPasteOpen = false;
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
+      } else if (studioState.trashDrawerOpen) {
+        studioState.trashDrawerOpen = false;
         renderAtlasSurface(true);
         audio.play("ui-tick");
       } else if (studioState.moreDrawerOpen) {

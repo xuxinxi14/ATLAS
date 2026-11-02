@@ -14,6 +14,16 @@ import {
   snapshotStudioDraft,
   applyStudioDraftSnapshot,
 } from "../../src/studio/studio-view.ts";
+import {
+  buildLocalKnowledgeGraph,
+  renderHoverPreviewCardMarkup,
+  resolveEntryRelations,
+} from "../../src/knowledge/graph.ts";
+import {
+  detectWikiLinkTrigger,
+  queryWikiLinkSuggestions,
+  renderWikiSuggestPopoverMarkup,
+} from "../../src/studio/wiki-suggest.ts";
 import { parseHashRoute, buildStudioHash } from "../../src/app/router.ts";
 import { knowledgeRepository } from "../../src/knowledge/repository.ts";
 import { records, columnFiles } from "../../src/data.ts";
@@ -373,4 +383,100 @@ test("Sliding Studio Tray (录入工作台) layout & dual-source transition time
   assert.equal(restored.lockedCode, "T-001");
   assert.equal(restored.title, "Aegisub 字幕时间轴与样式基础");
   assert.equal(restored.dirty, true);
+});
+
+test("Knowledge Constellation Graph, bidirectional backlinks, and hover preview card render accurately", () => {
+  const enzymeEntry = knowledgeRepository.byId("concept-enzyme-kinetics");
+  assert.ok(enzymeEntry, "concept-enzyme-kinetics entry exists");
+
+  const relations = resolveEntryRelations(enzymeEntry);
+  assert.ok(
+    relations.backlinks.some((b) => b.id === "skill-molecular-docking") ||
+      relations.related.some((r) => r.id === "skill-molecular-docking"),
+    "Bidirectional link between enzyme kinetics and molecular docking is resolved",
+  );
+
+  const graph = buildLocalKnowledgeGraph(enzymeEntry);
+  assert.equal(graph.nodes[0].kind, "center");
+  assert.equal(graph.nodes[0].entry.id, "concept-enzyme-kinetics");
+  assert.ok(graph.nodes.length >= 4, "Constellation includes center and satellite nodes");
+  assert.ok(graph.edges.length >= 3, "Constellation connects center to satellite nodes");
+
+  const readerHtml = renderReaderViewMarkup(
+    enzymeEntry.slug,
+    new Set(),
+    true,
+  );
+  assert.ok(
+    readerHtml.includes("KNOWLEDGE CONSTELLATION // 知识关联星图"),
+    "Reader includes Knowledge Constellation Graph card",
+  );
+  assert.ok(
+    readerHtml.includes('data-optical-drawer-tab="graph"'),
+    "Reader TOC drawer includes Knowledge Graph tab",
+  );
+
+  const previewHtml = renderHoverPreviewCardMarkup(enzymeEntry);
+  assert.ok(previewHtml.includes(enzymeEntry.visualCode));
+  assert.ok(previewHtml.includes(enzymeEntry.title));
+  assert.ok(previewHtml.includes(enzymeEntry.summary));
+});
+
+test("Studio wiki-link [[ autocomplete, drag-and-drop overlay, and trash restore drawer work accurately", () => {
+  // 1. Detect wiki-link trigger & auto-closed brackets
+  const docText = "参见 [[aegi]] 笔记";
+  const trigger = detectWikiLinkTrigger(docText, 9); // cursor right after "[[aegi"
+  assert.ok(trigger, "Detects active [[aegi trigger");
+  assert.equal(trigger.query, "aegi");
+  assert.equal(trigger.from, 3);
+  assert.equal(trigger.to, 11, "Includes trailing ]] in replacement range");
+
+  // 2. Query note suggestions and #heading anchor suggestions
+  const noteMatches = queryWikiLinkSuggestions("aegi");
+  assert.ok(
+    noteMatches.some((m) => m.slug === "tools/aegisub"),
+    "Finds tools/aegisub for [[aegi",
+  );
+
+  const headingMatches = queryWikiLinkSuggestions("tools/aegisub#快速");
+  assert.ok(
+    headingMatches.length > 0 && headingMatches[0].isHeading,
+    "Finds heading anchors when # is typed inside [[Note#...",
+  );
+
+  const popHtml = renderWikiSuggestPopoverMarkup(noteMatches, 0);
+  assert.ok(popHtml.includes("WIKI LINK AUTOCOMPLETE"));
+  assert.ok(popHtml.includes('data-wiki-suggest-idx="0"'));
+
+  // 3. Verify Studio Trash Restore Drawer & Dropzone markup
+  const draft = createDefaultStudioDraft("tools", "library");
+  draft.trashDrawerOpen = true;
+  draft.trashItems = [
+    {
+      fileName: "1730000000000__tools__demo-note.md",
+      title: "已删除的测试笔记",
+      slug: "tools/demo-note",
+      category: "tools",
+      fileStem: "demo-note",
+      summary: "用于验证回收站恢复面板的测试摘要。",
+      deletedAt: "2026-11-02 11:20",
+      deletedMs: 1730000000000,
+    },
+  ];
+  const studioHtml = renderStudioViewMarkup(draft, true);
+  assert.ok(
+    studioHtml.includes("studio-dropzone-overlay"),
+    "Studio includes image drag-and-drop overlay",
+  );
+  assert.ok(
+    studioHtml.includes('id="studio-wiki-suggest"'),
+    "Studio includes wiki-link autocomplete popover container",
+  );
+  assert.ok(
+    studioHtml.includes("已删除的测试笔记") &&
+      studioHtml.includes(
+        'data-studio-restore-trash="1730000000000__tools__demo-note.md"',
+      ),
+    "Studio trash drawer renders deleted item and restore action button",
+  );
 });

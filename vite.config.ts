@@ -656,6 +656,154 @@ function atlasStudioPlugin(): Plugin {
             return;
           }
 
+          if (pathname === "/__atlas_api/promote" && req.method === "POST") {
+            const payload = await readJsonBody(req);
+            const sourceSlug = String(payload.slug || "")
+              .trim()
+              .replace(/^\/+|\/+$/g, "");
+            const targetCategory = String(payload.targetCategory || "").trim();
+            if (
+              !sourceSlug ||
+              !VALID_CATEGORIES.has(targetCategory) ||
+              targetCategory === "inbox"
+            ) {
+              sendJson(res, 400, {
+                ok: false,
+                error: "请指定有效的草稿 slug 与目标正式领域",
+              });
+              return;
+            }
+            const currentSnapshot = await loadCompiledSnapshot(repoRoot);
+            const entry = currentSnapshot.manifest.entries.find(
+              (e: any) =>
+                e.slug === sourceSlug ||
+                e.id === sourceSlug ||
+                (Array.isArray(e.aliases) && e.aliases.includes(sourceSlug)),
+            );
+            const relPath = entry
+              ? entry.relPath
+              : `content/${sourceSlug.endsWith(".md") ? sourceSlug : `${sourceSlug}.md`}`;
+            const absSource = path.resolve(repoRoot, relPath);
+            if (!isInsideDir(contentDir, absSource) || !existsSync(absSource)) {
+              sendJson(res, 404, { ok: false, error: "待转正的草稿文件不存在" });
+              return;
+            }
+            const raw = await fs.readFile(absSource, "utf8");
+            const parsed = parseFrontMatter(raw, relPath);
+            const fm = parsed.data;
+            const fileStem = sanitizeSlugStem(
+              path.basename(absSource, ".md") ||
+                String(fm.slug || "").split("/").pop() ||
+                "promoted-note",
+            );
+            const newSlug = `${targetCategory}/${fileStem}`;
+            const targetDir = path.join(contentDir, targetCategory);
+            const targetFile = path.join(targetDir, `${fileStem}.md`);
+            if (existsSync(targetFile) && path.resolve(targetFile) !== path.resolve(absSource)) {
+              sendJson(res, 409, {
+                ok: false,
+                error: `目标领域已存在同名文件 content/${targetCategory}/${fileStem}.md`,
+              });
+              return;
+            }
+
+            const today = new Date().toISOString().slice(0, 10);
+            const nextStatus =
+              VALID_STATUSES.has(String(payload.targetStatus)) &&
+              String(payload.targetStatus) !== "draft"
+                ? String(payload.targetStatus)
+                : fm.status && fm.status !== "draft"
+                  ? String(fm.status)
+                  : "learning";
+            const aliases = Array.from(
+              new Set([
+                ...(Array.isArray(fm.aliases) ? fm.aliases : entry?.aliases || []),
+                sourceSlug,
+              ]),
+            ).filter((a) => a && a !== newSlug);
+
+            const id =
+              String(fm.id || entry?.id || `${targetCategory}-${fileStem}`).trim();
+            const title = String(fm.title || entry?.title || fileStem).trim();
+            const type = VALID_TYPES.has(String(fm.type || entry?.type))
+              ? String(fm.type || entry?.type)
+              : "skill";
+            const subcategory = String(
+              fm.subcategory || entry?.subcategory || "general",
+            ).trim();
+            const tags = Array.isArray(fm.tags)
+              ? fm.tags
+              : entry?.tags || [];
+            const summary = String(fm.summary || entry?.summary || title).trim();
+            const created = /^\d{4}-\d{2}-\d{2}$/.test(String(fm.created || ""))
+              ? String(fm.created)
+              : today;
+            const versionScope = String(
+              fm.version_scope || entry?.version_scope || "通用版本",
+            ).trim();
+            const sourceUrls = Array.isArray(fm.source_urls)
+              ? fm.source_urls
+              : entry?.source_urls || [];
+            const prerequisites = Array.isArray(fm.prerequisites)
+              ? fm.prerequisites
+              : entry?.prerequisites || [];
+            const related = Array.isArray(fm.related)
+              ? fm.related
+              : entry?.related || [];
+
+            let bodyContent = parsed.body.replace(/\r\n/g, "\n").trimStart();
+            if (!bodyContent.startsWith("# ")) {
+              bodyContent = `# ${title}\n\n${bodyContent}`;
+            }
+
+            const yamlLines = [
+              "---",
+              `id: ${id}`,
+              `title: ${quoteYamlScalar(title)}`,
+              `slug: ${newSlug}`,
+              `type: ${type}`,
+              `category: ${targetCategory}`,
+              `subcategory: ${quoteYamlScalar(subcategory)}`,
+              `status: ${nextStatus}`,
+              `tags: ${formatYamlArray(tags)}`,
+              `summary: ${quoteYamlScalar(summary)}`,
+              `created: ${created}`,
+              `updated: ${today}`,
+              `version_scope: ${quoteYamlScalar(versionScope)}`,
+              `source_urls: ${formatYamlArray(sourceUrls)}`,
+              `prerequisites: ${formatYamlArray(prerequisites)}`,
+              `related: ${formatYamlArray(related)}`,
+              ...(aliases.length > 0
+                ? [`aliases: ${formatYamlArray(aliases)}`]
+                : []),
+              "---",
+              "",
+              bodyContent,
+            ];
+
+            suppressWatcherUntil = Date.now() + 1500;
+            await fs.mkdir(targetDir, { recursive: true });
+            await fs.writeFile(targetFile, yamlLines.join("\n"), "utf8");
+            if (path.resolve(targetFile) !== path.resolve(absSource)) {
+              await fs.rm(absSource, { force: true });
+            }
+            await syncContentFiles(repoRoot);
+            const snapshot = await broadcastContentUpdate();
+            const promotedEntry = snapshot.manifest.entries.find(
+              (e: any) => e.slug === newSlug || e.id === id,
+            );
+            sendJson(res, 200, {
+              ok: true,
+              slug: newSlug,
+              id,
+              visualCode: promotedEntry?.visualCode ?? "",
+              globalCode: promotedEntry?.globalCode ?? "",
+              relPath: `content/${targetCategory}/${fileStem}.md`,
+              snapshot,
+            });
+            return;
+          }
+
           sendJson(res, 404, { ok: false, error: "Unknown ATLAS API route" });
         } catch (err) {
           console.error("[ATLAS Studio API Error]", err);

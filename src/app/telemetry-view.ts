@@ -281,6 +281,11 @@ export function renderTelemetryHomeMarkup(
                   : `<span class="atlas-webgl-fallback-note">当前环境未启用 WebGL，已自动为您开启全功能二维阅读模式</span>`
               }
             </div>
+            <div class="rhine-backup-bar" role="group" aria-label="全库快照备份与恢复">
+              <button type="button" class="rhine-backup-btn" data-atlas-action="export-snapshot-json" title="导出包含全部档案、收藏、温习进度与页边批注的 JSON 快照">⬇ 导出 JSON 快照</button>
+              <button type="button" class="rhine-backup-btn" data-atlas-action="export-snapshot-md" title="将全部档案与个人批注合并导出为单文件 Markdown 归档合集">⬇ 导出 MD 合集</button>
+              <button type="button" class="rhine-backup-btn" data-atlas-action="import-snapshot-json" title="从 JSON 快照文件恢复收藏、温习状态与个人批注">⬆ 导入恢复快照</button>
+            </div>
           </section>
         </aside>
 
@@ -318,7 +323,10 @@ export function renderTelemetryHomeMarkup(
           <section class="rhine-global-graph-section" data-stagger="3" aria-label="全域知识关联星图">
             <div class="rhine-section-kicker">
               <span>05 // GLOBAL KNOWLEDGE CONSTELLATION · 全域知识关联星图</span>
-              <span>CLICK NODE TO INSPECT · HOVER FOR SUMMARY</span>
+              <span class="global-graph-kicker-actions">
+                <button type="button" class="graph-3d-link-btn" data-atlas-action="spotlight-3d-filter" data-filter="status:review" title="在三维阵列中筛选并定位需校准档案">◈ 3D 定位需校准 (${telemetry.statusCounts.review})</button>
+                <button type="button" class="graph-3d-link-btn" data-atlas-action="spotlight-3d-filter" data-filter="status:learning" title="在三维阵列中筛选并定位解析中档案">◈ 3D 定位解析中 (${telemetry.statusCounts.learning})</button>
+              </span>
             </div>
             <div class="rhine-anchor-rule" data-rule><i></i></div>
             ${renderGlobalKnowledgeGraphMarkup()}

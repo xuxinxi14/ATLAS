@@ -307,6 +307,22 @@ export function renderLibraryViewMarkup(
                       role="menuitem"
                       class="desk-row-menu-item"
                     >✎ 编辑档案</a>`}
+                    ${
+                      !readOnly && entry.category === "inbox"
+                        ? portals
+                            .map(
+                              (p) => `<button
+                                type="button"
+                                role="menuitem"
+                                class="desk-row-menu-item is-promote-item"
+                                data-atlas-action="promote-inbox-entry"
+                                data-entry-slug="${escapeHtml(entry.slug)}"
+                                data-target-category="${escapeHtml(p.id)}"
+                              >⚡ 转正至 ${escapeHtml(p.codePrefix)} · ${escapeHtml(deskDomainTitle(p.id, p.title))}</button>`,
+                            )
+                            .join("")
+                        : ""
+                    }
                     <button
                       type="button"
                       role="menuitem"
@@ -361,7 +377,26 @@ export function renderLibraryViewMarkup(
       : "";
 
   const primaryActionHtml = isSelectedDraft && selectedEntry
-    ? readOnly ? "" : `<a href="${buildStudioHash(selectedEntry.slug)}" class="desk-act-primary">继续编撰草稿 ↗</a>`
+    ? readOnly
+      ? ""
+      : `<div class="desk-inbox-context-actions">
+          <div class="desk-inbox-promote-inline" role="group" aria-label="草稿一键转正归档">
+            <span class="desk-promote-inline-label">⚡ 转正归档：</span>
+            ${portals
+              .map(
+                (p) => `<button
+                  type="button"
+                  class="desk-promote-chip"
+                  data-atlas-action="promote-inbox-entry"
+                  data-entry-slug="${escapeHtml(selectedEntry.slug)}"
+                  data-target-category="${escapeHtml(p.id)}"
+                  title="将草稿转正至「${escapeHtml(p.title)}」并自动分配 ${escapeHtml(p.codePrefix)} 系列正式编号"
+                ><b>${escapeHtml(p.codePrefix)}</b><span>${escapeHtml(deskDomainTitle(p.id, p.title))}</span></button>`,
+              )
+              .join("")}
+          </div>
+          <a href="${buildStudioHash(selectedEntry.slug)}" class="desk-act-primary">继续编撰草稿 ↗</a>
+        </div>`
     : hasWebGL
       ? `<button
           type="button"

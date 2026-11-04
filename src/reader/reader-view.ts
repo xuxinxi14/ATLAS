@@ -16,6 +16,11 @@ import {
   renderLocalKnowledgeGraphMarkup,
   resolveEntryRelations,
 } from "../knowledge/graph.ts";
+import {
+  getEntryAnnotations,
+  applyInlineHighlightsToHtml,
+  renderReaderAnnotationsDrawerMarkup,
+} from "./reader-notes.ts";
 
 export function hydrateEntryHtmlImages(html: string): string {
   return html.replace(
@@ -251,7 +256,16 @@ export function renderReaderViewMarkup(
         </ul>`
       : `<p class="reader-side-muted">本地实践记录与技术总结</p>`;
 
-  const hydratedBodyHtml = formatOpticalBodyHtml(entry.html);
+  const annotations = getEntryAnnotations(entry.id, entry.slug);
+  const notesDrawerHtml = renderReaderAnnotationsDrawerMarkup(
+    entry,
+    annotations,
+    readOnly,
+  );
+  const hydratedBodyHtml = applyInlineHighlightsToHtml(
+    formatOpticalBodyHtml(entry.html),
+    annotations,
+  );
 
   return `
     <div class="optical-reader-stage" id="optical-reader-stage" data-has-webgl="${hasWebGL}">
@@ -360,6 +374,14 @@ export function renderReaderViewMarkup(
             <button
               type="button"
               class="optical-menu-item"
+              data-optical-action="open-notes-drawer"
+            >
+              <span>✎ 页边批注与高亮 (${annotations.length})</span>
+              <kbd>M</kbd>
+            </button>
+            <button
+              type="button"
+              class="optical-menu-item"
               data-optical-action="copy-wiki-link"
               data-entry-id="${escapeHtml(entry.id)}"
             >
@@ -413,6 +435,7 @@ export function renderReaderViewMarkup(
                 <button type="button" class="optical-drawer-tab active" data-optical-drawer-tab="toc">本文章节 (${entry.toc.length})</button>
                 <button type="button" class="optical-drawer-tab" data-optical-drawer-tab="tree">全部档案 (${allEntries.length})</button>
                 <button type="button" class="optical-drawer-tab" data-optical-drawer-tab="graph">关系图谱 (${relBundle.totalDirectCount})</button>
+                <button type="button" class="optical-drawer-tab" data-optical-drawer-tab="notes">批注 (${annotations.length})</button>
               </div>
               <button type="button" class="optical-drawer-close" data-optical-toggle="toc" aria-label="收起目录">×</button>
             </div>
@@ -427,6 +450,9 @@ export function renderReaderViewMarkup(
               <div class="optical-drawer-relations">
                 ${relationsHtml}
               </div>
+            </div>
+            <div class="optical-drawer-pane optical-pane-notes" id="optical-pane-notes" hidden>
+              ${notesDrawerHtml}
             </div>
           </aside>
 

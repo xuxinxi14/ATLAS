@@ -6311,3 +6311,413 @@ i[data-status="draft"] {
 .reader-markdown-body :is(h1, h2, h3, h4):hover .atlas-heading-anchor {
   opacity: 1;
 }
+
+/* ============================================================================
+ * 1. SNAPSHOT BACKUP & RESTORE
+ * ============================================================================ */
+
+.rhine-backup-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rhine-backup-btn,
+.settings-backup-actions button {
+  padding: 4px 9px;
+  font-size: 11px;
+  border: 1px solid rgba(156, 149, 136, 0.52);
+  background: rgba(248, 246, 241, 0.72);
+  color: var(--atlas-ink);
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.rhine-backup-btn:hover,
+.settings-backup-actions button:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+}
+
+[data-dark-surface="true"] .rhine-backup-btn,
+[data-dark-surface="true"] .settings-backup-actions button {
+  background: rgba(26, 32, 36, 0.8);
+  border-color: rgba(125, 138, 144, 0.42);
+}
+
+.settings-backup-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(156, 149, 136, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-backup-section > span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--atlas-muted);
+}
+
+.settings-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ============================================================================
+ * 2. READER INLINE HIGHLIGHTS & MARGIN NOTES DRAWER
+ * ============================================================================ */
+
+mark.atlas-inline-highlight {
+  padding: 1px 3px;
+  border-radius: 2px;
+  color: inherit;
+  background: rgba(237, 130, 27, 0.24);
+  border-bottom: 1.5px solid rgba(210, 123, 23, 0.75);
+}
+
+mark.atlas-inline-highlight[data-color="emerald"] {
+  background: rgba(46, 160, 115, 0.22);
+  border-bottom-color: rgba(46, 160, 115, 0.75);
+}
+
+mark.atlas-inline-highlight[data-color="sky"] {
+  background: rgba(56, 139, 210, 0.22);
+  border-bottom-color: rgba(56, 139, 210, 0.75);
+}
+
+.reader-annotations-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.reader-annotation-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(156, 149, 136, 0.45);
+  background: rgba(244, 242, 236, 0.6);
+}
+
+[data-dark-surface="true"] .reader-annotation-composer {
+  background: rgba(26, 32, 36, 0.68);
+  border-color: rgba(125, 138, 144, 0.38);
+}
+
+.annotation-composer-row {
+  display: flex;
+  gap: 6px;
+}
+
+.annotation-quote-input,
+.annotation-body-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid rgba(156, 149, 136, 0.48);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--atlas-ink);
+}
+
+[data-dark-surface="true"] .annotation-quote-input,
+[data-dark-surface="true"] .annotation-body-input {
+  background: rgba(18, 23, 26, 0.88);
+  border-color: rgba(125, 138, 144, 0.42);
+}
+
+.annotation-pick-selection-btn,
+.annotation-save-btn,
+.annotation-export-btn {
+  flex-shrink: 0;
+  padding: 4px 9px;
+  font-size: 11.5px;
+  border: 1px solid rgba(156, 149, 136, 0.55);
+  background: rgba(248, 246, 241, 0.88);
+  color: var(--atlas-ink);
+  cursor: pointer;
+}
+
+.annotation-save-btn,
+.annotation-export-btn.is-primary {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+  font-weight: 600;
+}
+
+.annotation-composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.annotation-color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.annotation-color-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(90, 86, 78, 0.45);
+  cursor: pointer;
+  padding: 0;
+}
+
+.annotation-color-btn[data-note-color="amber"] {
+  background: #ed821b;
+}
+
+.annotation-color-btn[data-note-color="emerald"] {
+  background: #2ea073;
+}
+
+.annotation-color-btn[data-note-color="sky"] {
+  background: #388bd2;
+}
+
+.annotation-color-btn.active {
+  box-shadow: 0 0 0 2px var(--atlas-ink);
+}
+
+.reader-annotations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reader-annotation-card {
+  padding: 8px 10px;
+  border: 1px solid rgba(156, 149, 136, 0.4);
+  border-left: 3px solid var(--atlas-amber);
+  background: rgba(248, 246, 241, 0.65);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reader-annotation-card[data-color="emerald"] {
+  border-left-color: #2ea073;
+}
+
+.reader-annotation-card[data-color="sky"] {
+  border-left-color: #388bd2;
+}
+
+[data-dark-surface="true"] .reader-annotation-card {
+  background: rgba(24, 30, 34, 0.72);
+  border-color: rgba(125, 138, 144, 0.34);
+}
+
+.annotation-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--atlas-muted);
+}
+
+.annotation-delete-btn {
+  border: none;
+  background: transparent;
+  color: var(--atlas-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.annotation-delete-btn:hover {
+  color: var(--atlas-amber);
+}
+
+.annotation-quote {
+  margin: 2px 0;
+  padding-left: 8px;
+  border-left: 2px solid rgba(156, 149, 136, 0.45);
+  font-size: 12px;
+  color: var(--atlas-muted);
+}
+
+.annotation-note-body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--atlas-ink);
+}
+
+.reader-annotations-export-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(156, 149, 136, 0.35);
+}
+
+/* ============================================================================
+ * 3. INBOX DRAFT ONE-CLICK PROMOTE WORKFLOW
+ * ============================================================================ */
+
+.studio-inbox-promote-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(210, 123, 23, 0.48);
+  background: rgba(237, 130, 27, 0.08);
+}
+
+.inbox-promote-label,
+.desk-promote-inline-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--atlas-amber);
+}
+
+.inbox-promote-domains,
+.desk-inbox-promote-inline {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inbox-promote-btn,
+.desk-promote-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  border: 1px solid rgba(156, 149, 136, 0.55);
+  background: rgba(248, 246, 241, 0.88);
+  color: var(--atlas-ink);
+  cursor: pointer;
+  transition: border-color 140ms ease, color 140ms ease;
+}
+
+.inbox-promote-btn b,
+.desk-promote-chip b {
+  color: var(--atlas-amber);
+}
+
+.inbox-promote-btn:hover,
+.desk-promote-chip:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+}
+
+[data-dark-surface="true"] .inbox-promote-btn,
+[data-dark-surface="true"] .desk-promote-chip {
+  background: rgba(26, 32, 36, 0.85);
+  border-color: rgba(125, 138, 144, 0.45);
+}
+
+.desk-inbox-context-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ============================================================================
+ * 4. 3D ARCHIVE ARRAY SPOTLIGHT HUD & CONSTELLATION LINKAGE
+ * ============================================================================ */
+
+.archive-spotlight-hud {
+  position: absolute;
+  left: 60px;
+  bottom: 72px;
+  z-index: 12;
+  pointer-events: auto;
+}
+
+.archive-spotlight-bar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid rgba(156, 149, 136, 0.45);
+  background: rgba(244, 242, 236, 0.78);
+  backdrop-filter: blur(6px);
+  font-size: 11px;
+}
+
+[data-dark-surface="true"] .archive-spotlight-bar {
+  background: rgba(22, 27, 30, 0.8);
+  border-color: rgba(125, 138, 144, 0.38);
+}
+
+.spotlight-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  color: var(--atlas-muted);
+}
+
+.spotlight-pills {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.spotlight-pill,
+.spotlight-step-btn,
+.graph-3d-link-btn {
+  padding: 2px 7px;
+  font-size: 11px;
+  border: 1px solid rgba(156, 149, 136, 0.45);
+  background: transparent;
+  color: var(--atlas-ink);
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.spotlight-pill.active,
+.spotlight-pill:hover,
+.spotlight-step-btn:hover,
+.graph-3d-link-btn:hover {
+  border-color: var(--atlas-amber);
+  color: var(--atlas-amber);
+  background: rgba(237, 130, 27, 0.1);
+}
+
+.spotlight-match-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(156, 149, 136, 0.35);
+}
+
+.spotlight-match-count b {
+  color: var(--atlas-amber);
+}
+
+.file-ticks button[data-spotlight-match="false"] {
+  opacity: 0.25;
+}
+
+.file-ticks button[data-spotlight-match="true"]:not(.selected) {
+  box-shadow: 0 0 0 1.5px var(--atlas-amber);
+}
+
+.global-graph-kicker-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

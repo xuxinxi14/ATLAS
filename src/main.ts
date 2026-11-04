@@ -77,6 +77,25 @@ import {
   formatEntryCitationCard,
 } from "./knowledge/graph";
 import {
+  getEntryAnnotations,
+  addEntryAnnotation,
+  removeEntryAnnotation,
+  formatAnnotationsAsMarkdownSection,
+  saveAllReaderAnnotations,
+  type AnnotationColor,
+} from "./reader/reader-notes";
+import {
+  serializeAtlasSnapshotJson,
+  createAtlasFullMarkdownBundleText,
+  parseAndValidateAtlasSnapshot,
+} from "./knowledge/backup";
+import {
+  resolveSpotlightMatchingIndices,
+  stepSpotlightArchiveIndex,
+  renderArchiveSpotlightHudMarkup,
+  type ArchiveSpotlightMode,
+} from "./archive-spotlight";
+import {
   detectWikiLinkTrigger,
   queryWikiLinkSuggestions,
   renderWikiSuggestPopoverMarkup,
@@ -164,6 +183,7 @@ $("#stage").innerHTML = `
     <div class="archive-counter"><span class="tiny-label">ARCHIVE / SELECT</span><div><span id="selected-number">01</span><i>/</i><span class="count-total">12</span></div></div>
     <div class="archive-navigation"><button data-action="prev" aria-label="上一个档案">↑</button><div id="file-ticks" class="file-ticks"></div><button data-action="next" aria-label="下一个档案">↓</button></div>
     <div class="column-navigation"><button data-action="column-prev" aria-label="上一列">←</button><div><span id="column-number">COLUMN <span id="column-index">03</span> / 05</span><strong id="column-name">机构档案</strong></div><button data-action="column-next" aria-label="下一列">→</button></div>
+    <div id="archive-spotlight-hud" class="archive-spotlight-hud"></div>
     <div class="archive-hint"><kbd>←</kbd> <kbd>→</kbd> 切换列 <span>／</span> <kbd>↑</kbd> <kbd>↓</kbd> 前后档案 <span>／</span> <kbd>ENTER</kbd> 读取</div>
   </section>
   <section id="detail-ui" class="detail-ui" aria-label="档案内容" hidden>
@@ -317,6 +337,9 @@ function saveCalibratedReviewIds() {
     );
   } catch {}
 }
+let archiveSpotlightFilter: ArchiveSpotlightMode = "all";
+let activeNoteColor: AnnotationColor = "amber";
+let pendingStudioAppendText = "";
 const storedPrefs = readLocal<
   Partial<{
     sound: boolean;
@@ -2102,6 +2125,11 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
         if (cached && cached.dirty) {
           applyStudioDraftSnapshot(studioState, cached);
         }
+        if (pendingStudioAppendText) {
+          studioState.body = `${studioState.body.trimEnd()}\n\n${pendingStudioAppendText}\n`;
+          pendingStudioAppendText = "";
+          markStudioDirty();
+        }
 
         await scheduleStudioLivePreview(true);
         if (!current()) return;
@@ -2148,10 +2176,185 @@ async function loadStudioEntryFromDisk(slugOrId: string) {
     if (cached && cached.dirty) {
       applyStudioDraftSnapshot(studioState, cached);
     }
+    if (pendingStudioAppendText) {
+      studioState.body = `${studioState.body.trimEnd()}\n\n${pendingStudioAppendText}\n`;
+      pendingStudioAppendText = "";
+      markStudioDirty();
+    }
     sync3DCameraWith2DView();
     renderAtlasSurface();
   } else {
     syncStudioStatusDom();
+  }
+}
+
+function openReaderDrawerAtTab(
+  tab: "toc" | "tree" | "graph" | "notes",
+  prefillSelection = false,
+) {
+  const selectionText = prefillSelection
+    ? (window.getSelection()?.toString().trim() ?? "")
+    : "";
+  const tocDrawer = document.getElementById("optical-toc-drawer");
+  const tocTrigger = document.querySelector<HTMLElement>(
+    '[data-optical-toggle="toc"]',
+  );
+  if (tocDrawer) {
+    tocDrawer.hidden = false;
+    tocTrigger?.setAttribute("aria-expanded", "true");
+  }
+  document
+    .querySelectorAll<HTMLElement>("[data-optical-drawer-tab]")
+    .forEach((b) =>
+      b.classList.toggle("active", b.dataset.opticalDrawerTab === tab),
+    );
+  const paneToc = document.getElementById("optical-pane-toc");
+  const paneTree = document.getElementById("optical-pane-tree");
+  const paneGraph = document.getElementById("optical-pane-graph");
+  const paneNotes = document.getElementById("optical-pane-notes");
+  if (paneToc) paneToc.hidden = tab !== "toc";
+  if (paneTree) paneTree.hidden = tab !== "tree";
+  if (paneGraph) paneGraph.hidden = tab !== "graph";
+  if (paneNotes) paneNotes.hidden = tab !== "notes";
+
+  if (tab === "notes") {
+    requestAnimationFrame(() => {
+      const quoteInput = document.getElementById(
+        "reader-note-quote-input",
+      ) as HTMLInputElement | null;
+      const bodyInput = document.getElementById(
+        "reader-note-body-input",
+      ) as HTMLTextAreaElement | null;
+      if (quoteInput && selectionText) {
+        quoteInput.value = selectionText;
+      }
+      bodyInput?.focus();
+    });
+  }
+}
+
+function exportAtlasBackupFile(format: "json" | "md") {
+  const today = new Date().toISOString().slice(0, 10);
+  if (format === "json") {
+    const jsonText = serializeAtlasSnapshotJson({
+      savedIds: saved,
+      calibratedIds: calibratedReviewIds,
+    });
+    const blob = new Blob([jsonText], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ATLAS-SNAPSHOT-${today}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    audio.play("confirm");
+    notify(`✓ 已导出全库 JSON 快照 (ATLAS-SNAPSHOT-${today}.json)`);
+  } else {
+    const mdText = createAtlasFullMarkdownBundleText({
+      savedIds: saved,
+      calibratedIds: calibratedReviewIds,
+    });
+    const blob = new Blob([mdText], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ATLAS-FULL-ARCHIVE-${today}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    audio.play("confirm");
+    notify(`✓ 已导出全库 Markdown 合集 (ATLAS-FULL-ARCHIVE-${today}.md)`);
+  }
+}
+
+function triggerImportSnapshotJson() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+  input.addEventListener("change", async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const raw = await file.text();
+      const validated = parseAndValidateAtlasSnapshot(raw);
+      if (!validated.ok) {
+        notify(`快照导入失败：${validated.error}`);
+        return;
+      }
+      const { userState } = validated.bundle;
+      saved.clear();
+      for (const id of userState.savedIds) saved.add(id);
+      try {
+        localStorage.setItem("rhine-saved", JSON.stringify([...saved]));
+      } catch {}
+      calibratedReviewIds.clear();
+      for (const id of userState.calibratedIds) calibratedReviewIds.add(id);
+      saveCalibratedReviewIds();
+      if (userState.annotations) {
+        saveAllReaderAnnotations(userState.annotations);
+      }
+      updateSelection();
+      if (atlasView !== "archive") {
+        renderAtlasSurface(true);
+      }
+      audio.play("confirm");
+      notify(
+        `✓ 已从快照恢复 ${saved.size} 项收藏、${calibratedReviewIds.size} 项校准记录与批注`,
+      );
+    } catch (err) {
+      notify(
+        `读取快照失败：${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  });
+  input.click();
+}
+
+async function promoteInboxEntryFromLibrary(
+  slug: string,
+  targetCategory: string,
+) {
+  try {
+    const res = await fetch("/__atlas_api/promote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug,
+        targetCategory,
+        targetStatus: "learning",
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "转正失败");
+    }
+    if (data.snapshot) {
+      applyHotSnapshot(data.snapshot, true);
+    }
+    libraryState.category = targetCategory;
+    libraryState.selectedId = data.id || data.slug;
+    libraryState.openRowMenuId = null;
+    sync3DCameraWith2DView();
+    renderAtlasSurface(true);
+    audio.play("confirm");
+    notify(
+      `✓ 草稿已转正归档为 ${data.visualCode || data.slug}（${deskDomainTitle(targetCategory, targetCategory)}）`,
+    );
+  } catch {
+    // Fallback in static mode: open Studio with targetCategory pre-selected
+    navigateAtlas(buildStudioHash(slug));
+    requestAnimationFrame(() => {
+      studioState.category = targetCategory;
+      if (studioState.status === "draft") studioState.status = "learning";
+      markStudioDirty();
+      renderAtlasSurface(true);
+      notify(
+        `已在编撰台预设转正领域为「${deskDomainTitle(targetCategory, targetCategory)}」，请保存或导出`,
+      );
+    });
   }
 }
 
@@ -3137,6 +3340,9 @@ function updateSelection(navigation?: ArchiveNavigation) {
     files.length <= fileTicks.length
       ? files
       : files.slice(0, fileTicks.length);
+  const spotlightSet = new Set(
+    resolveSpotlightMatchingIndices(archiveSpotlightFilter, selected, saved),
+  );
   fileTicks.forEach((button, slot) => {
     const index = visibleFiles[slot];
     if (index === undefined) {
@@ -3144,17 +3350,30 @@ function updateSelection(navigation?: ArchiveNavigation) {
       button.classList.remove("selected");
       button.setAttribute("aria-pressed", "false");
       delete button.dataset.status;
+      delete button.dataset.spotlightMatch;
       return;
     }
     const record = records[index];
     button.hidden = false;
     button.dataset.select = String(index);
     button.dataset.status = record.status;
+    button.dataset.spotlightMatch =
+      archiveSpotlightFilter === "all"
+        ? "all"
+        : String(spotlightSet.has(index));
     button.setAttribute("aria-label", `选择档案 ${record.id} ${record.title}`);
     button.title = `${record.visualCode} (${record.id}) · ${record.title} [${statusMeta(record.status).label}]`;
     button.classList.toggle("selected", index === selected);
     button.setAttribute("aria-pressed", String(index === selected));
   });
+  const spotlightHud = document.getElementById("archive-spotlight-hud");
+  if (spotlightHud) {
+    spotlightHud.innerHTML = renderArchiveSpotlightHudMarkup(
+      archiveSpotlightFilter,
+      selected,
+      saved,
+    );
+  }
   $("#saved-count").textContent = String(saved.size).padStart(2, "0");
 }
 function replayBoot(forcePreview = false) {
@@ -3434,7 +3653,7 @@ function motionPreferenceNoteMarkup() {
   return `<div id="motion-preference-note" class="motion-preference-note"><p>${motionSummary(prefs.motion)}</p><span>预设：${preset === "full" ? "完整动画" : preset === "reduced" ? "减少动画" : "自定义"} · 选择会保存在本站</span>${allEnabled ? "" : '<button data-action="enable-motion">启用完整动画并重播 ↻</button>'}</div>`;
 }
 function settingsMarkup() {
-  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">ATLAS USER <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}</div>${motionPreferenceNoteMarkup()}${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-shortcuts">${isWallpaper ? "<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览档案。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>" : "<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>H</kbd> 遥测 <kbd>L</kbd> 二维索引 <kbd>ESC</kbd> 返回</p>"}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ""}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ATLAS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
+  return `<h2>SYSTEM SETTINGS<small>终端偏好设置</small></h2><p class="settings-intro">ATLAS USER <span>·</span> SESSION AUTHORIZED</p>${isWallpaper ? '<p class="wallpaper-settings-note">每次启动都会读取 Wallpaper Engine 中的设置。在此修改仅对当前运行生效，无法持久保存；如需保留，请在 Wallpaper Engine 的壁纸属性中调整。</p>' : ""}<div class="settings-list">${themeSettingsMarkup(prefs.colorTheme === "dark")}${!isWallpaper ? `<label><div><strong>SUPER PERFORMANCE</strong><span>降低三维画质和渲染分辨率，保留完整动效；关闭后恢复原画质</span></div><input type="checkbox" data-pref="superPerformance" ${prefs.superPerformance ? "checked" : ""}/><i class="toggle"></i></label>` : ""}${workbench?.settingsMarkup() ?? ""}${audioSettingsMarkup(prefs)}</div>${motionPreferenceNoteMarkup()}${motionSettingsMarkup(prefs.motion, prefs.motionPreset)}${qualityMarkup(prefs.rendering)}${pwaSettingsMarkup()}<div class="settings-backup-section"><span>KNOWLEDGE SNAPSHOT // 全库快照备份与恢复</span><div class="settings-backup-actions"><button type="button" data-atlas-action="export-snapshot-json">⬇ 导出 JSON 快照</button><button type="button" data-atlas-action="export-snapshot-md">⬇ 导出 MD 合集</button><button type="button" data-atlas-action="import-snapshot-json">⬆ 导入恢复快照</button></div></div><div class="settings-shortcuts">${isWallpaper ? "<span>DESKTOP CONTROLS</span><p>拖动阵列或点击界面按钮浏览档案。桌面模式下，方向键与滚轮可能无法传入壁纸。</p>" : "<span>KEYBOARD CONTROLS</span><p><kbd>←</kbd><kbd>→</kbd> 切列 <kbd>↑</kbd><kbd>↓</kbd> 选档 <kbd>ENTER</kbd> 读取 <kbd>/</kbd> 检索 <kbd>H</kbd> 遥测 <kbd>L</kbd> 二维索引 <kbd>ESC</kbd> 返回</p>"}</div><div class="settings-bottom">${!isWallpaper && document.fullscreenEnabled ? '<button data-action="fullscreen">FULLSCREEN <span>↗</span></button>' : ""}<button data-action="restart">REINITIALIZE SYSTEM <span>↻</span></button></div><div class="modal-bottom"><span>ATLAS / 1.0 · 使用 MiSans 字体（小米） <a href="${assetUrl("fonts/MiSans-license.pdf")}" target="_blank" rel="noopener">字体许可</a></span><span>POWERED BY RHINE LAB</span></div>`;
 }
 
 document.addEventListener("input", (e) => {
@@ -3825,6 +4044,7 @@ document.addEventListener("click", (e) => {
     const paneToc = document.getElementById("optical-pane-toc");
     const paneTree = document.getElementById("optical-pane-tree");
     const paneGraph = document.getElementById("optical-pane-graph");
+    const paneNotes = document.getElementById("optical-pane-notes");
     if (paneToc && paneTree) {
       paneToc.hidden = tab !== "toc";
       paneTree.hidden = tab !== "tree";
@@ -3832,7 +4052,112 @@ document.addEventListener("click", (e) => {
     if (paneGraph) {
       paneGraph.hidden = tab !== "graph";
     }
+    if (paneNotes) {
+      paneNotes.hidden = tab !== "notes";
+    }
     audio.play("ui-tick");
+    return;
+  }
+  const noteColorBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-note-color]",
+  );
+  if (noteColorBtn) {
+    const color = noteColorBtn.dataset.noteColor as AnnotationColor;
+    if (color === "amber" || color === "emerald" || color === "sky") {
+      activeNoteColor = color;
+      document
+        .querySelectorAll<HTMLElement>("[data-note-color]")
+        .forEach((b) => b.classList.toggle("active", b === noteColorBtn));
+      audio.play("ui-tick");
+    }
+    return;
+  }
+  const readerNoteActBtn = (e.target as Element).closest<HTMLElement>(
+    "[data-reader-note-action]",
+  );
+  if (readerNoteActBtn) {
+    const nAct = readerNoteActBtn.dataset.readerNoteAction;
+    if (nAct === "capture-selection") {
+      const selText = window.getSelection()?.toString().trim() ?? "";
+      const quoteInput = document.getElementById(
+        "reader-note-quote-input",
+      ) as HTMLInputElement | null;
+      if (quoteInput) {
+        if (selText) {
+          quoteInput.value = selText;
+          notify("✓ 已拾取当前选中的正文句子");
+        } else {
+          quoteInput.focus();
+          notify("请先在正文中拖选一段文字，或直接输入需要高亮的句子");
+        }
+      }
+      audio.play("ui-tick");
+      return;
+    }
+    if (nAct === "add") {
+      const entryId = readerNoteActBtn.dataset.entryId ?? activeReaderSlug;
+      const entrySlug = readerNoteActBtn.dataset.entrySlug ?? activeReaderSlug;
+      const quoteInput = document.getElementById(
+        "reader-note-quote-input",
+      ) as HTMLInputElement | null;
+      const bodyInput = document.getElementById(
+        "reader-note-body-input",
+      ) as HTMLTextAreaElement | null;
+      const quoteVal = quoteInput?.value.trim() ?? "";
+      const noteVal = bodyInput?.value.trim() ?? "";
+      if (!quoteVal && !noteVal) {
+        bodyInput?.focus();
+        notify("请输入批注内容或高亮原文句子");
+        return;
+      }
+      addEntryAnnotation({
+        entryId,
+        slug: entrySlug,
+        quote: quoteVal,
+        note: noteVal,
+        color: activeNoteColor,
+      });
+      renderAtlasSurface(true);
+      openReaderDrawerAtTab("notes", false);
+      audio.play("confirm");
+      notify("✓ 已保存页边批注与内页高亮");
+      return;
+    }
+    if (nAct === "delete") {
+      const entryId = readerNoteActBtn.dataset.entryId ?? activeReaderSlug;
+      const annId = readerNoteActBtn.dataset.annotationId ?? "";
+      if (annId && removeEntryAnnotation(entryId, annId)) {
+        renderAtlasSurface(true);
+        openReaderDrawerAtTab("notes", false);
+        audio.play("ui-tick");
+        notify("已删除该条批注");
+      }
+      return;
+    }
+    if (nAct === "copy-markdown") {
+      const entryId = readerNoteActBtn.dataset.entryId ?? activeReaderSlug;
+      const anns = getEntryAnnotations(entryId, activeReaderSlug);
+      const md = formatAnnotationsAsMarkdownSection(anns);
+      if (md) {
+        void navigator.clipboard?.writeText(md).catch(() => {});
+        audio.play("confirm");
+        notify("✓ 已复制全部个人批注 Markdown");
+      }
+      return;
+    }
+    if (nAct === "append-to-studio") {
+      const entryId = readerNoteActBtn.dataset.entryId ?? activeReaderSlug;
+      const entrySlug = readerNoteActBtn.dataset.entrySlug ?? activeReaderSlug;
+      const anns = getEntryAnnotations(entryId, entrySlug);
+      const md = formatAnnotationsAsMarkdownSection(anns);
+      if (md) {
+        pendingStudioAppendText = md;
+        navigateAtlas(buildStudioHash(entrySlug));
+        audio.play("open");
+        notify("✓ 已将个人批注追加至编撰台文末，请按 Ctrl+S 保存归档");
+      }
+      return;
+    }
     return;
   }
   const opticalActionBtn = (e.target as Element).closest<HTMLElement>(
@@ -3872,6 +4197,11 @@ document.addEventListener("click", (e) => {
       }
       opticalActionBtn.setAttribute("aria-pressed", String(next));
       scene?.setReaderReceded(next);
+      audio.play("ui-tick");
+      return;
+    }
+    if (oAct === "open-notes-drawer") {
+      openReaderDrawerAtTab("notes", true);
       audio.play("ui-tick");
       return;
     }
@@ -4036,6 +4366,29 @@ document.addEventListener("click", (e) => {
     studioState.filterCategory = studioFilterBtn.dataset.studioFilter ?? "all";
     renderAtlasSurface(true);
     audio.play("ui-tick");
+    return;
+  }
+  const studioPromoteBtn = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-studio-promote-category]",
+  );
+  if (studioPromoteBtn) {
+    const targetCategory =
+      studioPromoteBtn.dataset.studioPromoteCategory ?? "tools";
+    studioState.category = targetCategory;
+    if (studioState.status === "draft") {
+      studioState.status = "learning";
+    }
+    studioState.openDropdown = null;
+    markStudioDirty();
+    renderAtlasSurface(true);
+    audio.play("confirm");
+    if (studioState.localDiskAvailable && !studioState.isNew) {
+      void saveStudioDraftToDisk(false);
+    } else {
+      notify(
+        `⚡ 已切换为正式领域「${deskDomainTitle(targetCategory, targetCategory)}」，点击保存即可完成转正`,
+      );
+    }
     return;
   }
   const studioCatBtn = (e.target as Element).closest<HTMLButtonElement>(
@@ -4588,6 +4941,70 @@ document.addEventListener("click", (e) => {
       notify("↺ 已恢复待校准列表");
       return;
     }
+    if (act === "export-snapshot-json") {
+      exportAtlasBackupFile("json");
+      return;
+    }
+    if (act === "export-snapshot-md") {
+      exportAtlasBackupFile("md");
+      return;
+    }
+    if (act === "import-snapshot-json") {
+      triggerImportSnapshotJson();
+      return;
+    }
+    if (act === "promote-inbox-entry") {
+      const slug = atlasActionBtn.dataset.entrySlug ?? "";
+      const targetCat = atlasActionBtn.dataset.targetCategory ?? "tools";
+      if (slug) {
+        void promoteInboxEntryFromLibrary(slug, targetCat);
+      }
+      return;
+    }
+    if (act === "spotlight-3d-filter") {
+      const filterStr = atlasActionBtn.dataset.filter ?? "all";
+      archiveSpotlightFilter = filterStr;
+      const matches = resolveSpotlightMatchingIndices(
+        archiveSpotlightFilter,
+        selected,
+        saved,
+      );
+      navigateAtlas("#/archive");
+      if (matches.length > 0) {
+        select(matches[0]);
+      } else {
+        updateSelection();
+      }
+      audio.play("confirm");
+      notify(`◈ 已在三维阵列启用筛选：${filterStr}（共 ${matches.length} 份匹配）`);
+      return;
+    }
+  }
+  const spotlightPill = (e.target as Element).closest<HTMLButtonElement>(
+    "[data-spotlight-filter]",
+  );
+  if (spotlightPill) {
+    const nextFilter = spotlightPill.dataset.spotlightFilter ?? "all";
+    archiveSpotlightFilter =
+      archiveSpotlightFilter === nextFilter && nextFilter !== "all"
+        ? "all"
+        : nextFilter;
+    const matches = resolveSpotlightMatchingIndices(
+      archiveSpotlightFilter,
+      selected,
+      saved,
+    );
+    if (
+      archiveSpotlightFilter !== "all" &&
+      matches.length > 0 &&
+      !matches.includes(selected)
+    ) {
+      select(matches[0]);
+    } else {
+      updateSelection();
+    }
+    audio.play("ui-tick");
+    return;
   }
   if (!started) return;
   if (modalClosing) return;
@@ -4708,6 +5125,18 @@ document.addEventListener("click", (e) => {
   }
   if (action === "prev") stepFile(-1);
   if (action === "next") stepFile(1);
+  if (action === "step-spotlight-next") {
+    const matches = resolveSpotlightMatchingIndices(
+      archiveSpotlightFilter,
+      selected,
+      saved,
+    );
+    if (matches.length > 0) {
+      const nextIdx = stepSpotlightArchiveIndex(matches, selected, 1);
+      select(nextIdx, { axis: "row", direction: 1 });
+    }
+    return;
+  }
   if (action === "column-prev") stepColumn(-1);
   if (action === "column-next") stepColumn(1);
   if (action === "open") openFile();
@@ -5125,6 +5554,12 @@ document.addEventListener("keydown", (e) => {
         audio.play("confirm");
         notify(`✓ 已复制 ${entry.globalCode} Markdown 摘要引用卡片`);
       }
+      return;
+    }
+    if (lower === "m") {
+      e.preventDefault();
+      openReaderDrawerAtTab("notes", true);
+      audio.play("ui-tick");
       return;
     }
   }

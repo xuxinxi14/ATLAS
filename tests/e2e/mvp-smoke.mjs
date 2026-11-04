@@ -28,6 +28,24 @@ import {
   queryWikiLinkSuggestions,
   renderWikiSuggestPopoverMarkup,
 } from "../../src/studio/wiki-suggest.ts";
+import {
+  addEntryAnnotation,
+  getEntryAnnotations,
+  removeEntryAnnotation,
+  formatAnnotationsAsMarkdownSection,
+  applyInlineHighlightsToHtml,
+} from "../../src/reader/reader-notes.ts";
+import {
+  createAtlasSnapshotBundle,
+  serializeAtlasSnapshotJson,
+  createAtlasFullMarkdownBundleText,
+  parseAndValidateAtlasSnapshot,
+} from "../../src/knowledge/backup.ts";
+import {
+  resolveSpotlightMatchingIndices,
+  stepSpotlightArchiveIndex,
+  renderArchiveSpotlightHudMarkup,
+} from "../../src/archive-spotlight.ts";
 import { parseHashRoute, buildStudioHash } from "../../src/app/router.ts";
 import { knowledgeRepository } from "../../src/knowledge/repository.ts";
 import { records, columnFiles } from "../../src/data.ts";
@@ -539,4 +557,138 @@ test("Global Knowledge Constellation, Review Calibration Queue, and Reader Citat
       readerHtml.includes('data-optical-action="copy-citation-card"'),
     "Reader includes both wiki-link and citation-card export actions",
   );
+});
+
+test("Snapshot Backup, Reader Inline Highlights & Notes, Inbox Promote Workflow, and 3D Spotlight HUD work accurately", () => {
+  // 1. Reader Inline Highlights & Margin Notes
+  const targetEntry = knowledgeRepository.byId("research-qpcr-ct-ddct");
+  assert.ok(targetEntry, "RT-qPCR entry exists");
+  const added = addEntryAnnotation({
+    entryId: targetEntry.id,
+    slug: targetEntry.slug,
+    quote: "熔解曲线",
+    note: "实验复核重点：确保单峰无引物二聚体",
+    color: "emerald",
+  });
+  assert.ok(added.id.startsWith("ann-"));
+  const listAfterAdd = getEntryAnnotations(targetEntry.id, targetEntry.slug);
+  assert.equal(listAfterAdd.length, 1);
+
+  const highlightedHtml = applyInlineHighlightsToHtml(
+    "<p>qPCR 质控需检查熔解曲线是否单峰。</p><code>熔解曲线</code>",
+    listAfterAdd,
+  );
+  assert.ok(
+    highlightedHtml.includes(
+      '<mark class="atlas-inline-highlight" data-color="emerald"',
+    ),
+    "Wraps matching quote in <mark> inside prose",
+  );
+  assert.ok(
+    highlightedHtml.includes("<code>熔解曲线</code>"),
+    "Does not corrupt text inside <code> blocks",
+  );
+
+  const mdSection = formatAnnotationsAsMarkdownSection(listAfterAdd);
+  assert.ok(mdSection.includes("## 个人批注与重点摘录"));
+  assert.ok(mdSection.includes("实验复核重点：确保单峰无引物二聚体"));
+
+  const readerWithNotes = renderReaderViewMarkup(
+    targetEntry.slug,
+    new Set(),
+    true,
+  );
+  assert.ok(
+    readerWithNotes.includes('data-optical-drawer-tab="notes"'),
+    "Reader TOC drawer includes Notes tab",
+  );
+  assert.ok(
+    readerWithNotes.includes("实验复核重点：确保单峰无引物二聚体"),
+    "Reader Notes drawer renders saved annotation",
+  );
+
+  // 2. Full Knowledge Snapshot Backup (JSON + Markdown Bundle + Restore Validation)
+  const rawJson = serializeAtlasSnapshotJson({
+    savedIds: ["X-001"],
+    calibratedIds: ["skill-molecular-docking"],
+  });
+  const parsedSnap = parseAndValidateAtlasSnapshot(rawJson);
+  assert.equal(parsedSnap.ok, true);
+  if (parsedSnap.ok) {
+    assert.equal(
+      parsedSnap.bundle.totalEntries,
+      knowledgeRepository.all(true).length,
+    );
+    assert.deepEqual(parsedSnap.bundle.userState.savedIds, ["X-001"]);
+    assert.ok(
+      parsedSnap.bundle.userState.annotations[targetEntry.id]?.length === 1,
+      "Snapshot preserves reader annotations",
+    );
+  }
+  const fullMdBundle = createAtlasFullMarkdownBundleText({
+    savedIds: ["X-001"],
+  });
+  assert.ok(
+    fullMdBundle.includes("ATLAS // PERSONAL KNOWLEDGE TERMINAL — 全库归档合集"),
+  );
+  assert.ok(fullMdBundle.includes("实验复核重点：确保单峰无引物二聚体"));
+
+  // Clean up test annotation
+  assert.equal(removeEntryAnnotation(targetEntry.id, added.id), true);
+  assert.equal(getEntryAnnotations(targetEntry.id).length, 0);
+
+  // 3. Inbox Promote Workflow in Studio & Library
+  const inboxDraft = createDefaultStudioDraft("inbox", "library");
+  inboxDraft.isNew = false;
+  inboxDraft.originalSlug = "inbox/docker-port-conflict";
+  const inboxStudioHtml = renderStudioViewMarkup(inboxDraft, true);
+  assert.ok(
+    inboxStudioHtml.includes('id="studio-inbox-promote-bar"') &&
+      inboxStudioHtml.includes('data-studio-promote-category="computing"'),
+    "Studio renders one-click Inbox Promote bar when editing an inbox draft",
+  );
+
+  const inboxLibHtml = renderLibraryViewMarkup(
+    {
+      category: "inbox",
+      type: "all",
+      status: "all",
+      query: "",
+      sortBy: "updated",
+      layout: "list",
+    },
+    new Set(),
+    true,
+  );
+  assert.ok(
+    inboxLibHtml.includes('data-atlas-action="promote-inbox-entry"'),
+    "Library inbox view renders one-click promote domain chips",
+  );
+
+  // 4. 3D Archive Spotlight HUD & Constellation Linkage
+  const reviewMatches = resolveSpotlightMatchingIndices(
+    "status:review",
+    0,
+    new Set(),
+  );
+  assert.ok(reviewMatches.length >= 1, "Finds review entries in 3D records");
+  const relatedMatches = resolveSpotlightMatchingIndices(
+    "related",
+    0,
+    new Set(),
+  );
+  assert.ok(
+    relatedMatches.includes(0) && relatedMatches.length >= 2,
+    "Finds constellation-connected records for selected 3D cassette",
+  );
+  const nextMatch = stepSpotlightArchiveIndex(relatedMatches, relatedMatches[0], 1);
+  assert.equal(nextMatch, relatedMatches[1]);
+
+  const spotlightHudHtml = renderArchiveSpotlightHudMarkup(
+    "status:review",
+    0,
+    new Set(),
+  );
+  assert.ok(spotlightHudHtml.includes("3D SPOTLIGHT //"));
+  assert.ok(spotlightHudHtml.includes('data-action="step-spotlight-next"'));
 });

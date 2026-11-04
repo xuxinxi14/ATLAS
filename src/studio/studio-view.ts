@@ -464,7 +464,19 @@ export function renderStudioViewMarkup(
                       role="menuitem"
                       class="studio-menu-item"
                       data-studio-action="export-markdown"
-                    >⇩ 导出 Markdown (.md)</button>
+                    >⇩ 导出当前 Markdown (.md)</button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class="studio-menu-item"
+                      data-atlas-action="export-snapshot-json"
+                    >⬇ 导出全库 JSON 快照</button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class="studio-menu-item"
+                      data-atlas-action="export-snapshot-md"
+                    >⬇ 导出全库 Markdown 合集</button>
                     <button
                       type="button"
                       role="menuitem"
@@ -626,6 +638,32 @@ export function renderStudioViewMarkup(
                 <i aria-hidden="true">⌄</i>
               </button>
             </div>
+
+            ${
+              state.category === "inbox" ||
+              state.originalSlug.startsWith("inbox/")
+                ? `<div class="studio-inbox-promote-bar" id="studio-inbox-promote-bar" role="region" aria-label="闪念草稿一键转正归档">
+                    <span class="inbox-promote-label">⚡ 草稿一键转正归档：</span>
+                    <div class="inbox-promote-domains">
+                      ${portals
+                        .map(
+                          (p) => `
+                            <button
+                              type="button"
+                              class="inbox-promote-btn"
+                              data-studio-promote-category="${escapeHtml(p.id)}"
+                              title="将此草稿一键转正至「${escapeHtml(p.title)}」并分配 ${escapeHtml(p.codePrefix)} 系列正式编号"
+                            >
+                              <b>${escapeHtml(p.codePrefix)}</b>
+                              <span>${escapeHtml(deskDomainTitle(p.id, p.title))}</span>
+                            </button>
+                          `,
+                        )
+                        .join("")}
+                    </div>
+                  </div>`
+                : ""
+            }
 
             <!-- Live preview, source and reading share the same underlying Markdown. -->
             <div class="studio-tool-row">

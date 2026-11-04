@@ -5,6 +5,7 @@ import {
   typeMeta,
 } from "../knowledge/repository.ts";
 import { renderGlobalKnowledgeGraphMarkup } from "../knowledge/graph.ts";
+import { renderKnowledgeAuditPanelMarkup } from "../knowledge/audit.ts";
 import { buildEntryHash, buildLibraryHash, buildStudioHash } from "./router.ts";
 import { publicReadOnly } from "../public-mode.ts";
 
@@ -330,6 +331,15 @@ export function renderTelemetryHomeMarkup(
             </div>
             <div class="rhine-anchor-rule" data-rule><i></i></div>
             ${renderGlobalKnowledgeGraphMarkup()}
+          </section>
+
+          <section class="rhine-audit-section" data-stagger="3" aria-label="知识库健康度巡检">
+            <div class="rhine-section-kicker">
+              <span>06 // KNOWLEDGE HEALTH AUDIT · 知识库健康度与断链巡检</span>
+              <span>BROKEN LINKS / ORPHAN NODES / QUICKSTART COVERAGE</span>
+            </div>
+            <div class="rhine-anchor-rule" data-rule><i></i></div>
+            ${renderKnowledgeAuditPanelMarkup(readOnly, true)}
           </section>
         </div>
       </div>

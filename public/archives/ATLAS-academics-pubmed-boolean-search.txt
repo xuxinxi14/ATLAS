@@ -13,9 +13,9 @@ ACADEMICS & CORE · SKILL · STATUS: PROFICIENT
 【核心要点】
 1. 标准组合范式：同一概念内部用 OR 连接「MeSH 主题词 + 自由词同义词（[Title/Abstract]）」，不同核心概念之间用 AND 交集组合，布尔运算符必须全大写（AND / OR / NOT）。
 2. 为什么不能只搜 MeSH：最新发表（In Process / Ahead of Print）的文献尚未完成人工 MeSH 标引，仅用 [MeSH Terms] 会漏掉近 3～6 个月的新文献；必须配合 [tiab] 自由词补齐。
-3. 初检定界：先用核心综述（"Review"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程与酶抑制动力学判读）。
+3. 初检定界：先用核心综述（"Review"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程（Michaelis-Menten）与酶抑制类型判读）。
 4. 精化去噪：用 NOT ("animals"[MeSH Terms] NOT "humans"[MeSH Terms]) 排除纯动物实验（仅限临床研究场景）。
-5. 整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master 科研组会汇报生成与核对工作流 或笔记库。
+5. 整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master：环境配置与演示文稿制作流程 或笔记库。
 6. 布尔逻辑词 AND、OR、NOT 已全部大写且括号层级闭合
 
 【正文内容】
@@ -47,9 +47,9 @@ PubMed 医学文献检索式构造（MeSH 主题词与布尔逻辑）速查
 
 文献筛选与汇报衔接流程
 
-1. 初检定界：先用核心综述（"Review"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程与酶抑制动力学判读）。
+1. 初检定界：先用核心综述（"Review"[pt]）快速摸清领域术语与经典指标（如酶动力学参数 K_m, K_i，参见 米氏方程（Michaelis-Menten）与酶抑制类型判读）。
 2. 精化去噪：用 NOT ("animals"[MeSH Terms] NOT "humans"[MeSH Terms]) 排除纯动物实验（仅限临床研究场景）。
-3. 整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master 科研组会汇报生成与核对工作流 或笔记库。
+3. 整理入库：将高价值文献的 PMID 与核心实验图表结论导入 PPT Master：环境配置与演示文稿制作流程 或笔记库。
 
 验证清单
 

@@ -68,9 +68,15 @@ import {
 } from "./library/library-view";
 import {
   renderReaderViewMarkup,
+  resolveDefaultSplitTargetSlug,
   hydrateEntryHtmlImages,
   prefetchEntryAssets,
 } from "./reader/reader-view";
+import {
+  isCommandPaletteQuery,
+  searchAtlasCommands,
+  renderCommandPaletteResultsMarkup,
+} from "./search/command-palette";
 import {
   renderHoverPreviewCardMarkup,
   formatEntryWikiCitation,
@@ -235,6 +241,7 @@ let modal: "search" | "saved" | "settings" | null = null,
 let activeTab = "overview";
 let atlasView: RouteView = "archive";
 let activeReaderSlug = records[0]?.slug ?? "tools/aegisub";
+let activeReaderSplitSlug: string | null = null;
 let activeReaderAnchor: string | undefined;
 let readerOrigin = { hash: "#/archive", label: "档案大厅" };
 let currentRouteHash = "";
@@ -888,6 +895,8 @@ function exitStudioToOrigin() {
   studioState.openDropdown = null;
   studioState.moreDrawerOpen = false;
   studioState.aiPasteOpen = false;
+  studioState.trashDrawerOpen = false;
+  studioState.auditDrawerOpen = false;
   studioState.aiPendingCandidate = null;
   if (studioState.dirty) {
     studioDraftCache.set(
@@ -913,6 +922,7 @@ function exitStudioToOrigin() {
 function exitOpticalReader() {
   manualReaderRecede = null;
   previousReaderSlug = "";
+  activeReaderSplitSlug = null;
   scene?.setReaderReceded(false);
   scene?.setReaderMode(false);
   if (mode === "detail") {
@@ -1389,6 +1399,8 @@ function renderAtlasSurface(preserveLibraryInputFocus = false) {
               saved,
               hasWebGL,
               readerOrigin,
+              publicReadOnly,
+              activeReaderSplitSlug,
             );
 
   studioEditorModule?.unmountStudioEditor();
@@ -3582,7 +3594,7 @@ function renderModal() {
   modalTransition?.dispose();
   const filterCategories = [...categories, "闪念草稿箱"];
   $("#modal-root").innerHTML =
-    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>ATLAS // ${modal === "settings" ? "SYSTEM PREFERENCES" : "KNOWLEDGE DIRECTORY"}</span><button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "全文与命令加权检索"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" placeholder="输入标题、编号、标签或检索算子 (tag: / cat: / status: / type:)…" aria-label="检索档案"/><span class="key">ESC</span></div><div class="category-filters">${filterCategories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案与摘要</span><span>PORTAL / 领域</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>ATLAS KNOWLEDGE BASE <i>●</i> ${records.length} ARCHIVED</span></div>`}</section></div>`;
+    `<div class="modal-backdrop"><section class="terminal-modal ${modal === "settings" ? "settings-modal" : ""}" role="dialog" aria-modal="true" aria-label="${modal === "settings" ? "系统设置" : modal === "saved" ? "收藏档案" : "档案检索"}"><div class="modal-top"><span>ATLAS // ${modal === "settings" ? "SYSTEM PREFERENCES" : "KNOWLEDGE DIRECTORY & COMMANDS"}</span><div class="modal-top-actions">${modal !== "settings" ? `<button type="button" class="search-cmd-toggle-btn" data-action="toggle-command-mode" title="切换命令面板 (Ctrl+P 或输入 >)">&gt; 命令面板</button>` : ""}<button data-action="close-modal" aria-label="关闭窗口">CLOSE <span>×</span></button></div></div>${modal === "settings" ? settingsMarkup() : `<h2>${modal === "saved" ? "SAVED ARCHIVES" : "ARCHIVE INDEX"}<small>${modal === "saved" ? "收藏档案" : "全文检索与 > 命令直达"}</small></h2><div class="search-field"><span>⌕</span><input id="archive-search" type="search" autocomplete="off" value="${escapeHtml(searchQuery)}" placeholder="输入关键词、算子 (tag:/status:)，或输入 > 开启命令面板 (Ctrl+P)…" aria-label="检索档案或执行命令"/><span class="key">ESC</span></div><div class="category-filters">${filterCategories.map((c, i) => `<button data-filter="${escapeHtml(c)}" class="${i === 0 ? "active" : ""}">${escapeHtml(c)}</button>`).join("")}</div><div class="result-header"><span>FILE / 档案与命令</span><span>PORTAL / 领域</span><span>ACCESS</span></div><div id="search-results" class="search-results"></div><div class="modal-bottom"><span id="result-count"></span><span>ATLAS KNOWLEDGE BASE <i>●</i> ${records.length} ARCHIVED</span></div>`}</section></div>`;
   const backdrop = $(".modal-backdrop");
   backdrop.hidden = true;
   modalTransition = new SurfaceTransition(backdrop, $(".terminal-modal"));
@@ -3591,7 +3603,13 @@ function renderModal() {
   if (modal !== "settings") {
     renderResults();
     requestAnimationFrame(() => {
-      if (backdrop.isConnected && !modalClosing) $("#archive-search").focus();
+      if (backdrop.isConnected && !modalClosing) {
+        const input = $("#archive-search") as HTMLInputElement;
+        input.focus();
+        try {
+          input.setSelectionRange(input.value.length, input.value.length);
+        } catch {}
+      }
     });
   } else
     requestAnimationFrame(() => {
@@ -3605,6 +3623,16 @@ function renderModal() {
     });
 }
 function renderResults() {
+  if (isCommandPaletteQuery(searchQuery)) {
+    const cmds = searchAtlasCommands(searchQuery, {
+      readOnly: publicReadOnly,
+      isDark: prefs.colorTheme === "dark",
+    });
+    $("#search-results").innerHTML = renderCommandPaletteResultsMarkup(cmds);
+    $("#result-count").textContent =
+      `${String(cmds.length).padStart(2, "0")} COMMANDS READY`;
+    return;
+  }
   const catFilter = filter === "闪念草稿箱" ? "inbox" : filter;
   const rawResults = searchKnowledge(searchQuery, {
     category: catFilter,
@@ -3630,9 +3658,114 @@ function renderResults() {
           return `<button class="result-row" data-result="${recIdx >= 0 ? recIdx : 0}" data-result-slug="${escapeHtml(item.slug)}" data-result-in-3d="${recIdx >= 0}"><span class="result-name"><b>${escapeHtml(displayId)}</b><span>${escapeHtml(item.title)}<small>${escapeHtml(item.visualCode)} · ${escapeHtml(sMeta.label)} · ${escapeHtml(snippet)}</small></span>${isSaved ? "<i>＋</i>" : ""}</span><span>${escapeHtml(item.categoryTitle)}</span><span>${atlasView === "archive" && recIdx >= 0 ? "3D / 2D" : "READ 2D"} <i>↗</i></span></button>`;
         })
         .join("")
-    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "读取档案时，选择 SAVE ARCHIVE 或 ☆ 收藏 将其保存在此处。" : "尝试其他名称、档案编号，或切换知识领域分类。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
+    : `<div class="empty-results"><span>∅</span><strong>${modal === "saved" && !searchQuery ? "尚无收藏档案" : "没有匹配的档案"}</strong><p>${modal === "saved" && !searchQuery ? "读取档案时，选择 SAVE ARCHIVE 或 ☆ 收藏 将其保存在此处。" : "尝试其他名称、档案编号，或输入 > 打开命令面板。"}</p><button data-action="reset-search">${modal === "saved" ? "查看全部档案 →" : "重置检索 →"}</button></div>`;
   $("#result-count").textContent =
     `${String(filtered.length).padStart(2, "0")} RECORDS FOUND`;
+}
+
+function executeCommandPaletteAction(action: string, param = "") {
+  closeModal(() => {
+    if (action === "nav-home") {
+      navigateAtlas("#/home");
+      audio.play("confirm");
+      return;
+    }
+    if (action === "nav-library") {
+      navigateAtlas(param ? buildLibraryHash(param) : "#/library");
+      audio.play("confirm");
+      return;
+    }
+    if (action === "nav-archive") {
+      navigateAtlas("#/archive");
+      audio.play("confirm");
+      return;
+    }
+    if (action === "nav-studio") {
+      Object.assign(
+        studioState,
+        createDefaultStudioDraft(param || "tools", "library"),
+      );
+      navigateAtlas("#/studio");
+      audio.play("open");
+      return;
+    }
+    if (action === "promote-first-inbox") {
+      const drafts = knowledgeRepository.listByCategory("inbox", true);
+      if (drafts.length > 0) {
+        void promoteInboxEntryFromLibrary(
+          param || drafts[0].slug,
+          "computing",
+        );
+      } else {
+        notify("当前闪念草稿箱为空，无需转正");
+      }
+      return;
+    }
+    if (action === "run-knowledge-audit") {
+      if (!publicReadOnly) {
+        studioState.auditDrawerOpen = true;
+        studioState.moreDrawerOpen = false;
+        studioState.aiPasteOpen = false;
+        studioState.trashDrawerOpen = false;
+        if (atlasView === "studio") {
+          renderAtlasSurface(true);
+        } else {
+          navigateAtlas("#/studio");
+        }
+        audio.play("confirm");
+        notify("🩺 已打开知识库健康度与断链巡检抽屉");
+      } else {
+        navigateAtlas("#/home");
+        requestAnimationFrame(() =>
+          document
+            .getElementById("atlas-audit-panel")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+        );
+      }
+      return;
+    }
+    if (action === "export-snapshot-json") {
+      exportAtlasBackupFile("json");
+      return;
+    }
+    if (action === "export-snapshot-md") {
+      exportAtlasBackupFile("md");
+      return;
+    }
+    if (action === "import-snapshot-json") {
+      triggerImportSnapshotJson();
+      return;
+    }
+    if (action === "toggle-theme-quick") {
+      prefs.colorTheme = prefs.colorTheme === "dark" ? "light" : "dark";
+      savePrefs();
+      renderAtlasSurface(true);
+      audio.play("confirm");
+      return;
+    }
+    if (action === "spotlight-3d") {
+      archiveSpotlightFilter = param || "all";
+      const matches = resolveSpotlightMatchingIndices(
+        archiveSpotlightFilter,
+        selected,
+        saved,
+      );
+      navigateAtlas("#/archive");
+      if (matches.length > 0) select(matches[0]);
+      else updateSelection();
+      audio.play("confirm");
+      notify(`◈ 已在三维阵列启用聚光筛选：${archiveSpotlightFilter}`);
+      return;
+    }
+    if (action === "open-settings") {
+      openModal("settings");
+      return;
+    }
+    if (action === "replay-boot") {
+      replayBoot();
+      return;
+    }
+  });
 }
 function updateQualitySummary() {
   const summary = document.querySelector("#quality-summary");
@@ -3829,6 +3962,12 @@ document.addEventListener("change", (e) => {
     renderAtlasSurface();
     return;
   }
+  if (el.id === "optical-split-select") {
+    activeReaderSplitSlug = el.value;
+    renderAtlasSurface(true);
+    audio.play("ui-tick");
+    return;
+  }
   if (el.id === "quality-preset" && Object.hasOwn(qualityPresets, el.value)) {
     prefs.rendering = { ...qualityPresets[el.value as QualityPreset] };
     savePrefs();
@@ -3889,6 +4028,23 @@ document.addEventListener("change", (e) => {
   }
 });
 document.addEventListener("click", (e) => {
+  if (atlasView === "reader" && (e.altKey || e.shiftKey)) {
+    const internalEntryAnchor = (e.target as Element).closest<HTMLAnchorElement>(
+      'a[href^="#/entry/"]',
+    );
+    if (internalEntryAnchor) {
+      const target = parseHashRoute(internalEntryAnchor.hash);
+      if (target?.view === "reader" && target.slug) {
+        e.preventDefault();
+        activeReaderSplitSlug = target.slug;
+        scene?.setReaderReceded(true);
+        renderAtlasSurface(true);
+        audio.play("open");
+        notify("◫ 已在右侧开启分屏对比阅读");
+        return;
+      }
+    }
+  }
   const readerHeadingAnchor =
     atlasView === "reader"
       ? (e.target as Element).closest<HTMLAnchorElement>(
@@ -4205,6 +4361,39 @@ document.addEventListener("click", (e) => {
       audio.play("ui-tick");
       return;
     }
+    if (oAct === "toggle-split-reader") {
+      const entry =
+        knowledgeRepository.bySlug(activeReaderSlug) ??
+        knowledgeRepository.byId(activeReaderSlug);
+      if (activeReaderSplitSlug) {
+        activeReaderSplitSlug = null;
+        scene?.setReaderReceded(Boolean(manualReaderRecede));
+      } else if (entry) {
+        activeReaderSplitSlug = resolveDefaultSplitTargetSlug(entry);
+        scene?.setReaderReceded(true);
+        notify("◫ 已开启分屏对比阅读（按住 Alt 点击任意内链可在右侧对照）");
+      }
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (oAct === "close-split-pane") {
+      activeReaderSplitSlug = null;
+      scene?.setReaderReceded(Boolean(manualReaderRecede));
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (oAct === "swap-split-pane") {
+      if (activeReaderSplitSlug) {
+        const oldMain = activeReaderSlug;
+        const nextMain = activeReaderSplitSlug;
+        activeReaderSplitSlug = oldMain;
+        navigateAtlas(buildEntryHash(nextMain));
+        audio.play("ui-tick");
+      }
+      return;
+    }
     if (oAct === "copy-wiki-link") {
       const entry =
         knowledgeRepository.bySlug(activeReaderSlug) ??
@@ -4486,6 +4675,7 @@ document.addEventListener("click", (e) => {
       if (studioState.moreDrawerOpen) {
         studioState.aiPasteOpen = false;
         studioState.trashDrawerOpen = false;
+        studioState.auditDrawerOpen = false;
       }
       studioState.openDropdown = null;
       renderAtlasSurface(true);
@@ -4504,6 +4694,7 @@ document.addEventListener("click", (e) => {
       if (studioState.trashDrawerOpen) {
         studioState.moreDrawerOpen = false;
         studioState.aiPasteOpen = false;
+        studioState.auditDrawerOpen = false;
         void loadStudioTrashItems();
       }
       studioState.openDropdown = null;
@@ -4513,6 +4704,24 @@ document.addEventListener("click", (e) => {
     }
     if (sAct === "close-trash-drawer") {
       studioState.trashDrawerOpen = false;
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "toggle-audit-drawer") {
+      studioState.auditDrawerOpen = !studioState.auditDrawerOpen;
+      if (studioState.auditDrawerOpen) {
+        studioState.moreDrawerOpen = false;
+        studioState.aiPasteOpen = false;
+        studioState.trashDrawerOpen = false;
+      }
+      studioState.openDropdown = null;
+      renderAtlasSurface(true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (sAct === "close-audit-drawer") {
+      studioState.auditDrawerOpen = false;
       renderAtlasSurface(true);
       audio.play("ui-tick");
       return;
@@ -5031,6 +5240,33 @@ document.addEventListener("click", (e) => {
     select(Number(el.dataset.select));
     return;
   }
+  if (el.dataset.commandAction) {
+    executeCommandPaletteAction(
+      el.dataset.commandAction,
+      el.dataset.commandPayload ?? el.dataset.commandParam ?? "",
+    );
+    return;
+  }
+  if (el.dataset.action === "toggle-command-mode") {
+    const input = document.getElementById(
+      "archive-search",
+    ) as HTMLInputElement | null;
+    if (isCommandPaletteQuery(searchQuery)) {
+      searchQuery = searchQuery.replace(/^\s*(?:>|command:|cmd:)\s*/i, "");
+    } else {
+      searchQuery = `> ${searchQuery.trim()}`;
+    }
+    if (input) {
+      input.value = searchQuery;
+      input.focus();
+      try {
+        input.setSelectionRange(input.value.length, input.value.length);
+      } catch {}
+    }
+    renderResults();
+    audio.play("ui-tick");
+    return;
+  }
   if (el.dataset.result) {
     const index = Number(el.dataset.result);
     const slug = el.dataset.resultSlug;
@@ -5349,6 +5585,48 @@ document.addEventListener("keydown", (e) => {
     openModal("search");
     return;
   }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+    e.preventDefault();
+    if (mode === "boot" && ready) setMode("archive");
+    if (modal !== "search") {
+      openModal("search");
+    }
+    searchQuery = "> ";
+    const input = document.getElementById(
+      "archive-search",
+    ) as HTMLInputElement | null;
+    if (input) {
+      input.value = searchQuery;
+      input.focus();
+      try {
+        input.setSelectionRange(input.value.length, input.value.length);
+      } catch {}
+    }
+    renderResults();
+    return;
+  }
+  if (
+    modal === "search" &&
+    e.key === "Enter" &&
+    (e.target as HTMLElement)?.id === "archive-search"
+  ) {
+    const firstCmd = document.querySelector<HTMLButtonElement>(
+      "#search-results [data-command-action]",
+    );
+    if (firstCmd) {
+      e.preventDefault();
+      firstCmd.click();
+      return;
+    }
+    const firstResult = document.querySelector<HTMLButtonElement>(
+      "#search-results [data-result]",
+    );
+    if (firstResult) {
+      e.preventDefault();
+      firstResult.click();
+      return;
+    }
+  }
   if (playground?.active && !modal) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -5401,6 +5679,10 @@ document.addEventListener("keydown", (e) => {
         studioState.trashDrawerOpen = false;
         renderAtlasSurface(true);
         audio.play("ui-tick");
+      } else if (studioState.auditDrawerOpen) {
+        studioState.auditDrawerOpen = false;
+        renderAtlasSurface(true);
+        audio.play("ui-tick");
       } else if (studioState.moreDrawerOpen) {
         studioState.moreDrawerOpen = false;
         renderAtlasSurface(true);
@@ -5424,6 +5706,13 @@ document.addEventListener("keydown", (e) => {
         document
           .querySelector<HTMLElement>('[data-optical-toggle="more"]')
           ?.setAttribute("aria-expanded", "false");
+        audio.play("ui-tick");
+        return;
+      }
+      if (activeReaderSplitSlug) {
+        activeReaderSplitSlug = null;
+        scene?.setReaderReceded(Boolean(manualReaderRecede));
+        renderAtlasSurface(true);
         audio.play("ui-tick");
         return;
       }
@@ -5559,6 +5848,23 @@ document.addEventListener("keydown", (e) => {
     if (lower === "m") {
       e.preventDefault();
       openReaderDrawerAtTab("notes", true);
+      audio.play("ui-tick");
+      return;
+    }
+    if (lower === "v") {
+      e.preventDefault();
+      const entry =
+        knowledgeRepository.bySlug(activeReaderSlug) ??
+        knowledgeRepository.byId(activeReaderSlug);
+      if (activeReaderSplitSlug) {
+        activeReaderSplitSlug = null;
+        scene?.setReaderReceded(Boolean(manualReaderRecede));
+      } else if (entry) {
+        activeReaderSplitSlug = resolveDefaultSplitTargetSlug(entry);
+        scene?.setReaderReceded(true);
+        notify("◫ 已开启分屏对比阅读（按 V 或 × 可关闭）");
+      }
+      renderAtlasSurface(true);
       audio.play("ui-tick");
       return;
     }

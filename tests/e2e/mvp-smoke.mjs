@@ -4,7 +4,20 @@ import { resolve } from "node:path";
 import test from "node:test";
 import { renderTelemetryHomeMarkup } from "../../src/app/telemetry-view.ts";
 import { renderLibraryViewMarkup } from "../../src/library/library-view.ts";
-import { renderReaderViewMarkup } from "../../src/reader/reader-view.ts";
+import {
+  renderReaderViewMarkup,
+  resolveDefaultSplitTargetSlug,
+  renderSplitComparisonPaneMarkup,
+} from "../../src/reader/reader-view.ts";
+import {
+  isCommandPaletteQuery,
+  searchAtlasCommands,
+  renderCommandPaletteResultsMarkup,
+} from "../../src/search/command-palette.ts";
+import {
+  inspectKnowledgeHealth,
+  renderKnowledgeAuditPanelMarkup,
+} from "../../src/knowledge/audit.ts";
 import { evaluateOpticalReaderTimeline } from "../../src/optical-reader-rig.ts";
 import { evaluateIndexDeskTimeline } from "../../src/index-desk-rig.ts";
 import { evaluateStudioTrayTimeline } from "../../src/studio-tray-rig.ts";
@@ -691,4 +704,125 @@ test("Snapshot Backup, Reader Inline Highlights & Notes, Inbox Promote Workflow,
   );
   assert.ok(spotlightHudHtml.includes("3D SPOTLIGHT //"));
   assert.ok(spotlightHudHtml.includes('data-action="step-spotlight-next"'));
+});
+
+test("Split-View Dual Reader, Global Command Palette, and Knowledge Health Audit & Broken Link Inspector work end-to-end", () => {
+  // 1. Split-View Dual Reader (Item 2)
+  const primaryEntry = knowledgeRepository.byId("concept-enzyme-kinetics");
+  assert.ok(primaryEntry, "Primary entry concept-enzyme-kinetics exists");
+  const defaultTargetSlug = resolveDefaultSplitTargetSlug(primaryEntry);
+  assert.ok(
+    defaultTargetSlug && defaultTargetSlug !== primaryEntry.slug,
+    "Resolves a distinct default split comparison target slug",
+  );
+
+  const splitPaneHtml = renderSplitComparisonPaneMarkup(
+    defaultTargetSlug,
+    primaryEntry,
+  );
+  assert.ok(
+    splitPaneHtml.includes('id="optical-split-pane"'),
+    "Renders #optical-split-pane container",
+  );
+  assert.ok(
+    splitPaneHtml.includes('id="optical-split-select"'),
+    "Renders target selector #optical-split-select",
+  );
+  assert.ok(
+    splitPaneHtml.includes('data-optical-action="swap-split-pane"'),
+    "Renders swap split pane button",
+  );
+
+  const dualReaderHtml = renderReaderViewMarkup(
+    primaryEntry.slug,
+    new Set(),
+    true,
+    { hash: "#/library", label: "二维索引" },
+    false,
+    defaultTargetSlug,
+  );
+  assert.ok(
+    dualReaderHtml.includes("optical-split-workspace is-split-active"),
+    "Reader view activates .is-split-active grid when splitRightSlug is provided",
+  );
+  assert.ok(
+    dualReaderHtml.includes('data-optical-action="toggle-split-reader"'),
+    "Reader top bar includes toggle-split-reader button",
+  );
+
+  // 2. Global Command Palette (Item 3)
+  assert.equal(isCommandPaletteQuery("> 巡检"), true);
+  assert.equal(isCommandPaletteQuery("cmd: export"), true);
+  assert.equal(isCommandPaletteQuery("aegisub"), false);
+
+  const auditCmds = searchAtlasCommands("> 巡检", { readOnly: false, isDark: false });
+  assert.ok(
+    auditCmds.some((c) => c.action === "run-knowledge-audit"),
+    "Command palette finds run-knowledge-audit for '> 巡检'",
+  );
+
+  const exportCmds = searchAtlasCommands("> 快照", { readOnly: false, isDark: false });
+  assert.ok(
+    exportCmds.some((c) => c.action === "export-snapshot-json"),
+    "Command palette finds export-snapshot-json for '> 快照'",
+  );
+
+  const cmdMarkup = renderCommandPaletteResultsMarkup(auditCmds);
+  assert.ok(
+    cmdMarkup.includes('data-command-action="run-knowledge-audit"'),
+    "Command palette renders actionable command button markup",
+  );
+
+  // 3. Knowledge Health Audit & Broken Link Inspector (Item 4)
+  const baseAudit = inspectKnowledgeHealth();
+  assert.ok(
+    baseAudit.healthScore >= 0 && baseAudit.healthScore <= 100,
+    "Computes valid 0-100 health score",
+  );
+  assert.equal(
+    baseAudit.brokenLinkCount,
+    0,
+    "All built-in knowledge entries have 0 broken [[wiki-links]]",
+  );
+
+  // Verify broken-link & missing-quickstart detection on synthetic entry
+  const syntheticAudit = inspectKnowledgeHealth([
+    ...knowledgeRepository.all(true),
+    {
+      ...primaryEntry,
+      id: "synthetic-broken-entry",
+      slug: "tools/synthetic-broken-entry",
+      title: "测试断链与缺失速查词条",
+      visualCode: "T-999",
+      markdown: "这里引用了一个不存在的词条 [[non-existent-ghost-note]]。",
+      plainText: "这里引用了一个不存在的词条",
+      quickstartHtml: "",
+      prerequisites: [],
+      related: [],
+    },
+  ]);
+  assert.ok(
+    syntheticAudit.brokenLinkCount >= 1,
+    "Detects broken [[non-existent-ghost-note]] wiki link",
+  );
+  assert.ok(
+    syntheticAudit.missingQuickstartCount >= 1,
+    "Detects missing ## 快速复习 section",
+  );
+
+  const auditPanelHtml = renderKnowledgeAuditPanelMarkup(false, false);
+  assert.ok(
+    auditPanelHtml.includes('id="atlas-audit-panel"'),
+    "Renders #atlas-audit-panel",
+  );
+  assert.ok(
+    auditPanelHtml.includes("HEALTH INDEX"),
+    "Renders HEALTH INDEX badge",
+  );
+
+  const homeHtml = renderTelemetryHomeMarkup(true, false);
+  assert.ok(
+    homeHtml.includes("06 // KNOWLEDGE HEALTH AUDIT"),
+    "Telemetry Home includes 06 // KNOWLEDGE HEALTH AUDIT section",
+  );
 });

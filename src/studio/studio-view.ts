@@ -1,5 +1,6 @@
 import { escapeHtml } from "../html.ts";
 import { knowledgeRepository, typeMeta } from "../knowledge/repository.ts";
+import { renderKnowledgeAuditPanelMarkup } from "../knowledge/audit.ts";
 import type { EntryStatus, EntryType } from "../knowledge/types.ts";
 import { deskDomainTitle, deskStatusLabel } from "../library/library-view.ts";
 import type { StudioEntrySource } from "../studio-tray-rig.ts";
@@ -80,6 +81,8 @@ export interface StudioDraftState {
   aiPasteOpen: boolean;
   /** Right-side local drawer for Trash & Restore ("回收站恢复") */
   trashDrawerOpen: boolean;
+  /** Right-side local drawer for Knowledge Health Audit ("知识库健康度巡检") */
+  auditDrawerOpen: boolean;
   trashItems: StudioTrashItem[];
   trashLoading: boolean;
   aiRawInput: string;
@@ -172,6 +175,7 @@ export function createDefaultStudioDraft(
     moreDrawerOpen: false,
     aiPasteOpen: false,
     trashDrawerOpen: false,
+    auditDrawerOpen: false,
     trashItems: [],
     trashLoading: false,
     aiRawInput: "",
@@ -477,6 +481,12 @@ export function renderStudioViewMarkup(
                       class="studio-menu-item"
                       data-atlas-action="export-snapshot-md"
                     >⬇ 导出全库 Markdown 合集</button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      class="studio-menu-item"
+                      data-studio-action="toggle-audit-drawer"
+                    >🩺 知识库健康度与断链巡检</button>
                     <button
                       type="button"
                       role="menuitem"
@@ -1019,6 +1029,32 @@ export function renderStudioViewMarkup(
                               .join("")}
                           </div>`
                   }
+                </div>
+              </aside>
+
+              <!-- 右侧局部抽屉 4：知识库健康度与断链巡检 -->
+              <aside
+                class="studio-local-drawer studio-audit-drawer"
+                id="studio-audit-drawer"
+                role="dialog"
+                aria-label="知识库健康度与断链巡检"
+                ${state.auditDrawerOpen ? "" : "hidden"}
+              >
+                <div class="studio-drawer-head">
+                  <strong>🩺 知识库健康度与断链巡检</strong>
+                  <button
+                    type="button"
+                    class="studio-drawer-close"
+                    data-studio-action="close-audit-drawer"
+                    aria-label="关闭知识库巡检抽屉"
+                  >×</button>
+                </div>
+
+                <div class="studio-drawer-body">
+                  <p class="studio-ai-intro">
+                    自动扫描全库断链 <code>[[wiki-link]]</code>、孤立节点、缺失速查卡与待校准词条，点击即可直达修订。
+                  </p>
+                  ${renderKnowledgeAuditPanelMarkup(false, false)}
                 </div>
               </aside>
             </div>

@@ -49,9 +49,9 @@ aliases:
 
 ## 文献筛选与汇报衔接流程
 
-1. **初检定界**：先用核心综述（`"Review"[pt]`）快速摸清领域术语与经典指标（如酶动力学参数 $K_m, K_i$，参见 [[米氏方程与酶抑制动力学判读]]）。
+1. **初检定界**：先用核心综述（`"Review"[pt]`）快速摸清领域术语与经典指标（如酶动力学参数 $K_m, K_i$，参见 [[academics/enzyme-kinetics|米氏方程（Michaelis-Menten）与酶抑制类型判读]]）。
 2. **精化去噪**：用 `NOT ("animals"[MeSH Terms] NOT "humans"[MeSH Terms])` 排除纯动物实验（仅限临床研究场景）。
-3. **整理入库**：将高价值文献的 PMID 与核心实验图表结论导入 [[PPT Master 科研组会汇报生成与核对工作流]] 或笔记库。
+3. **整理入库**：将高价值文献的 PMID 与核心实验图表结论导入 [[tools/ppt-master-workflow|PPT Master：环境配置与演示文稿制作流程]] 或笔记库。
 
 ## 验证清单
 

@@ -64,12 +64,106 @@ function formatOpticalBodyHtml(rawHtml: string): string {
   return hydrateEntryHtmlImages(rawHtml);
 }
 
+export function resolveDefaultSplitTargetSlug(entry: KnowledgeEntry): string {
+  const rels = resolveEntryRelations(entry);
+  const firstRel =
+    rels.related[0] ?? rels.prerequisites[0] ?? rels.backlinks[0];
+  if (firstRel && firstRel.slug !== entry.slug) {
+    return firstRel.slug;
+  }
+  const all = knowledgeRepository.all(false);
+  const sameCat = all.find(
+    (e) => e.category === entry.category && e.slug !== entry.slug,
+  );
+  if (sameCat) return sameCat.slug;
+  const anyOther = all.find((e) => e.slug !== entry.slug);
+  return anyOther?.slug ?? entry.slug;
+}
+
+export function renderSplitComparisonPaneMarkup(
+  rightSlugOrId: string,
+  primaryEntry: KnowledgeEntry,
+): string {
+  const rightEntry =
+    knowledgeRepository.bySlug(rightSlugOrId) ??
+    knowledgeRepository.byId(rightSlugOrId);
+  if (!rightEntry) return "";
+
+  const allEntries = knowledgeRepository.all(true);
+  const rightAnnotations = getEntryAnnotations(rightEntry.id, rightEntry.slug);
+  const rightBodyHtml = applyInlineHighlightsToHtml(
+    formatOpticalBodyHtml(rightEntry.html),
+    rightAnnotations,
+  );
+
+  const selectOptionsHtml = allEntries
+    .filter((e) => e.id !== primaryEntry.id)
+    .map(
+      (e) =>
+        `<option value="${escapeHtml(e.slug)}" ${e.id === rightEntry.id ? "selected" : ""}>${escapeHtml(e.visualCode)} · ${escapeHtml(e.title)}</option>`,
+    )
+    .join("");
+
+  return `
+    <aside class="optical-split-pane" id="optical-split-pane" aria-label="分屏对照阅读窗格" data-split-slug="${escapeHtml(rightEntry.slug)}">
+      <header class="optical-split-header">
+        <div class="split-header-left">
+          <span class="split-kicker">SPLIT COMPARE // 对照</span>
+          <select id="optical-split-select" class="optical-split-select" aria-label="选择分屏对照档案">
+            ${selectOptionsHtml}
+          </select>
+        </div>
+        <div class="split-header-actions">
+          <button
+            type="button"
+            class="split-act-btn"
+            data-optical-action="swap-split-pane"
+            data-split-slug="${escapeHtml(rightEntry.slug)}"
+            title="将主副阅读窗格互换"
+          >⇄ 互换</button>
+          <a
+            href="${buildEntryHash(rightEntry.slug)}"
+            class="split-act-btn"
+            data-optical-action="close-split-pane"
+            title="全屏单栏打开此篇"
+          >↗ 单栏</a>
+          <button
+            type="button"
+            class="split-act-btn is-close"
+            data-optical-action="close-split-pane"
+            title="关闭分屏对比 (V)"
+            aria-label="关闭分屏对比"
+          >×</button>
+        </div>
+      </header>
+      <div class="optical-split-scroll" id="optical-split-scroll">
+        <article class="optical-reading-column is-split-column">
+          <header class="optical-article-header">
+            <div class="optical-meta-line">
+              <span class="optical-meta-code">${escapeHtml(rightEntry.visualCode)}</span>
+              <span class="optical-meta-sep" aria-hidden="true">/</span>
+              <span>${escapeHtml(rightEntry.categoryTitle)}</span>
+            </div>
+            <h2>${escapeHtml(rightEntry.title)}</h2>
+            <p class="optical-article-summary">${escapeHtml(rightEntry.summary)}</p>
+            <div class="optical-article-rule" role="separator"></div>
+          </header>
+          <div class="reader-markdown-body optical-markdown-body">
+            ${rightBodyHtml}
+          </div>
+        </article>
+      </div>
+    </aside>
+  `;
+}
+
 export function renderReaderViewMarkup(
   slugOrId: string,
   savedIds: Set<string>,
   hasWebGL = true,
   origin = { hash: "#/archive", label: "档案大厅" },
   readOnly = publicReadOnly,
+  splitRightSlug: string | null = null,
 ): string {
   const entry =
     knowledgeRepository.bySlug(slugOrId) ?? knowledgeRepository.byId(slugOrId);
@@ -266,9 +360,13 @@ export function renderReaderViewMarkup(
     formatOpticalBodyHtml(entry.html),
     annotations,
   );
+  const splitPaneHtml = splitRightSlug
+    ? renderSplitComparisonPaneMarkup(splitRightSlug, entry)
+    : "";
+  const isSplitActive = Boolean(splitPaneHtml);
 
   return `
-    <div class="optical-reader-stage" id="optical-reader-stage" data-has-webgl="${hasWebGL}">
+    <div class="optical-reader-stage" id="optical-reader-stage" data-has-webgl="${hasWebGL}" ${isSplitActive ? 'data-receded="true"' : ""}>
       <!-- Top-Right Optical Reader Stage Signature (matches reference top-right) -->
       <div class="optical-stage-signature" aria-hidden="true">
         <b>ATLAS</b><span>/</span><span>OPTICAL READER</span><i></i>
@@ -335,6 +433,16 @@ export function renderReaderViewMarkup(
             <div class="optical-top-actions">
               <button
                 type="button"
+                class="optical-top-btn ${isSplitActive ? "active" : ""}"
+                data-optical-action="toggle-split-reader"
+                aria-pressed="${isSplitActive}"
+                title="开启或关闭双栏分屏对比阅读 (快捷键 V，或按住 Alt 点击文中双链)"
+              >
+                ◫ 分屏对比
+              </button>
+              <i class="optical-top-divider" aria-hidden="true"></i>
+              <button
+                type="button"
                 class="optical-top-btn"
                 data-optical-toggle="toc"
                 aria-expanded="false"
@@ -370,6 +478,14 @@ export function renderReaderViewMarkup(
             >
               <span>${isSaved ? "★ 取消收藏" : "☆ 收藏档案"}</span>
               <kbd>S</kbd>
+            </button>
+            <button
+              type="button"
+              class="optical-menu-item"
+              data-optical-action="toggle-split-reader"
+            >
+              <span>${isSplitActive ? "◫ 关闭分屏对比阅读" : "◫ 开启分屏对比阅读"}</span>
+              <kbd>V</kbd>
             </button>
             <button
               type="button"
@@ -456,7 +572,8 @@ export function renderReaderViewMarkup(
             </div>
           </aside>
 
-          <!-- Center Single-Column Scrollable Reading Canvas -->
+          <!-- Center Scrollable Reading Workspace (Single-Column or Split-View Dual Column) -->
+          <div class="optical-split-workspace ${isSplitActive ? "is-split-active" : ""}">
           <div class="optical-screen-scroll" id="atlas-reader-scroll">
             <article class="optical-reading-column">
               <!-- Above-the-fold Single Reading Order: Code/Portal -> Title -> Summary -> Rule -> Body -->
@@ -569,6 +686,8 @@ export function renderReaderViewMarkup(
                 </div>
               </footer>
             </article>
+          </div>
+          ${splitPaneHtml}
           </div>
 
           <!-- Bottom Status Bar Inside Optical Screen (matches reference: ● LINK ESTABLISHED) -->
